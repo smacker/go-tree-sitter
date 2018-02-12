@@ -3,7 +3,6 @@
 
 #include "tree_sitter/runtime.h"
 
-TSNode parse_javascript(TSDocument *document, const char *input);
-char* readValue(TSDocument *document, TSNode node);
+char *readValue(TSDocument *document, TSNode node);
 
 #endif

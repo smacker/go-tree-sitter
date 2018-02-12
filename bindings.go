@@ -4,17 +4,21 @@ package sitter
 //#cgo LDFLAGS: ${SRCDIR}/tree-sitter/out/Release/libruntime.a
 //#include "bindings.h"
 import "C"
+import "unsafe"
 
-func Parse(content []byte, lang string) *Node {
+type Language struct {
+	Ptr unsafe.Pointer
+}
+
+func Parse(content []byte, lang *Language) *Node {
 	input := (*C.char)(C.CBytes(content))
 	doc := C.ts_document_new()
-	switch lang {
-	case "javascript":
-		cNode := C.parse_javascript(doc, input)
-		return &Node{cNode, doc}
-	default:
-		panic("language not found")
-	}
+	cLang := (*C.struct_TSLanguage)(lang.Ptr)
+	C.ts_document_set_language(doc, cLang)
+	C.ts_document_set_input_string(doc, input)
+	C.ts_document_parse(doc)
+	cNode := C.ts_document_root_node(doc)
+	return &Node{cNode, doc}
 }
 
 type Node struct {

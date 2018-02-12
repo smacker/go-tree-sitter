@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRootNode(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("let a = 1"), "javascript")
+	n := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
 
 	assert.Equal(uint32(0), n.StartByte())
 	assert.Equal(uint32(9), n.EndByte())
