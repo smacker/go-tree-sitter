@@ -6,6 +6,6 @@ git clone https://github.com/tree-sitter/tree-sitter.git
 git clone https://github.com/tree-sitter/tree-sitter-javascript.git
 cd tree-sitter
 script/configure
-make
+make runtime
 cd ..
 go run example/main.go
