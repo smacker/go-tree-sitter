@@ -12,9 +12,13 @@ func main() {
 	fmt.Println("AST:", n)
 	fmt.Println("Root type:", n.Type())
 	fmt.Println("Root children:", n.ChildCount())
-	fmt.Println("Root name:", n.Name())
-	child1 := n.Child(0)
-	fmt.Println("func type:", child1.Type())
-	fmt.Println("func children:", child1.ChildCount())
-	fmt.Println("func name:", child1.Name())
+
+	fmt.Println("Functions in input:")
+	iter := sitter.NewIterator(n, sitter.DFSMode)
+	iter.ForEach(func(n *sitter.Node) error {
+		if n.Type() == "function" {
+			fmt.Println("-", n.Value())
+		}
+		return nil
+	})
 }

@@ -126,11 +126,7 @@ func (n *Node) PrevNamedSibling() *Node {
 	return &Node{cNode, n.cDoc}
 }
 
-// need love
-func (n *Node) Name() string {
-	if n.Type() != "function" {
-		return ""
-	}
+func (n *Node) Value() string {
 	nNode := C.ts_node_named_child(n.cNode, C.uint32_t(0))
 	return C.GoString(C.readValue(n.cDoc, nNode))
 }
