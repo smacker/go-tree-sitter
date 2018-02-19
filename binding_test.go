@@ -44,6 +44,7 @@ func TestDocument(t *testing.T) {
 	doc := sitter.NewDocument()
 	defer doc.Close()
 
+	doc.Debug()
 	doc.SetLanguage(javascript.GetLanguage())
 	doc.SetInputBytes([]byte("let a = 1"))
 	doc.Parse()
@@ -58,4 +59,15 @@ func TestDocument(t *testing.T) {
 	doc.Parse()
 	n = doc.RootNode()
 	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (string))))", n.String())
+
+	doc.Edit(8, 3, []byte("true"))
+	// check that it changed tree
+	assert.True(n.HasChanges())
+	assert.True(n.Child(0).HasChanges())
+	assert.False(n.Child(0).Child(0).HasChanges()) // left side of tree didn't change
+	assert.True(n.Child(0).Child(1).HasChanges())
+
+	doc.Parse()
+	n = doc.RootNode()
+	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (true))))", n.String())
 }

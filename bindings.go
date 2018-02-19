@@ -23,12 +23,13 @@ func Parse(content []byte, lang *Language) (*Node, func()) {
 }
 
 type Document struct {
-	cDoc *C.struct_TSDocument
+	cDoc     *C.struct_TSDocument
+	inputStr string // it's not easy to get string from doc, keep it here for now
 }
 
 func NewDocument() *Document {
 	cDoc := C.ts_document_new()
-	return &Document{cDoc}
+	return &Document{cDoc, ""}
 }
 
 func (d *Document) Close() {
@@ -42,7 +43,64 @@ func (d *Document) SetLanguage(lang *Language) {
 
 func (d *Document) SetInputBytes(content []byte) {
 	input := (*C.char)(C.CBytes(content))
+	d.inputStr = string(content)
 	C.ts_document_set_input_string(d.cDoc, input)
+}
+
+func (d *Document) Edit(startByte, bytesRemoved int, replace []byte) {
+	// need to rewrite it in C and mutate original input
+	var startRow, startCol int
+	payload := d.inputStr
+	for i := 0; i < startByte; i++ {
+		b := payload[i]
+		if b == '\n' {
+			startRow++
+			startCol = 0
+		} else {
+			startCol++
+		}
+	}
+
+	textRemoved := payload[startByte : startByte+bytesRemoved]
+
+	// FIXME why isn't it C.struct_TSInputEdit?
+	cInput := C.struct___2{
+		start_byte:    C.uint32_t(startByte),
+		bytes_removed: C.uint32_t(bytesRemoved),
+		bytes_added:   C.uint32_t(len(replace)),
+		start_point: C.struct___3{
+			row:    C.uint32_t(startRow),
+			column: C.uint32_t(startCol),
+		},
+		extent_removed: getTSPoint(textRemoved),
+		extent_added:   getTSPoint(string(replace)),
+	}
+
+	// set new input
+	newContent := payload[:startByte] + string(replace) + payload[bytesRemoved:]
+	text := (*C.char)(C.CBytes([]byte(newContent)))
+	newInput := C.ts_string_input_make(text)
+	C.ts_document_set_input(d.cDoc, newInput)
+	d.inputStr = newContent
+
+	C.ts_document_edit(d.cDoc, cInput)
+}
+
+func getTSPoint(text string) C.struct___3 {
+	var row, col int
+	for _, b := range text {
+		if b == '\n' {
+			row++
+			col = 0
+		} else {
+			col++
+		}
+	}
+	// C.struct_TSPoint???
+	return C.struct___3{
+		row:    C.uint32_t(row),
+		column: C.uint32_t(col),
+	}
 }
 
 func (d *Document) Parse() {
@@ -52,6 +110,11 @@ func (d *Document) Parse() {
 func (d *Document) RootNode() *Node {
 	cNode := C.ts_document_root_node(d.cDoc)
 	return &Node{cNode, d.cDoc}
+}
+
+func (d *Document) Debug() {
+	logger := C.stderr_logger_new(true)
+	C.ts_document_set_logger(d.cDoc, logger)
 }
 
 type Language struct {
