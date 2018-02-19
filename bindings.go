@@ -77,7 +77,7 @@ func (d *Document) Edit(startByte, bytesRemoved int, replace []byte) {
 	}
 
 	// set new input
-	newContent := payload[:startByte] + string(replace) + payload[bytesRemoved:]
+	newContent := payload[:startByte] + string(replace) + payload[startByte+bytesRemoved:]
 	text := (*C.char)(C.CBytes([]byte(newContent)))
 	newInput := C.ts_string_input_make(text)
 	C.ts_document_set_input(d.cDoc, newInput)
