@@ -23,38 +23,32 @@ func main() {
 	fmt.Println("Root type:", n.Type())
 	fmt.Println("Root children:", n.ChildCount())
 
-	fmt.Println()
-	fmt.Println("Functions in input:")
+	fmt.Println("\nFunctions in input:")
 	iter := sitter.NewIterator(n, sitter.DFSMode)
+	var funcs []*sitter.Node
 	iter.ForEach(func(n *sitter.Node) error {
 		if n.Type() == "function" {
 			fmt.Println("-", n.Value())
+			funcs = append(funcs, n)
 		}
 		return nil
 	})
 
+	fmt.Println("\nEdit input")
 	// reuse tree
-	fmt.Println()
-	fmt.Println("Edit input")
 	doc.Edit(62, 0, []byte(" console.log('goodbye') "))
 
-	fmt.Println("Functions in input:")
-	iter = sitter.NewIterator(n, sitter.DFSMode)
-	iter.ForEach(func(n *sitter.Node) error {
-		if n.Type() == "function" {
-			var textChange string
-			if n.HasChanges() {
-				textChange = "has change"
-			} else {
-				textChange = "no changes"
-			}
-			fmt.Println("-", n.Value(), ">", textChange)
+	for _, f := range funcs {
+		var textChange string
+		if f.HasChanges() {
+			textChange = "has change"
+		} else {
+			textChange = "no changes"
 		}
-		return nil
-	})
+		fmt.Println("-", f.Value(), ">", textChange)
+	}
 
 	doc.Parse()
 	n = doc.RootNode()
-	fmt.Println()
-	fmt.Println("New AST:", n)
+	fmt.Println("\nNew AST:", n)
 }
