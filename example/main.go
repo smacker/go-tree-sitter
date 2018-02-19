@@ -8,7 +8,9 @@ import (
 )
 
 func main() {
-	n := sitter.Parse([]byte("function hello() { console.log('hello') }"), javascript.GetLanguage())
+	n, close := sitter.Parse([]byte("function hello() { console.log('hello') }; function goodbye(){}"), javascript.GetLanguage())
+	defer close()
+
 	fmt.Println("AST:", n)
 	fmt.Println("Root type:", n.Type())
 	fmt.Println("Root children:", n.ChildCount())

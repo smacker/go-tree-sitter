@@ -11,7 +11,8 @@ import (
 func TestRootNode(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
+	n, close := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
+	defer close()
 
 	assert.Equal(uint32(0), n.StartByte())
 	assert.Equal(uint32(9), n.EndByte())
@@ -35,4 +36,26 @@ func TestRootNode(t *testing.T) {
 
 	assert.NotNil(n.Child(0))
 	assert.NotNil(n.NamedChild(0))
+}
+
+func TestDocument(t *testing.T) {
+	assert := assert.New(t)
+
+	doc := sitter.NewDocument()
+	defer doc.Close()
+
+	doc.SetLanguage(javascript.GetLanguage())
+	doc.SetInputBytes([]byte("let a = 1"))
+	doc.Parse()
+	n := doc.RootNode()
+
+	assert.Equal(uint32(0), n.StartByte())
+	assert.Equal(uint32(9), n.EndByte())
+	assert.Equal("program", n.Type())
+	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (number))))", n.String())
+
+	doc.SetInputBytes([]byte("let a = 'a'"))
+	doc.Parse()
+	n = doc.RootNode()
+	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (string))))", n.String())
 }

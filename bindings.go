@@ -6,11 +6,9 @@ package sitter
 import "C"
 import "unsafe"
 
-type Language struct {
-	Ptr unsafe.Pointer
-}
-
-func Parse(content []byte, lang *Language) *Node {
+// Parse is shortcut for parsing bytes of source code
+// return root node and close function
+func Parse(content []byte, lang *Language) (*Node, func()) {
 	input := (*C.char)(C.CBytes(content))
 	doc := C.ts_document_new()
 	cLang := (*C.struct_TSLanguage)(lang.Ptr)
@@ -18,7 +16,46 @@ func Parse(content []byte, lang *Language) *Node {
 	C.ts_document_set_input_string(doc, input)
 	C.ts_document_parse(doc)
 	cNode := C.ts_document_root_node(doc)
-	return &Node{cNode, doc}
+	close := func() {
+		C.ts_document_free(doc)
+	}
+	return &Node{cNode, doc}, close
+}
+
+type Document struct {
+	cDoc *C.struct_TSDocument
+}
+
+func NewDocument() *Document {
+	cDoc := C.ts_document_new()
+	return &Document{cDoc}
+}
+
+func (d *Document) Close() {
+	C.ts_document_free(d.cDoc)
+}
+
+func (d *Document) SetLanguage(lang *Language) {
+	cLang := (*C.struct_TSLanguage)(lang.Ptr)
+	C.ts_document_set_language(d.cDoc, cLang)
+}
+
+func (d *Document) SetInputBytes(content []byte) {
+	input := (*C.char)(C.CBytes(content))
+	C.ts_document_set_input_string(d.cDoc, input)
+}
+
+func (d *Document) Parse() {
+	C.ts_document_parse(d.cDoc)
+}
+
+func (d *Document) RootNode() *Node {
+	cNode := C.ts_document_root_node(d.cDoc)
+	return &Node{cNode, d.cDoc}
+}
+
+type Language struct {
+	Ptr unsafe.Pointer
 }
 
 type Node struct {
