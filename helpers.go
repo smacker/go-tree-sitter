@@ -1,7 +1,11 @@
 package sitter
 
-func NodeValue(content []byte, n *Node) string {
+func FuncName(content []byte, n *Node) string {
 	if n == nil {
+		return ""
+	}
+
+	if n.Type() != "function" {
 		return ""
 	}
 

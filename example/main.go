@@ -28,7 +28,7 @@ func main() {
 	var funcs []*sitter.Node
 	iter.ForEach(func(n *sitter.Node) error {
 		if n.Type() == "function" {
-			fmt.Println("-", sitter.NodeValue(input, n))
+			fmt.Println("-", sitter.FuncName(input, n))
 			funcs = append(funcs, n)
 		}
 		return nil
@@ -62,7 +62,7 @@ func main() {
 		} else {
 			textChange = "no changes"
 		}
-		fmt.Println("-", sitter.NodeValue(input, f), ">", textChange)
+		fmt.Println("-", sitter.FuncName(input, f), ">", textChange)
 	}
 
 	newTree := parser.ParseWithTree(input, tree)
