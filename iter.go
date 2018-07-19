@@ -1,8 +1,6 @@
 package sitter
 
-import (
-	"io"
-)
+import "io"
 
 type IterMode int
 

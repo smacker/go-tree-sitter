@@ -11,7 +11,6 @@ import (
 )
 
 func GetLanguage() *sitter.Language {
-	return &sitter.Language{
-		Ptr: unsafe.Pointer(C.tree_sitter_javascript()),
-	}
+	ptr := unsafe.Pointer(C.tree_sitter_javascript())
+	return sitter.NewLanguage(ptr)
 }

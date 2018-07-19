@@ -3,7 +3,7 @@
 
 #include "tree_sitter/runtime.h"
 
-char *readValue(TSDocument *document, TSNode node);
+//char *readValue(TSDocument *document, TSNode node);
 
 TSInput ts_string_input_make(const char *);
 

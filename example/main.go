@@ -10,14 +10,14 @@ import (
 func main() {
 	input := []byte("function hello() { console.log('hello') }; function goodbye(){}")
 
-	doc := sitter.NewDocument()
-	defer doc.Close()
+	parser := sitter.NewParser()
+	defer parser.Delete()
+	parser.SetLanguage(javascript.GetLanguage())
 
-	doc.SetLanguage(javascript.GetLanguage())
-	doc.SetInputBytes(input)
-	doc.Parse()
+	tree := parser.Parse(input)
+	defer tree.Delete()
 
-	n := doc.RootNode()
+	n := tree.RootNode()
 
 	fmt.Println("AST:", n)
 	fmt.Println("Root type:", n.Type())
@@ -28,15 +28,32 @@ func main() {
 	var funcs []*sitter.Node
 	iter.ForEach(func(n *sitter.Node) error {
 		if n.Type() == "function" {
-			fmt.Println("-", n.Value())
+			fmt.Println("-", sitter.NodeValue(input, n))
 			funcs = append(funcs, n)
 		}
 		return nil
 	})
 
 	fmt.Println("\nEdit input")
+	input = []byte("function hello() { console.log('hello') }; function goodbye(){ console.log('goodbye') }")
 	// reuse tree
-	doc.Edit(62, 0, []byte(" console.log('goodbye') "))
+	tree.Edit(sitter.EditInput{
+		StartIndex:  62,
+		OldEndIndex: 63,
+		NewEndIndex: 87,
+		StartPosition: sitter.Position{
+			Row:    0,
+			Column: 62,
+		},
+		OldEndPosition: sitter.Position{
+			Row:    0,
+			Column: 63,
+		},
+		NewEndPosition: sitter.Position{
+			Row:    0,
+			Column: 87,
+		},
+	})
 
 	for _, f := range funcs {
 		var textChange string
@@ -45,10 +62,10 @@ func main() {
 		} else {
 			textChange = "no changes"
 		}
-		fmt.Println("-", f.Value(), ">", textChange)
+		fmt.Println("-", sitter.NodeValue(input, f), ">", textChange)
 	}
 
-	doc.Parse()
-	n = doc.RootNode()
+	newTree := parser.ParseWithTree(input, tree)
+	n = newTree.RootNode()
 	fmt.Println("\nNew AST:", n)
 }
