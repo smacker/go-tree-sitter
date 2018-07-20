@@ -25,25 +25,23 @@ func Parse(content []byte, lang *Language) (*Node, func()) {
 		C.ts_parser_delete(cParser)
 	}
 
-	return &Node{ptr}, close
+	return &ptr, close
 }
 
-type Parser struct {
-	ptr *C.TSParser
-}
+type Parser = C.TSParser
 
 func NewParser() *Parser {
 	cParser := C.ts_parser_new()
-	return &Parser{cParser}
+	return cParser
 }
 
 func (p *Parser) Delete() {
-	C.ts_parser_delete(p.ptr)
+	C.ts_parser_delete(p)
 }
 
 func (p *Parser) SetLanguage(lang *Language) {
 	cLang := (*C.struct_TSLanguage)(lang.ptr)
-	C.ts_parser_set_language(p.ptr, cLang)
+	C.ts_parser_set_language(p, cLang)
 }
 
 func (p *Parser) Parse(content []byte) *Tree {
@@ -52,41 +50,31 @@ func (p *Parser) Parse(content []byte) *Tree {
 
 func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 	input := (*C.char)(C.CBytes(content))
+	treePtr := C.ts_parser_parse_string(p, t, input, C.uint32_t(len(content)))
 
-	var oldTreePtr *C.TSTree
-	if t == nil {
-		oldTreePtr = nil
-	} else {
-		oldTreePtr = t.ptr
-	}
-
-	treePtr := C.ts_parser_parse_string(p.ptr, oldTreePtr, input, C.uint32_t(len(content)))
-
-	return &Tree{treePtr}
+	return treePtr
 }
 
 func (p *Parser) ReParse(t *Tree, input *Input) *Tree {
-	treePtr := C.ts_parser_parse(p.ptr, t.ptr, *input.ptr)
+	treePtr := C.ts_parser_parse(p, t, *input.ptr)
 
-	return &Tree{treePtr}
+	return treePtr
 }
 
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)
-	C.ts_parser_set_logger(p.ptr, logger)
+	C.ts_parser_set_logger(p, logger)
 }
 
-type Tree struct {
-	ptr *C.TSTree
-}
+type Tree = C.TSTree
 
 func (t *Tree) Delete() {
-	C.ts_tree_delete(t.ptr)
+	C.ts_tree_delete(t)
 }
 
 func (t *Tree) RootNode() *Node {
-	ptr := C.ts_tree_root_node(t.ptr)
-	return &Node{ptr}
+	ptr := C.ts_tree_root_node(t)
+	return &ptr
 }
 
 func getTSPoint(text string) C.struct___4 {
@@ -145,7 +133,7 @@ func (t *Tree) Edit(i EditInput) {
 		},
 	}
 
-	C.ts_tree_edit(t.ptr, cEditInput)
+	C.ts_tree_edit(t, cEditInput)
 }
 
 type Language struct {
@@ -156,102 +144,100 @@ func NewLanguage(ptr unsafe.Pointer) *Language {
 	return &Language{ptr}
 }
 
-type Node struct {
-	ptr C.TSNode
-}
+type Node = C.TSNode
 
 func (n *Node) StartByte() uint32 {
-	return uint32(C.ts_node_start_byte(n.ptr))
+	return uint32(C.ts_node_start_byte(*n))
 }
 
 func (n *Node) EndByte() uint32 {
-	return uint32(C.ts_node_end_byte(n.ptr))
+	return uint32(C.ts_node_end_byte(*n))
 }
 
 func (n *Node) String() string {
-	return C.GoString(C.ts_node_string(n.ptr))
+	return C.GoString(C.ts_node_string(*n))
 }
 
 func (n *Node) Type() string {
-	return C.GoString(C.ts_node_type(n.ptr))
+	return C.GoString(C.ts_node_type(*n))
 }
 
 func (n *Node) IsNamed() bool {
-	return bool(C.ts_node_is_named(n.ptr))
+	return bool(C.ts_node_is_named(*n))
 }
 
 func (n *Node) IsMissing() bool {
-	return bool(C.ts_node_is_missing(n.ptr))
+	return bool(C.ts_node_is_missing(*n))
 }
 
 func (n *Node) HasChanges() bool {
-	return bool(C.ts_node_has_changes(n.ptr))
+	return bool(C.ts_node_has_changes(*n))
 }
 
 func (n *Node) HasError() bool {
-	return bool(C.ts_node_has_error(n.ptr))
+	return bool(C.ts_node_has_error(*n))
 }
 
 func (n *Node) Parent() *Node {
-	ptr := C.ts_node_parent(n.ptr)
+	ptr := C.ts_node_parent(*n)
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
 
 func (n *Node) Child(idx int) *Node {
-	ptr := C.ts_node_child(n.ptr, C.uint32_t(idx))
+	ptr := C.ts_node_child(*n, C.uint32_t(idx))
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
 
 func (n *Node) NamedChild(idx int) *Node {
-	ptr := C.ts_node_named_child(n.ptr, C.uint32_t(idx))
+	ptr := C.ts_node_named_child(*n, C.uint32_t(idx))
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
 
 func (n *Node) ChildCount() uint32 {
-	return uint32(C.ts_node_child_count(n.ptr))
+	return uint32(C.ts_node_child_count(*n))
 }
 
 func (n *Node) NamedChildCount() uint32 {
-	return uint32(C.ts_node_named_child_count(n.ptr))
+	return uint32(C.ts_node_named_child_count(*n))
 }
 
 func (n *Node) NextSibling() *Node {
-	ptr := C.ts_node_next_sibling(n.ptr)
+	ptr := C.ts_node_next_sibling(*n)
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
 
 func (n *Node) NextNamedSibling() *Node {
-	ptr := C.ts_node_next_named_sibling(n.ptr)
+	ptr := C.ts_node_next_named_sibling(*n)
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
 
 func (n *Node) PrevSibling() *Node {
-	ptr := C.ts_node_prev_sibling(n.ptr)
+	ptr := C.ts_node_prev_sibling(*n)
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
 
 func (n *Node) PrevNamedSibling() *Node {
-	ptr := C.ts_node_prev_named_sibling(n.ptr)
+	ptr := C.ts_node_prev_named_sibling(*n)
 	if ptr.id == nil {
 		return nil
 	}
-	return &Node{ptr}
+	return &ptr
 }
