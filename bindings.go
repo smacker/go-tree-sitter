@@ -179,27 +179,27 @@ func (n Node) HasError() bool {
 }
 
 func (n Node) Parent() *Node {
-	ptr := C.ts_node_parent(n)
-	if ptr.id == nil {
+	nn := C.ts_node_parent(n)
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
 
 func (n Node) Child(idx int) *Node {
-	ptr := C.ts_node_child(n, C.uint32_t(idx))
-	if ptr.id == nil {
+	nn := C.ts_node_child(n, C.uint32_t(idx))
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
 
 func (n Node) NamedChild(idx int) *Node {
-	ptr := C.ts_node_named_child(n, C.uint32_t(idx))
-	if ptr.id == nil {
+	nn := C.ts_node_named_child(n, C.uint32_t(idx))
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
 
 func (n Node) ChildCount() uint32 {
@@ -211,33 +211,33 @@ func (n Node) NamedChildCount() uint32 {
 }
 
 func (n Node) NextSibling() *Node {
-	ptr := C.ts_node_next_sibling(n)
-	if ptr.id == nil {
+	nn := C.ts_node_next_sibling(n)
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
 
 func (n Node) NextNamedSibling() *Node {
-	ptr := C.ts_node_next_named_sibling(n)
-	if ptr.id == nil {
+	nn := C.ts_node_next_named_sibling(n)
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
 
 func (n Node) PrevSibling() *Node {
-	ptr := C.ts_node_prev_sibling(n)
-	if ptr.id == nil {
+	nn := C.ts_node_prev_sibling(n)
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
 
 func (n Node) PrevNamedSibling() *Node {
-	ptr := C.ts_node_prev_named_sibling(n)
-	if ptr.id == nil {
+	nn := C.ts_node_prev_named_sibling(n)
+	if nn.id == nil {
 		return nil
 	}
-	return &ptr
+	return &nn
 }
