@@ -146,96 +146,96 @@ func NewLanguage(ptr unsafe.Pointer) *Language {
 
 type Node = C.TSNode
 
-func (n *Node) StartByte() uint32 {
-	return uint32(C.ts_node_start_byte(*n))
+func (n Node) StartByte() uint32 {
+	return uint32(C.ts_node_start_byte(n))
 }
 
-func (n *Node) EndByte() uint32 {
-	return uint32(C.ts_node_end_byte(*n))
+func (n Node) EndByte() uint32 {
+	return uint32(C.ts_node_end_byte(n))
 }
 
-func (n *Node) String() string {
-	return C.GoString(C.ts_node_string(*n))
+func (n Node) String() string {
+	return C.GoString(C.ts_node_string(n))
 }
 
-func (n *Node) Type() string {
-	return C.GoString(C.ts_node_type(*n))
+func (n Node) Type() string {
+	return C.GoString(C.ts_node_type(n))
 }
 
-func (n *Node) IsNamed() bool {
-	return bool(C.ts_node_is_named(*n))
+func (n Node) IsNamed() bool {
+	return bool(C.ts_node_is_named(n))
 }
 
-func (n *Node) IsMissing() bool {
-	return bool(C.ts_node_is_missing(*n))
+func (n Node) IsMissing() bool {
+	return bool(C.ts_node_is_missing(n))
 }
 
-func (n *Node) HasChanges() bool {
-	return bool(C.ts_node_has_changes(*n))
+func (n Node) HasChanges() bool {
+	return bool(C.ts_node_has_changes(n))
 }
 
-func (n *Node) HasError() bool {
-	return bool(C.ts_node_has_error(*n))
+func (n Node) HasError() bool {
+	return bool(C.ts_node_has_error(n))
 }
 
-func (n *Node) Parent() *Node {
-	ptr := C.ts_node_parent(*n)
+func (n Node) Parent() *Node {
+	ptr := C.ts_node_parent(n)
 	if ptr.id == nil {
 		return nil
 	}
 	return &ptr
 }
 
-func (n *Node) Child(idx int) *Node {
-	ptr := C.ts_node_child(*n, C.uint32_t(idx))
+func (n Node) Child(idx int) *Node {
+	ptr := C.ts_node_child(n, C.uint32_t(idx))
 	if ptr.id == nil {
 		return nil
 	}
 	return &ptr
 }
 
-func (n *Node) NamedChild(idx int) *Node {
-	ptr := C.ts_node_named_child(*n, C.uint32_t(idx))
+func (n Node) NamedChild(idx int) *Node {
+	ptr := C.ts_node_named_child(n, C.uint32_t(idx))
 	if ptr.id == nil {
 		return nil
 	}
 	return &ptr
 }
 
-func (n *Node) ChildCount() uint32 {
-	return uint32(C.ts_node_child_count(*n))
+func (n Node) ChildCount() uint32 {
+	return uint32(C.ts_node_child_count(n))
 }
 
-func (n *Node) NamedChildCount() uint32 {
-	return uint32(C.ts_node_named_child_count(*n))
+func (n Node) NamedChildCount() uint32 {
+	return uint32(C.ts_node_named_child_count(n))
 }
 
-func (n *Node) NextSibling() *Node {
-	ptr := C.ts_node_next_sibling(*n)
+func (n Node) NextSibling() *Node {
+	ptr := C.ts_node_next_sibling(n)
 	if ptr.id == nil {
 		return nil
 	}
 	return &ptr
 }
 
-func (n *Node) NextNamedSibling() *Node {
-	ptr := C.ts_node_next_named_sibling(*n)
+func (n Node) NextNamedSibling() *Node {
+	ptr := C.ts_node_next_named_sibling(n)
 	if ptr.id == nil {
 		return nil
 	}
 	return &ptr
 }
 
-func (n *Node) PrevSibling() *Node {
-	ptr := C.ts_node_prev_sibling(*n)
+func (n Node) PrevSibling() *Node {
+	ptr := C.ts_node_prev_sibling(n)
 	if ptr.id == nil {
 		return nil
 	}
 	return &ptr
 }
 
-func (n *Node) PrevNamedSibling() *Node {
-	ptr := C.ts_node_prev_named_sibling(*n)
+func (n Node) PrevNamedSibling() *Node {
+	ptr := C.ts_node_prev_named_sibling(n)
 	if ptr.id == nil {
 		return nil
 	}
