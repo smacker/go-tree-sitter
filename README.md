@@ -3,7 +3,7 @@
 Golang bindings for [tree-sitter](https://github.com/tree-sitter/tree-sitter)
 
 ```bash
-$ go get github.com/smacker/go-tree-sitter
+$ go get -d github.com/smacker/go-tree-sitter
 $ cd $GOPATH/src/github.com/smacker/go-tree-sitter
 $ ./run.sh
 ```
