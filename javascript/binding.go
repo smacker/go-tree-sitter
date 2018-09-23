@@ -1,6 +1,6 @@
 package javascript
 
-//#cgo CFLAGS: -std=c99 -I${SRCDIR}/tree-sitter-javascript/src
+//#cgo CFLAGS: -std=c99 -I${SRCDIR}/../vendor/tree-sitter-javascript/src
 //#include "parser.c"
 //#include "scanner.c"
 import "C"

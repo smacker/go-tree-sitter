@@ -2,33 +2,18 @@
 
 set -e
 
-if [ -d tree-sitter ]; then
-    (cd tree-sitter; git pull origin master)
-else
-    git clone https://github.com/tree-sitter/tree-sitter.git
+if [ -e ./vendor/tree-sitter/out/Release ]; then
+  rm -rf ./vendor/tree-sitter/out/Release
 fi;
 
-(cd tree-sitter; git checkout 257522372f8ee6359d1c28943eb519bc33904367)
+(
+    cd vendor/tree-sitter
+    script/configure
+    make runtime
+)
 
-if [ -d javascript/tree-sitter-javascript ]; then
-    (cd javascript/tree-sitter-javascript; git pull origin master)
-else
-    git clone https://github.com/tree-sitter/tree-sitter-javascript.git javascript/tree-sitter-javascript
-fi;
-
-(cd javascript/tree-sitter-javascript; git checkout 740716dfb0dd31e57c5d7e2b2ee8d49ec082f16c)
-
-if [ -e ./tree-sitter/out/Release ]; then
-  rm -rf ./tree-sitter/out/Release
-fi;
-
-cd tree-sitter
-script/configure
-make runtime
-cd ..
-
-if [ -e ./tree-sitter/out/Release/obj.target ]; then
-  mv ./tree-sitter/out/Release/obj.target/* ./tree-sitter/out/Release
+if [ -e ./vendor/tree-sitter/out/Release/obj.target ]; then
+  mv ./vendor/tree-sitter/out/Release/obj.target/* ./vendor/tree-sitter/out/Release
 fi;
 
 go run example/main.go

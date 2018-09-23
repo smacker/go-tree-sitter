@@ -1,7 +1,7 @@
 package sitter
 
-//#cgo CFLAGS: -g -I${SRCDIR}/tree-sitter/include
-//#cgo LDFLAGS: ${SRCDIR}/tree-sitter/out/Release/libruntime.a
+//#cgo CFLAGS: -g -I${SRCDIR}/vendor/tree-sitter/include
+//#cgo LDFLAGS: ${SRCDIR}/vendor/tree-sitter/out/Release/libruntime.a
 //#include "bindings.h"
 import "C"
 import (
