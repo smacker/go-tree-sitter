@@ -1,10 +1,5 @@
-/tree-sitter
-/javascript/tree-sitter-javascript
-
-**/.DS_Store
-
-.vscode
-.idea
+# changes in vendor code after build
+vendor/tree-sitter/externals
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
