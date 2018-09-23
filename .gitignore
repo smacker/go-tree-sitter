@@ -1,6 +1,11 @@
 # changes in vendor code after build
 vendor/tree-sitter/externals
 
+# grammars
+*/parser.c
+*/scanner.cc
+python/tree_sitter
+
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
 *.a

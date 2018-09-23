@@ -7,3 +7,6 @@
 [submodule "vendor/tree-sitter-go"]
 	path = vendor/tree-sitter-go
 	url = https://github.com/tree-sitter/tree-sitter-go.git
+[submodule "vendor/tree-sitter-python"]
+	path = vendor/tree-sitter-python
+	url = https://github.com/tree-sitter/tree-sitter-python.git

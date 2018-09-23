@@ -16,4 +16,14 @@ if [ -e ./vendor/tree-sitter/out/Release/obj.target ]; then
   mv ./vendor/tree-sitter/out/Release/obj.target/* ./vendor/tree-sitter/out/Release
 fi;
 
+# grammars
+langs="python"
+for lang in ${langs}
+do
+    cp -R ./vendor/tree-sitter-$lang/src/parser.c \
+        ./vendor/tree-sitter-$lang/src/scanner.cc \
+        ./vendor/tree-sitter-$lang/src/tree_sitter \
+        ./$lang
+done
+
 go run example/main.go
