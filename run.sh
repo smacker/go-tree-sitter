@@ -18,8 +18,17 @@ fi;
 
 (cd javascript/tree-sitter-javascript; git checkout 740716dfb0dd31e57c5d7e2b2ee8d49ec082f16c)
 
+if [ -e ./tree-sitter/out/Release ]; then
+  rm -rf ./tree-sitter/out/Release
+fi;
+
 cd tree-sitter
 script/configure
 make runtime
 cd ..
+
+if [ -e ./tree-sitter/out/Release/obj.target ]; then
+  mv ./tree-sitter/out/Release/obj.target/* ./tree-sitter/out/Release
+fi;
+
 go run example/main.go
