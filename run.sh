@@ -8,7 +8,7 @@ else
     git clone https://github.com/tree-sitter/tree-sitter.git
 fi;
 
-(cd tree-sitter; git checkout 16376c43f5cc75bbc5297e6d5716bd94d55ccc05)
+(cd tree-sitter; git checkout 257522372f8ee6359d1c28943eb519bc33904367)
 
 if [ -d javascript/tree-sitter-javascript ]; then
     (cd javascript/tree-sitter-javascript; git pull origin master)
