@@ -6,7 +6,7 @@ go:
 
 install:
   - ./run.sh
-  - go get ./...
+  - go get -t ./...
 
 script:
   - go test -v .
