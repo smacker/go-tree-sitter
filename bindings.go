@@ -77,7 +77,7 @@ func (t *Tree) RootNode() *Node {
 	return &ptr
 }
 
-func getTSPoint(text string) C.struct___4 {
+func getTSPoint(text string) C.TSPoint {
 	var row, col int
 	for _, b := range text {
 		if b == '\n' {
@@ -87,15 +87,14 @@ func getTSPoint(text string) C.struct___4 {
 			col++
 		}
 	}
-	// C.struct_TSPoint???
-	return C.struct___4{
+	return C.TSPoint{
 		row:    C.uint32_t(row),
 		column: C.uint32_t(col),
 	}
 }
 
 type Input struct {
-	ptr *C.struct___2
+	ptr *C.TSInput
 	str string
 }
 
@@ -114,20 +113,19 @@ type EditInput struct {
 }
 
 func (t *Tree) Edit(i EditInput) {
-	// FIXME why isn't it C.struct_TSInputEdit?
-	cEditInput := &C.struct___3{
+	cEditInput := &C.TSInputEdit{
 		start_byte:   C.uint32_t(i.StartIndex),
 		old_end_byte: C.uint32_t(i.OldEndIndex),
 		new_end_byte: C.uint32_t(i.NewEndIndex),
-		start_point: C.struct___4{
+		start_point: C.TSPoint{
 			row:    C.uint32_t(i.StartPosition.Row),
 			column: C.uint32_t(i.StartPosition.Column),
 		},
-		old_end_point: C.struct___4{
+		old_end_point: C.TSPoint{
 			row:    C.uint32_t(i.OldEndPosition.Row),
 			column: C.uint32_t(i.OldEndPosition.Column),
 		},
-		new_end_point: C.struct___4{
+		new_end_point: C.TSPoint{
 			row:    C.uint32_t(i.NewEndPosition.Row),
 			column: C.uint32_t(i.NewEndPosition.Column),
 		},
