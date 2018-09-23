@@ -1,0 +1,12 @@
+language: go
+
+go:
+  - '1.10'
+  - '1.11'
+
+install:
+  - ./run.sh
+  - go get ./...
+
+script:
+  - go test -v .
