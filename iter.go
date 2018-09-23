@@ -9,22 +9,24 @@ const (
 	BFSMode
 )
 
-type iterator struct {
+// Iterator for a tree of nodes
+type Iterator struct {
 	named bool
 	mode  IterMode
 
 	nodesToVisit []*Node
 }
 
-func NewIterator(n *Node, mode IterMode) *iterator {
-	return &iterator{
+// NewIterator takes a node and mode (DFS/BFS) and returns iterator over named children of the node
+func NewIterator(n *Node, mode IterMode) *Iterator {
+	return &Iterator{
 		named:        true,
 		mode:         mode,
 		nodesToVisit: []*Node{n},
 	}
 }
 
-func (iter *iterator) Next() (*Node, error) {
+func (iter *Iterator) Next() (*Node, error) {
 	if len(iter.nodesToVisit) == 0 {
 		return nil, io.EOF
 	}
@@ -46,7 +48,7 @@ func (iter *iterator) Next() (*Node, error) {
 	return n, nil
 }
 
-func (iter *iterator) ForEach(fn func(*Node) error) error {
+func (iter *Iterator) ForEach(fn func(*Node) error) error {
 	for {
 		n, err := iter.Next()
 		if err != nil {
