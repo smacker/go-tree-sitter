@@ -17,7 +17,7 @@ if [ -e ./vendor/tree-sitter/out/Release/obj.target ]; then
 fi;
 
 # grammars
-langs="python"
+langs="python ruby"
 for lang in ${langs}
 do
     cp -R ./vendor/tree-sitter-$lang/src/parser.c \

@@ -13,3 +13,6 @@
 [submodule "vendor/tree-sitter-java"]
 	path = vendor/tree-sitter-java
 	url = https://github.com/tree-sitter/tree-sitter-java.git
+[submodule "vendor/tree-sitter-ruby"]
+	path = vendor/tree-sitter-ruby
+	url = https://github.com/tree-sitter/tree-sitter-ruby.git
