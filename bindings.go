@@ -77,22 +77,6 @@ func (t *Tree) RootNode() *Node {
 	return &ptr
 }
 
-func getTSPoint(text string) C.TSPoint {
-	var row, col int
-	for _, b := range text {
-		if b == '\n' {
-			row++
-			col = 0
-		} else {
-			col++
-		}
-	}
-	return C.TSPoint{
-		row:    C.uint32_t(row),
-		column: C.uint32_t(col),
-	}
-}
-
 type Input struct {
 	ptr *C.TSInput
 	str string
