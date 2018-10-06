@@ -50,7 +50,7 @@ If your source code changes, you can update the syntax tree. This will take less
 ```go
 // change 1 -> true
 newText := []byte("let a = true")
-tree2.Edit(sitter.EditInput{
+tree.Edit(sitter.EditInput{
     StartIndex:  8,
     OldEndIndex: 9,
     NewEndIndex: 12,
@@ -71,9 +71,9 @@ tree2.Edit(sitter.EditInput{
 // check that it changed tree
 assert.True(n.HasChanges())
 assert.True(n.Child(0).HasChanges())
-assert.False(n.Child(0).Child(0).HasChanges()) // left side of tree didn't change
+assert.False(n.Child(0).Child(0).HasChanges()) // left side of the tree didn't change
 assert.True(n.Child(0).Child(1).HasChanges())
 
 // generate new tree
-newTree := parser.ParseWithTree(newText, newTree)
+newTree := parser.ParseWithTree(newText, tree)
 ```
