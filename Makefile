@@ -7,8 +7,8 @@ vendor/tree-sitter/out/Release/libruntime.a:
 	cd vendor/tree-sitter; \
 	script/configure; \
 	make runtime; \
-	if [ -e ./vendor/tree-sitter/out/Release/obj.target ]; then \
-		mv ./vendor/tree-sitter/out/Release/obj.target/* ./vendor/tree-sitter/out/Release; \
+	if [ -e ./out/Release/obj.target ]; then \
+		mv ./out/Release/obj.target/* ./out/Release; \
 	fi; \
 
 gprefix := vendor/tree-sitter-
