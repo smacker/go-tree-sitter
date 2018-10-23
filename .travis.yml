@@ -5,7 +5,7 @@ go:
   - '1.11'
 
 install:
-  - ./build.sh
+  - make
   - go get -t ./...
 
 script:
