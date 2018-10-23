@@ -1,7 +1,11 @@
 package ruby
 
-//#include <tree_sitter/parser.h>
-//const TSLanguage *tree_sitter_ruby();
+//#cgo LDFLAGS: -lstdc++
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-ruby/parser.o
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-ruby/scanner.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-ruby/src
+//#include "tree_sitter/parser.h"
+//TSLanguage *tree_sitter_ruby();
 import "C"
 import (
 	"unsafe"

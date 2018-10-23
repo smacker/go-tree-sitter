@@ -1,7 +1,9 @@
 package golang
 
-//#cgo CFLAGS: -std=c99 -I${SRCDIR}/../vendor/tree-sitter-go/src
-//#include "parser.c"
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-go/parser.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-go/src
+//#include "tree_sitter/parser.h"
+//TSLanguage *tree_sitter_go();
 import "C"
 import (
 	"unsafe"

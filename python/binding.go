@@ -1,7 +1,12 @@
 package python
 
-//#include <tree_sitter/parser.h>
-//const TSLanguage *tree_sitter_python();
+//#cgo LDFLAGS: -lstdc++
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-python/parser.o
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-python/scanner.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-python/src
+//#include <stdlib.h>
+//#include "tree_sitter/parser.h"
+//TSLanguage *tree_sitter_python();
 import "C"
 import (
 	"unsafe"

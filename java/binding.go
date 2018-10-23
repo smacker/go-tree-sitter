@@ -1,7 +1,9 @@
 package java
 
-//#cgo CFLAGS: -std=c99 -I${SRCDIR}/../vendor/tree-sitter-java/src
-//#include "parser.c"
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-java/parser.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-java/src
+//#include "tree_sitter/parser.h"
+//TSLanguage *tree_sitter_java();
 import "C"
 import (
 	"unsafe"

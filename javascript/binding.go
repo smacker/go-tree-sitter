@@ -1,8 +1,10 @@
 package javascript
 
-//#cgo CFLAGS: -std=c99 -I${SRCDIR}/../vendor/tree-sitter-javascript/src
-//#include "parser.c"
-//#include "scanner.c"
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-javascript/parser.o
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-javascript/scanner.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-javascript/src
+//#include "tree_sitter/parser.h"
+//TSLanguage *tree_sitter_javascript();
 import "C"
 import (
 	"unsafe"
