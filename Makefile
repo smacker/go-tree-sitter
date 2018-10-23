@@ -23,7 +23,7 @@ $(parsers): $(gprefix)%/parser.o : $(gprefix)%/src/parser.c
 	gcc -I$(gprefix)$*/src -c $< -o $@
 
 $(scanners_c): $(gprefix)%/scanner.o : $(gprefix)%/src/scanner.c
-	gcc -I$(gprefix)$*/src -c $< -o $@
+	gcc -std=c99 -I$(gprefix)$*/src -c $< -o $@
 
 $(scanners_cc): $(gprefix)%/scanner.o : $(gprefix)%/src/scanner.cc
 	gcc -I$(gprefix)$*/src -c $< -o $@
