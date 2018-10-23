@@ -26,7 +26,7 @@ $(scanners_c): $(gprefix)%/scanner.o : $(gprefix)%/src/scanner.c
 	gcc -std=c99 -I$(gprefix)$*/src -c $< -o $@
 
 $(scanners_cc): $(gprefix)%/scanner.o : $(gprefix)%/src/scanner.cc
-	gcc -I$(gprefix)$*/src -c $< -o $@
+	g++ -I$(gprefix)$*/src -c $< -o $@
 
 clean:
 	rm -rf vendor/tree-sitter/out/Release/libruntime.a
