@@ -28,7 +28,7 @@ func main() {
 	var funcs []*sitter.Node
 	iter.ForEach(func(n *sitter.Node) error {
 		if n.Type() == "function" {
-			fmt.Println("-", sitter.FuncName(input, n))
+			fmt.Println("-", funcName(input, n))
 			funcs = append(funcs, n)
 		}
 		return nil
@@ -62,10 +62,27 @@ func main() {
 		} else {
 			textChange = "no changes"
 		}
-		fmt.Println("-", sitter.FuncName(input, f), ">", textChange)
+		fmt.Println("-", funcName(input, f), ">", textChange)
 	}
 
 	newTree := parser.ParseWithTree(input, tree)
 	n = newTree.RootNode()
 	fmt.Println("\nNew AST:", n)
+}
+
+func funcName(content []byte, n *sitter.Node) string {
+	if n == nil {
+		return ""
+	}
+
+	if n.Type() != "function" {
+		return ""
+	}
+
+	c := n.NamedChild(0)
+	if c == nil {
+		return ""
+	}
+
+	return string(content[c.StartByte():c.EndByte()])
 }
