@@ -3,10 +3,6 @@
 
 #include "tree_sitter/runtime.h"
 
-//char *readValue(TSDocument *document, TSNode node);
-
-TSInput ts_string_input_make(const char *);
-
 TSLogger stderr_logger_new(bool include_lexing);
 
 #endif

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
-static void log(void *payload, TSLogType type, const char *msg)
+static void stderr_log(void *payload, TSLogType type, const char *msg)
 {
     bool include_lexing = (bool)payload;
     switch (type)
@@ -21,6 +21,6 @@ TSLogger stderr_logger_new(bool include_lexing)
 {
     TSLogger result;
     result.payload = (void *)include_lexing;
-    result.log = log;
+    result.log = stderr_log;
     return result;
 }

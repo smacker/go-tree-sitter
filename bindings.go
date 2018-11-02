@@ -1,6 +1,5 @@
 package sitter
 
-//#cgo go1.11 CFLAGS: -fno-builtin-log
 //#cgo CFLAGS: -g -I${SRCDIR}/vendor/tree-sitter/include
 //#cgo LDFLAGS: ${SRCDIR}/vendor/tree-sitter/tree_sitter.a
 //#include "bindings.h"
