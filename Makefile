@@ -1,59 +1,95 @@
-all: tree-sitter grammars
+# directory to download dependencies in
+vendor_dir = vendor
 
-tsprefix := vendor/tree-sitter
-tree_sitter_c := get_changed_ranges.c \
-	language.c \
-	lexer.c \
-	node.c \
-	parser.c \
-	stack.c \
-	subtree.c \
-	tree_cursor.c \
-	tree.c \
-	utf16.c
+# sha of the commit in tree-sitter (it doesn't have tags)
+tree_sitter_sha = 3faaec33175c9ff04391f60b28d0d1a1910f193d
 
-tree_sitter_files = $(addprefix $(tsprefix)/src/runtime/,$(addsuffix .o, $(basename $(tree_sitter_c))))
+# list of versions per grammar
+go_version = v0.13.3
+java_version = v0.13.0
+javascript_version = v0.13.8
+python_version = v0.13.4
+ruby_version = v0.13.11
+
+all: | $(vendor_dir) tree-sitter grammars
+
+$(vendor_dir):
+	mkdir -p $@
+
+# tree-sitter rules
+
+tree_sitter_dir = $(vendor_dir)/tree-sitter
+tree_sitter_lib = $(vendor_dir)/tree_sitter.a
+
+# list of compiled files from C for tree-sitter
+targets = $(addprefix $(tree_sitter_dir)/src/runtime/,\
+	get_changed_ranges.o \
+	language.o \
+	lexer.o \
+	node.o \
+	parser.o \
+	stack.o \
+	subtree.o \
+	tree_cursor.o \
+	tree.o \
+	utf16.o \
+)
+
+utf8proc_target = $(tree_sitter_dir)/externals/utf8proc/utf8proc.o
 
 .PHONY: tree-sitter
-tree-sitter: pre_sitter $(tree_sitter_files) $(tsprefix)/externals/utf8proc/utf8proc.o $(tsprefix)/tree_sitter.a
+tree-sitter: | $(tree_sitter_dir) $(tree_sitter_lib)
 
-$(tree_sitter_files): %.o : %.c
-	gcc -I $(tsprefix)/include -I $(tsprefix)/externals/utf8proc -I $(tsprefix)/src -c $< -o $@
+$(tree_sitter_dir):
+	@git clone https://github.com/tree-sitter/tree-sitter.git $@; \
+	cd $@; \
+	git checkout $(tree_sitter_sha); \
+	git submodule init externals/utf8proc; \
+	git submodule update externals/utf8proc;
 
-$(tsprefix)/externals/utf8proc/utf8proc.o:
-	gcc -I $(tsprefix)/externals/utf8proc -c $(tsprefix)/externals/utf8proc/utf8proc.c -o $(tsprefix)/externals/utf8proc/utf8proc.o
+$(tree_sitter_lib): $(targets) $(utf8proc_target)
+	ar rcs $@ $(targets) $(utf8proc_target)
 
-$(tsprefix)/tree_sitter.a:
-	ar rcs $(tsprefix)/tree_sitter.a $(tree_sitter_files) $(tsprefix)/externals/utf8proc/utf8proc.o
+$(targets): %.o : %.c
+	gcc -I $(tree_sitter_dir)/include -I $(tree_sitter_dir)/externals/utf8proc -I $(tree_sitter_dir)/src -c $< -o $@
 
-gprefix := vendor/tree-sitter-
-parsers := $(patsubst %src/parser.c,%parser.o,$(wildcard vendor/tree-sitter-*/src/parser.c))
-scanners_c := $(patsubst %src/scanner.c,%scanner.o,$(wildcard vendor/tree-sitter-*/src/scanner.c))
-scanners_cc := $(patsubst %src/scanner.cc,%scanner.o,$(wildcard vendor/tree-sitter-*/src/scanner.cc))
+$(utf8proc_target): %.o : %.c
+	gcc -I $(@D) -c $< -o $@
+
+# grammars rules
+
+# list of compiled files from C for all grammars
+targets_c = $(addprefix $(vendor_dir)/,\
+	go/parser.o \
+	java/parser.o \
+	javascript/scanner.o \
+	javascript/parser.o \
+	python/parser.o \
+	ruby/parser.o \
+)
+
+# list of compiled files from C++ for all grammars
+targets_cc = $(addprefix $(vendor_dir)/,\
+	python/scanner.o \
+	ruby/scanner.o \
+)
+
+targets_dirs = $(sort $(dir $(targets_c) $(targets_cc)))
 
 .PHONY: grammars
-grammars: pre_grammars $(parsers) $(scanners_c) $(scanners_cc)
+grammars: $(targets_dirs) $(targets_c) $(targets_cc)
 
-$(parsers): $(gprefix)%/parser.o : $(gprefix)%/src/parser.c
-	gcc -I$(gprefix)$*/src -c $< -o $@
+$(targets_dirs):
+	mkdir -p $@
 
-$(scanners_c): $(gprefix)%/scanner.o : $(gprefix)%/src/scanner.c
-	gcc -std=c99 -I$(gprefix)$*/src -c $< -o $@
+$(targets_c): %.o: %.c
+	gcc -std=c99 -I vendor/tree-sitter/include -c $< -o $@
 
-$(scanners_cc): $(gprefix)%/scanner.o : $(gprefix)%/src/scanner.cc
-	g++ -I$(gprefix)$*/src -c $< -o $@
+$(targets_cc): %.o: %.cc
+	g++ -I vendor/tree-sitter/include -c $< -o $@
+
+$(patsubst %.o,%.c,$(targets_c)) $(patsubst %.o,%.cc,$(targets_cc)):
+	curl -s "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$(subst vendor/,,$(@D))/$($(subst vendor/,,$(@D))_version)/src/$(@F)" -o $@
 
 clean:
-	rm -rf vendor/tree-sitter/tree_sitter.a
-	rm -rf $(wildcard vendor/tree-sitter/src/runtime/*.o)
-	rm -rf $(wildcard vendor/tree-sitter/src/externals/utf8proc/*.o)
-	rm -rf $(wildcard vendor/tree-sitter-*/parser.o)
-	rm -rf $(wildcard vendor/tree-sitter-*/scanner.o)
-
-.PHONY: pre_sitter
-pre_sitter:
-	@echo ">>> compiling tree-sitter";
-
-.PHONY: pre_grammars
-pre_grammars:
-	@echo ">>> compiling grammars";
+	rm -rf $(vendor_dir)

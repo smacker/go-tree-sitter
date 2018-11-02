@@ -1,7 +1,7 @@
 package golang
 
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-go/parser.o
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-go/src
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/go/parser.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/include
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_go();
 import "C"

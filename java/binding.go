@@ -1,7 +1,7 @@
 package java
 
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-java/parser.o
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-java/src
+//#cgo LDFLAGS: ${SRCDIR}/../vendor/java/parser.o
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/include
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_java();
 import "C"
