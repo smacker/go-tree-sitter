@@ -2,7 +2,7 @@ package sitter
 
 //#cgo CFLAGS: -fno-builtin-log
 //#cgo CFLAGS: -g -I${SRCDIR}/vendor/tree-sitter/include
-//#cgo LDFLAGS: ${SRCDIR}/vendor/tree-sitter/out/Release/libruntime.a
+//#cgo LDFLAGS: ${SRCDIR}/vendor/tree-sitter/tree_sitter.a
 //#include "bindings.h"
 import "C"
 import (
