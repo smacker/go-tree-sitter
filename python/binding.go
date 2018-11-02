@@ -1,8 +1,8 @@
 package python
 
-//#cgo LDFLAGS: -lstdc++
 //#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-python/parser.o
 //#cgo LDFLAGS: ${SRCDIR}/../vendor/tree-sitter-python/scanner.o
+//#cgo LDFLAGS: -lstdc++
 //#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter-python/src
 //#include <stdlib.h>
 //#include "tree_sitter/parser.h"
