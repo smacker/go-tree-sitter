@@ -70,6 +70,12 @@ func deleteParser(p *Parser) {
 
 type Tree struct{ c *C.TSTree }
 
+func (t *Tree) Copy() *Tree {
+	newTree := &Tree{C.ts_tree_copy(t.c)}
+	runtime.SetFinalizer(newTree, deleteTree)
+	return newTree
+}
+
 func (t *Tree) RootNode() *Node {
 	ptr := C.ts_tree_root_node(t.c)
 	return &ptr
@@ -130,6 +136,8 @@ func NewLanguage(ptr unsafe.Pointer) *Language {
 
 type Node = C.TSNode
 
+type Symbol = C.TSSymbol
+
 func (n Node) StartByte() uint32 {
 	return uint32(C.ts_node_start_byte(n))
 }
@@ -138,12 +146,40 @@ func (n Node) EndByte() uint32 {
 	return uint32(C.ts_node_end_byte(n))
 }
 
-func (n Node) String() string {
-	return C.GoString(C.ts_node_string(n))
+func (n Node) StartPoint() Position {
+	p := C.ts_node_start_point(n)
+	return Position{
+		Row:    int(p.row),
+		Column: int(p.column),
+	}
+}
+
+func (n Node) EndPoint() Position {
+	p := C.ts_node_end_point(n)
+	return Position{
+		Row:    int(p.row),
+		Column: int(p.column),
+	}
+}
+
+func (n Node) Symbol() Symbol {
+	return C.ts_node_symbol(n)
 }
 
 func (n Node) Type() string {
 	return C.GoString(C.ts_node_type(n))
+}
+
+func (n Node) String() string {
+	return C.GoString(C.ts_node_string(n))
+}
+
+func (n Node) Equal(other Node) bool {
+	return bool(C.ts_node_eq(n, other))
+}
+
+func (n Node) IsNull() bool {
+	return bool(C.ts_node_is_null(n))
 }
 
 func (n Node) IsNamed() bool {

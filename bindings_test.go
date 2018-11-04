@@ -15,9 +15,19 @@ func TestRootNode(t *testing.T) {
 
 	assert.Equal(uint32(0), n.StartByte())
 	assert.Equal(uint32(9), n.EndByte())
+	assert.Equal(sitter.Position{
+		Row:    0,
+		Column: 0,
+	}, n.StartPoint())
+	assert.Equal(sitter.Position{
+		Row:    0,
+		Column: 9,
+	}, n.EndPoint())
 	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (number))))", n.String())
 	assert.Equal("program", n.Type())
+	assert.Equal(sitter.Symbol(115), n.Symbol())
 
+	assert.Equal(false, n.IsNull())
 	assert.Equal(true, n.IsNamed())
 	assert.Equal(false, n.IsMissing())
 	assert.Equal(false, n.HasChanges())
