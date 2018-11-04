@@ -11,8 +11,7 @@ import (
 func TestRootNode(t *testing.T) {
 	assert := assert.New(t)
 
-	n, close := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
-	defer close()
+	n := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
 
 	assert.Equal(uint32(0), n.StartByte())
 	assert.Equal(uint32(9), n.EndByte())
@@ -41,12 +40,10 @@ func TestTree(t *testing.T) {
 	assert := assert.New(t)
 
 	parser := sitter.NewParser()
-	defer parser.Delete()
 
 	parser.Debug()
 	parser.SetLanguage(javascript.GetLanguage())
 	tree := parser.Parse([]byte("let a = 1"))
-	defer tree.Delete()
 	n := tree.RootNode()
 
 	assert.Equal(uint32(0), n.StartByte())
@@ -55,7 +52,6 @@ func TestTree(t *testing.T) {
 	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (number))))", n.String())
 
 	tree2 := parser.Parse([]byte("let a = 'a'"))
-	defer tree2.Delete()
 	n = tree2.RootNode()
 	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (string))))", n.String())
 

@@ -5,12 +5,13 @@ package sitter
 //#include "bindings.h"
 import "C"
 import (
+	"runtime"
 	"unsafe"
 )
 
 // Parse is shortcut for parsing bytes of source code
 // return root node and close function
-func Parse(content []byte, lang *Language) (*Node, func()) {
+func Parse(content []byte, lang *Language) *Node {
 	input := (*C.char)(C.CBytes(content))
 
 	cParser := C.ts_parser_new()
@@ -20,28 +21,20 @@ func Parse(content []byte, lang *Language) (*Node, func()) {
 	cTree := C.ts_parser_parse_string(cParser, nil, input, C.uint32_t(len(content)))
 	ptr := C.ts_tree_root_node(cTree)
 
-	close := func() {
-		C.ts_tree_delete(cTree)
-		C.ts_parser_delete(cParser)
-	}
-
-	return &ptr, close
+	return &ptr
 }
 
-type Parser = C.TSParser
+type Parser struct{ c *C.TSParser }
 
 func NewParser() *Parser {
-	cParser := C.ts_parser_new()
-	return cParser
-}
-
-func (p *Parser) Delete() {
-	C.ts_parser_delete(p)
+	p := &Parser{C.ts_parser_new()}
+	runtime.SetFinalizer(p, deleteParser)
+	return p
 }
 
 func (p *Parser) SetLanguage(lang *Language) {
 	cLang := (*C.struct_TSLanguage)(lang.ptr)
-	C.ts_parser_set_language(p, cLang)
+	C.ts_parser_set_language(p.c, cLang)
 }
 
 func (p *Parser) Parse(content []byte) *Tree {
@@ -49,32 +42,41 @@ func (p *Parser) Parse(content []byte) *Tree {
 }
 
 func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
-	input := (*C.char)(C.CBytes(content))
-	treePtr := C.ts_parser_parse_string(p, t, input, C.uint32_t(len(content)))
+	var cTree *C.TSTree
+	if t != nil {
+		cTree = t.c
+	}
 
-	return treePtr
+	input := (*C.char)(C.CBytes(content))
+	newTree := &Tree{C.ts_parser_parse_string(p.c, cTree, input, C.uint32_t(len(content)))}
+	runtime.SetFinalizer(newTree, deleteTree)
+	return newTree
 }
 
 func (p *Parser) ReParse(t *Tree, input *Input) *Tree {
-	treePtr := C.ts_parser_parse(p, t, *input.ptr)
-
-	return treePtr
+	newTree := &Tree{C.ts_parser_parse(p.c, t.c, *input.ptr)}
+	runtime.SetFinalizer(newTree, deleteTree)
+	return newTree
 }
 
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)
-	C.ts_parser_set_logger(p, logger)
+	C.ts_parser_set_logger(p.c, logger)
 }
 
-type Tree = C.TSTree
-
-func (t *Tree) Delete() {
-	C.ts_tree_delete(t)
+func deleteParser(p *Parser) {
+	C.ts_parser_delete(p.c)
 }
+
+type Tree struct{ c *C.TSTree }
 
 func (t *Tree) RootNode() *Node {
-	ptr := C.ts_tree_root_node(t)
+	ptr := C.ts_tree_root_node(t.c)
 	return &ptr
+}
+
+func deleteTree(t *Tree) {
+	C.ts_tree_delete(t.c)
 }
 
 type Input struct {
@@ -115,7 +117,7 @@ func (t *Tree) Edit(i EditInput) {
 		},
 	}
 
-	C.ts_tree_edit(t, cEditInput)
+	C.ts_tree_edit(t.c, cEditInput)
 }
 
 type Language struct {

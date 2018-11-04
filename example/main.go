@@ -11,11 +11,9 @@ func main() {
 	input := []byte("function hello() { console.log('hello') }; function goodbye(){}")
 
 	parser := sitter.NewParser()
-	defer parser.Delete()
 	parser.SetLanguage(javascript.GetLanguage())
 
 	tree := parser.Parse(input)
-	defer tree.Delete()
 
 	n := tree.RootNode()
 
