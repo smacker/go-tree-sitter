@@ -39,15 +39,15 @@ func main() {
 		StartIndex:  62,
 		OldEndIndex: 63,
 		NewEndIndex: 87,
-		StartPosition: sitter.Position{
+		StartPoint: sitter.Point{
 			Row:    0,
 			Column: 62,
 		},
-		OldEndPosition: sitter.Position{
+		OldEndPoint: sitter.Point{
 			Row:    0,
 			Column: 63,
 		},
-		NewEndPosition: sitter.Position{
+		NewEndPoint: sitter.Point{
 			Row:    0,
 			Column: 87,
 		},

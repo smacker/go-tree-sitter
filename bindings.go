@@ -90,18 +90,18 @@ type Input struct {
 	str string
 }
 
-type Position struct {
-	Row    int
-	Column int
+type Point struct {
+	Row    uint32
+	Column uint32
 }
 
 type EditInput struct {
-	StartIndex     int
-	OldEndIndex    int
-	NewEndIndex    int
-	StartPosition  Position
-	OldEndPosition Position
-	NewEndPosition Position
+	StartIndex  uint32
+	OldEndIndex uint32
+	NewEndIndex uint32
+	StartPoint  Point
+	OldEndPoint Point
+	NewEndPoint Point
 }
 
 func (t *Tree) Edit(i EditInput) {
@@ -110,16 +110,16 @@ func (t *Tree) Edit(i EditInput) {
 		old_end_byte: C.uint32_t(i.OldEndIndex),
 		new_end_byte: C.uint32_t(i.NewEndIndex),
 		start_point: C.TSPoint{
-			row:    C.uint32_t(i.StartPosition.Row),
-			column: C.uint32_t(i.StartPosition.Column),
+			row:    C.uint32_t(i.StartPoint.Row),
+			column: C.uint32_t(i.StartPoint.Column),
 		},
 		old_end_point: C.TSPoint{
-			row:    C.uint32_t(i.OldEndPosition.Row),
-			column: C.uint32_t(i.OldEndPosition.Column),
+			row:    C.uint32_t(i.OldEndPoint.Row),
+			column: C.uint32_t(i.OldEndPoint.Column),
 		},
 		new_end_point: C.TSPoint{
-			row:    C.uint32_t(i.NewEndPosition.Row),
-			column: C.uint32_t(i.NewEndPosition.Column),
+			row:    C.uint32_t(i.OldEndPoint.Row),
+			column: C.uint32_t(i.OldEndPoint.Column),
 		},
 	}
 
@@ -146,19 +146,19 @@ func (n Node) EndByte() uint32 {
 	return uint32(C.ts_node_end_byte(n))
 }
 
-func (n Node) StartPoint() Position {
+func (n Node) StartPoint() Point {
 	p := C.ts_node_start_point(n)
-	return Position{
-		Row:    int(p.row),
-		Column: int(p.column),
+	return Point{
+		Row:    uint32(p.row),
+		Column: uint32(p.column),
 	}
 }
 
-func (n Node) EndPoint() Position {
+func (n Node) EndPoint() Point {
 	p := C.ts_node_end_point(n)
-	return Position{
-		Row:    int(p.row),
-		Column: int(p.column),
+	return Point{
+		Row:    uint32(p.row),
+		Column: uint32(p.column),
 	}
 }
 

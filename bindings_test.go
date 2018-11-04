@@ -15,11 +15,11 @@ func TestRootNode(t *testing.T) {
 
 	assert.Equal(uint32(0), n.StartByte())
 	assert.Equal(uint32(9), n.EndByte())
-	assert.Equal(sitter.Position{
+	assert.Equal(sitter.Point{
 		Row:    0,
 		Column: 0,
 	}, n.StartPoint())
-	assert.Equal(sitter.Position{
+	assert.Equal(sitter.Point{
 		Row:    0,
 		Column: 9,
 	}, n.EndPoint())
@@ -71,15 +71,15 @@ func TestTree(t *testing.T) {
 		StartIndex:  8,
 		OldEndIndex: 11,
 		NewEndIndex: 12,
-		StartPosition: sitter.Position{
+		StartPoint: sitter.Point{
 			Row:    0,
 			Column: 8,
 		},
-		OldEndPosition: sitter.Position{
+		OldEndPoint: sitter.Point{
 			Row:    0,
 			Column: 11,
 		},
-		NewEndPosition: sitter.Position{
+		NewEndPoint: sitter.Point{
 			Row:    0,
 			Column: 12,
 		},
