@@ -54,15 +54,15 @@ tree.Edit(sitter.EditInput{
     StartIndex:  8,
     OldEndIndex: 9,
     NewEndIndex: 12,
-    StartPosition: sitter.Position{
+    StartPoint: sitter.Point{
         Row:    0,
         Column: 8,
     },
-    OldEndPosition: sitter.Position{
+    OldEndPoint: sitter.Point{
         Row:    0,
         Column: 9,
     },
-    NewEndPosition: sitter.Position{
+    NewEndPoint: sitter.Point{
         Row:    0,
         Column: 12,
     },
