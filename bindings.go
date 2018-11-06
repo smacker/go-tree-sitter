@@ -134,9 +134,39 @@ func NewLanguage(ptr unsafe.Pointer) *Language {
 	return &Language{ptr}
 }
 
+func (l *Language) SymbolName(s Symbol) string {
+	return C.GoString(C.ts_language_symbol_name((*C.TSLanguage)(l.ptr), s))
+}
+
+func (l *Language) SymbolType(s Symbol) SymbolType {
+	return SymbolType(C.ts_language_symbol_type((*C.TSLanguage)(l.ptr), s))
+}
+
+func (l *Language) SymbolCount() uint32 {
+	return uint32(C.ts_language_symbol_count((*C.TSLanguage)(l.ptr)))
+}
+
 type Node = C.TSNode
 
 type Symbol = C.TSSymbol
+
+type SymbolType int
+
+const (
+	SymbolTypeRegular SymbolType = iota
+	SymbolTypeAnonymous
+	SymbolTypeAuxiliary
+)
+
+var symbolTypeNames = []string{
+	"Regular",
+	"Anonymous",
+	"Auxiliary",
+}
+
+func (t SymbolType) String() string {
+	return symbolTypeNames[t]
+}
 
 func (n Node) StartByte() uint32 {
 	return uint32(C.ts_node_start_byte(n))

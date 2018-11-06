@@ -94,3 +94,14 @@ func TestTree(t *testing.T) {
 	n = tree3.RootNode()
 	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (true))))", n.String())
 }
+
+func TestLanguage(t *testing.T) {
+	assert := assert.New(t)
+	js := javascript.GetLanguage()
+
+	assert.True(js.SymbolCount() > 169)
+	assert.Equal(js.SymbolName(169), "function")
+	assert.Equal(js.SymbolType(169), sitter.SymbolTypeRegular)
+
+	assert.Equal(sitter.SymbolTypeRegular.String(), "Regular")
+}
