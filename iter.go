@@ -33,15 +33,17 @@ func (iter *Iterator) Next() (*Node, error) {
 
 	var n *Node
 	n, iter.nodesToVisit = iter.nodesToVisit[0], iter.nodesToVisit[1:]
+
+	var children []*Node
+	for i := 0; i < int(n.NamedChildCount()); i++ {
+		children = append(children, n.NamedChild(i))
+	}
+
 	switch iter.mode {
 	case DFSMode:
-		for i := 0; i < int(n.NamedChildCount()); i++ {
-			iter.nodesToVisit = append(iter.nodesToVisit, n.NamedChild(i))
-		}
+		iter.nodesToVisit = append(children, iter.nodesToVisit...)
 	case BFSMode:
-		for i := 0; i < int(n.NamedChildCount()); i++ {
-			iter.nodesToVisit = append([]*Node{n.NamedChild(i)}, iter.nodesToVisit...)
-		}
+		iter.nodesToVisit = append(iter.nodesToVisit, children...)
 	default:
 		panic("not implemented")
 	}
