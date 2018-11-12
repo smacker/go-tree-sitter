@@ -204,7 +204,9 @@ func (n Node) Type() string {
 }
 
 func (n Node) String() string {
-	return C.GoString(C.ts_node_string(n.c))
+	ptr := C.ts_node_string(n.c)
+	defer C.free(unsafe.Pointer(ptr))
+	return C.GoString(ptr)
 }
 
 func (n Node) Equal(other Node) bool {
