@@ -1,7 +1,9 @@
 package sitter_test
 
 import (
+	"runtime"
 	"testing"
+	"time"
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/javascript"
@@ -104,4 +106,23 @@ func TestLanguage(t *testing.T) {
 	assert.Equal(js.SymbolType(169), sitter.SymbolTypeRegular)
 
 	assert.Equal(sitter.SymbolTypeRegular.String(), "Regular")
+}
+
+func TestGC(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := sitter.NewParser()
+
+	parser.SetLanguage(javascript.GetLanguage())
+	tree := parser.Parse([]byte("let a = 1"))
+	n := tree.RootNode()
+
+	r := isNamedWithGC(n)
+	assert.True(r)
+}
+
+func isNamedWithGC(n *sitter.Node) bool {
+	runtime.GC()
+	time.Sleep(500 * time.Microsecond)
+	return n.IsNamed()
 }

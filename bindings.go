@@ -21,7 +21,7 @@ func Parse(content []byte, lang *Language) *Node {
 	cTree := C.ts_parser_parse_string(cParser, nil, input, C.uint32_t(len(content)))
 	ptr := C.ts_tree_root_node(cTree)
 
-	return &ptr
+	return &Node{ptr, &Tree{cTree}}
 }
 
 type Parser struct{ c *C.TSParser }
@@ -78,7 +78,7 @@ func (t *Tree) Copy() *Tree {
 
 func (t *Tree) RootNode() *Node {
 	ptr := C.ts_tree_root_node(t.c)
-	return &ptr
+	return &Node{ptr, t}
 }
 
 func deleteTree(t *Tree) {
@@ -146,7 +146,10 @@ func (l *Language) SymbolCount() uint32 {
 	return uint32(C.ts_language_symbol_count((*C.TSLanguage)(l.ptr)))
 }
 
-type Node = C.TSNode
+type Node struct {
+	c C.TSNode
+	t *Tree // keep pointer on tree becase node is valid only as long as tree is
+}
 
 type Symbol = C.TSSymbol
 
@@ -169,15 +172,15 @@ func (t SymbolType) String() string {
 }
 
 func (n Node) StartByte() uint32 {
-	return uint32(C.ts_node_start_byte(n))
+	return uint32(C.ts_node_start_byte(n.c))
 }
 
 func (n Node) EndByte() uint32 {
-	return uint32(C.ts_node_end_byte(n))
+	return uint32(C.ts_node_end_byte(n.c))
 }
 
 func (n Node) StartPoint() Point {
-	p := C.ts_node_start_point(n)
+	p := C.ts_node_start_point(n.c)
 	return Point{
 		Row:    uint32(p.row),
 		Column: uint32(p.column),
@@ -185,7 +188,7 @@ func (n Node) StartPoint() Point {
 }
 
 func (n Node) EndPoint() Point {
-	p := C.ts_node_end_point(n)
+	p := C.ts_node_end_point(n.c)
 	return Point{
 		Row:    uint32(p.row),
 		Column: uint32(p.column),
@@ -193,101 +196,101 @@ func (n Node) EndPoint() Point {
 }
 
 func (n Node) Symbol() Symbol {
-	return C.ts_node_symbol(n)
+	return C.ts_node_symbol(n.c)
 }
 
 func (n Node) Type() string {
-	return C.GoString(C.ts_node_type(n))
+	return C.GoString(C.ts_node_type(n.c))
 }
 
 func (n Node) String() string {
-	return C.GoString(C.ts_node_string(n))
+	return C.GoString(C.ts_node_string(n.c))
 }
 
 func (n Node) Equal(other Node) bool {
-	return bool(C.ts_node_eq(n, other))
+	return bool(C.ts_node_eq(n.c, other.c))
 }
 
 func (n Node) IsNull() bool {
-	return bool(C.ts_node_is_null(n))
+	return bool(C.ts_node_is_null(n.c))
 }
 
 func (n Node) IsNamed() bool {
-	return bool(C.ts_node_is_named(n))
+	return bool(C.ts_node_is_named(n.c))
 }
 
 func (n Node) IsMissing() bool {
-	return bool(C.ts_node_is_missing(n))
+	return bool(C.ts_node_is_missing(n.c))
 }
 
 func (n Node) HasChanges() bool {
-	return bool(C.ts_node_has_changes(n))
+	return bool(C.ts_node_has_changes(n.c))
 }
 
 func (n Node) HasError() bool {
-	return bool(C.ts_node_has_error(n))
+	return bool(C.ts_node_has_error(n.c))
 }
 
 func (n Node) Parent() *Node {
-	nn := C.ts_node_parent(n)
+	nn := C.ts_node_parent(n.c)
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
 
 func (n Node) Child(idx int) *Node {
-	nn := C.ts_node_child(n, C.uint32_t(idx))
+	nn := C.ts_node_child(n.c, C.uint32_t(idx))
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
 
 func (n Node) NamedChild(idx int) *Node {
-	nn := C.ts_node_named_child(n, C.uint32_t(idx))
+	nn := C.ts_node_named_child(n.c, C.uint32_t(idx))
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
 
 func (n Node) ChildCount() uint32 {
-	return uint32(C.ts_node_child_count(n))
+	return uint32(C.ts_node_child_count(n.c))
 }
 
 func (n Node) NamedChildCount() uint32 {
-	return uint32(C.ts_node_named_child_count(n))
+	return uint32(C.ts_node_named_child_count(n.c))
 }
 
 func (n Node) NextSibling() *Node {
-	nn := C.ts_node_next_sibling(n)
+	nn := C.ts_node_next_sibling(n.c)
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
 
 func (n Node) NextNamedSibling() *Node {
-	nn := C.ts_node_next_named_sibling(n)
+	nn := C.ts_node_next_named_sibling(n.c)
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
 
 func (n Node) PrevSibling() *Node {
-	nn := C.ts_node_prev_sibling(n)
+	nn := C.ts_node_prev_sibling(n.c)
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
 
 func (n Node) PrevNamedSibling() *Node {
-	nn := C.ts_node_prev_named_sibling(n)
+	nn := C.ts_node_prev_named_sibling(n.c)
 	if nn.id == nil {
 		return nil
 	}
-	return &nn
+	return &Node{nn, n.t}
 }
