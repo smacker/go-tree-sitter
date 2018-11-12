@@ -6,6 +6,8 @@ tree_sitter_sha = 3faaec33175c9ff04391f60b28d0d1a1910f193d
 
 # list of versions per grammar
 bash_version = v0.13.6
+c_version = v0.13.7
+cpp_version = v0.13.8
 go_version = v0.13.3
 java_version = v0.13.0
 javascript_version = v0.13.8
@@ -62,6 +64,8 @@ $(utf8proc_target): %.o : %.c
 # list of compiled files from C for all grammars
 targets_c = $(addprefix $(vendor_dir)/,\
 	bash/parser.o \
+	c/parser.o \
+	cpp/parser.o \
 	go/parser.o \
 	java/parser.o \
 	javascript/scanner.o \
@@ -73,6 +77,7 @@ targets_c = $(addprefix $(vendor_dir)/,\
 # list of compiled files from C++ for all grammars
 targets_cc = $(addprefix $(vendor_dir)/,\
 	bash/scanner.o \
+	cpp/scanner.o \
 	python/scanner.o \
 	ruby/scanner.o \
 )
