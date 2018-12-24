@@ -58,6 +58,16 @@ func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 	return newTree
 }
 
+// OperationLimit returns current operatation limit of the tree
+func (p *Parser) OperationLimit() int {
+	return int(C.ts_parser_operation_limit(p.c))
+}
+
+// SetOperationLimit limits the amount of work the parser does on any given call to parse()
+func (p *Parser) SetOperationLimit(limit int) {
+	C.ts_parser_set_operation_limit(p.c, C.ulong(limit))
+}
+
 // Debug enables debug output to stderr
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)

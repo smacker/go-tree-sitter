@@ -126,3 +126,13 @@ func isNamedWithGC(n *sitter.Node) bool {
 	time.Sleep(500 * time.Microsecond)
 	return n.IsNamed()
 }
+
+func TestSetOperationLimit(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := sitter.NewParser()
+	assert.Equal(-1, parser.OperationLimit())
+
+	parser.SetOperationLimit(10)
+	assert.Equal(10, parser.OperationLimit())
+}
