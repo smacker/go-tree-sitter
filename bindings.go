@@ -68,6 +68,12 @@ func (p *Parser) SetOperationLimit(limit int) {
 	C.ts_parser_set_operation_limit(p.c, C.ulong(limit))
 }
 
+// Reset causes the parser to parse from scratch on the next call to parse, instead of resuming
+// so that it sees the changes to the beginning of the source code.
+func (p *Parser) Reset() {
+	C.ts_parser_reset(p.c)
+}
+
 // Debug enables debug output to stderr
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)
