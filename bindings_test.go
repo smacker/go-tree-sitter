@@ -27,7 +27,7 @@ func TestRootNode(t *testing.T) {
 	}, n.EndPoint())
 	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (number))))", n.String())
 	assert.Equal("program", n.Type())
-	assert.Equal(sitter.Symbol(115), n.Symbol())
+	assert.Equal(sitter.Symbol(117), n.Symbol())
 
 	assert.Equal(false, n.IsNull())
 	assert.Equal(true, n.IsNamed())
@@ -102,7 +102,7 @@ func TestLanguage(t *testing.T) {
 	js := javascript.GetLanguage()
 
 	assert.True(js.SymbolCount() > 169)
-	assert.Equal(js.SymbolName(169), "function")
+	assert.Equal(js.SymbolName(169), "class")
 	assert.Equal(js.SymbolType(169), sitter.SymbolTypeRegular)
 
 	assert.Equal(sitter.SymbolTypeRegular.String(), "Regular")
