@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/stretchr/testify/assert"
 )
@@ -135,4 +136,36 @@ func TestSetOperationLimit(t *testing.T) {
 
 	parser.SetOperationLimit(10)
 	assert.Equal(10, parser.OperationLimit())
+}
+
+func TestIncludedRanges(t *testing.T) {
+	assert := assert.New(t)
+
+	// go code with JS in comment
+	code := "package main\n//console.log('sup');"
+
+	parser := sitter.NewParser()
+	parser.SetLanguage(golang.GetLanguage())
+	goTree := parser.Parse([]byte(code))
+	commentNode := goTree.RootNode().NamedChild(1)
+	assert.Equal("comment", commentNode.Type())
+
+	jsRange := sitter.Range{
+		StartPoint: sitter.Point{
+			Row:    commentNode.StartPoint().Row,
+			Column: commentNode.StartPoint().Column + 2,
+		},
+		EndPoint:  commentNode.EndPoint(),
+		StartByte: commentNode.StartByte() + 2,
+		EndByte:   commentNode.EndByte(),
+	}
+
+	parser.SetIncludedRanges([]sitter.Range{jsRange})
+	parser.SetLanguage(javascript.GetLanguage())
+	jsTree := parser.Parse([]byte(code))
+
+	assert.Equal(
+		"(program (expression_statement (call_expression (member_expression (identifier) (property_identifier)) (arguments (string)))))",
+		jsTree.RootNode().String(),
+	)
 }

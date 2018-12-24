@@ -74,6 +74,26 @@ func (p *Parser) Reset() {
 	C.ts_parser_reset(p.c)
 }
 
+// SetIncludedRanges sets text ranges of a file
+func (p *Parser) SetIncludedRanges(ranges []Range) {
+	cRanges := make([]C.TSRange, len(ranges))
+	for i, r := range ranges {
+		cRanges[i] = C.TSRange{
+			start_point: C.TSPoint{
+				row:    C.uint32_t(r.StartPoint.Row),
+				column: C.uint32_t(r.StartPoint.Column),
+			},
+			end_point: C.TSPoint{
+				row:    C.uint32_t(r.EndPoint.Row),
+				column: C.uint32_t(r.EndPoint.Column),
+			},
+			start_byte: C.uint32_t(r.StartByte),
+			end_byte:   C.uint32_t(r.EndByte),
+		}
+	}
+	C.ts_parser_set_included_ranges(p.c, (*C.TSRange)(unsafe.Pointer(&ranges[0])), C.uint(len(ranges)))
+}
+
 // Debug enables debug output to stderr
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)
@@ -82,6 +102,18 @@ func (p *Parser) Debug() {
 
 func deleteParser(p *Parser) {
 	C.ts_parser_delete(p.c)
+}
+
+type Point struct {
+	Row    uint32
+	Column uint32
+}
+
+type Range struct {
+	StartPoint Point
+	EndPoint   Point
+	StartByte  uint32
+	EndByte    uint32
 }
 
 // Tree represents the syntax tree of an entire source code file
@@ -104,11 +136,6 @@ func (t *Tree) RootNode() *Node {
 
 func deleteTree(t *Tree) {
 	C.ts_tree_delete(t.c)
-}
-
-type Point struct {
-	Row    uint32
-	Column uint32
 }
 
 type EditInput struct {
