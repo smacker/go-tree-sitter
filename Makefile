@@ -2,16 +2,16 @@
 vendor_dir = vendor
 
 # sha of the commit in tree-sitter (it doesn't have tags)
-tree_sitter_sha = 3faaec33175c9ff04391f60b28d0d1a1910f193d
+tree_sitter_sha = fd39568823ba2c41644df3d213cc925822cac04a
 
 # list of versions per grammar
 bash_version = v0.13.6
-c_version = v0.13.7
-cpp_version = v0.13.8
+c_version = v0.13.10
+cpp_version = v0.13.11
 go_version = v0.13.3
 java_version = v0.13.0
-javascript_version = v0.13.8
-python_version = v0.13.4
+javascript_version = v0.13.10
+python_version = v0.13.6
 ruby_version = v0.13.11
 
 all: | $(vendor_dir) tree-sitter grammars
