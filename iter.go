@@ -17,8 +17,17 @@ type Iterator struct {
 	nodesToVisit []*Node
 }
 
-// NewIterator takes a node and mode (DFS/BFS) and returns iterator over named children of the node
+// NewIterator takes a node and mode (DFS/BFS) and returns iterator over children of the node
 func NewIterator(n *Node, mode IterMode) *Iterator {
+	return &Iterator{
+		named:        false,
+		mode:         mode,
+		nodesToVisit: []*Node{n},
+	}
+}
+
+// NewNamedIterator takes a node and mode (DFS/BFS) and returns iterator over named children of the node
+func NewNamedIterator(n *Node, mode IterMode) *Iterator {
 	return &Iterator{
 		named:        true,
 		mode:         mode,
@@ -35,8 +44,14 @@ func (iter *Iterator) Next() (*Node, error) {
 	n, iter.nodesToVisit = iter.nodesToVisit[0], iter.nodesToVisit[1:]
 
 	var children []*Node
-	for i := 0; i < int(n.NamedChildCount()); i++ {
-		children = append(children, n.NamedChild(i))
+	if iter.named {
+		for i := 0; i < int(n.NamedChildCount()); i++ {
+			children = append(children, n.NamedChild(i))
+		}
+	} else {
+		for i := 0; i < int(n.ChildCount()); i++ {
+			children = append(children, n.Child(i))
+		}
 	}
 
 	switch iter.mode {

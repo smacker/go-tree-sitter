@@ -22,7 +22,7 @@ func main() {
 	fmt.Println("Root children:", n.ChildCount())
 
 	fmt.Println("\nFunctions in input:")
-	iter := sitter.NewIterator(n, sitter.DFSMode)
+	iter := sitter.NewNamedIterator(n, sitter.DFSMode)
 	var funcs []*sitter.Node
 	iter.ForEach(func(n *sitter.Node) error {
 		if n.Type() == "function" {
