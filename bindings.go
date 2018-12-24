@@ -58,12 +58,6 @@ func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 	return newTree
 }
 
-func (p *Parser) ReParse(t *Tree, input *Input) *Tree {
-	newTree := &Tree{C.ts_parser_parse(p.c, t.c, *input.ptr)}
-	runtime.SetFinalizer(newTree, deleteTree)
-	return newTree
-}
-
 // Debug enables debug output to stderr
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)
@@ -94,11 +88,6 @@ func (t *Tree) RootNode() *Node {
 
 func deleteTree(t *Tree) {
 	C.ts_tree_delete(t.c)
-}
-
-type Input struct {
-	ptr *C.TSInput
-	str string
 }
 
 type Point struct {
