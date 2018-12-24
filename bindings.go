@@ -24,23 +24,28 @@ func Parse(content []byte, lang *Language) *Node {
 	return &Node{ptr, &Tree{cTree}}
 }
 
+// Parser produces concrete syntax tree based on source code using Language
 type Parser struct{ c *C.TSParser }
 
+// NewParser creates new Parser
 func NewParser() *Parser {
 	p := &Parser{C.ts_parser_new()}
 	runtime.SetFinalizer(p, deleteParser)
 	return p
 }
 
+// SetLanguage assignes Language to a parser
 func (p *Parser) SetLanguage(lang *Language) {
 	cLang := (*C.struct_TSLanguage)(lang.ptr)
 	C.ts_parser_set_language(p.c, cLang)
 }
 
+// Parse produces new Tree from content
 func (p *Parser) Parse(content []byte) *Tree {
 	return p.ParseWithTree(content, nil)
 }
 
+// ParseWithTree produces new Tree from content using old tree
 func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 	var cTree *C.TSTree
 	if t != nil {
@@ -59,6 +64,7 @@ func (p *Parser) ReParse(t *Tree, input *Input) *Tree {
 	return newTree
 }
 
+// Debug enables debug output to stderr
 func (p *Parser) Debug() {
 	logger := C.stderr_logger_new(true)
 	C.ts_parser_set_logger(p.c, logger)
@@ -68,14 +74,19 @@ func deleteParser(p *Parser) {
 	C.ts_parser_delete(p.c)
 }
 
+// Tree represents the syntax tree of an entire source code file
+// Note: Tree instances are not thread safe;
+// you must copy a tree if you want to use it on multiple threads simultaneously.
 type Tree struct{ c *C.TSTree }
 
+// Copy returns a new copy of a tree
 func (t *Tree) Copy() *Tree {
 	newTree := &Tree{C.ts_tree_copy(t.c)}
 	runtime.SetFinalizer(newTree, deleteTree)
 	return newTree
 }
 
+// RootNode returns root node of a tree
 func (t *Tree) RootNode() *Node {
 	ptr := C.ts_tree_root_node(t.c)
 	return &Node{ptr, t}
@@ -126,10 +137,12 @@ func (t *Tree) Edit(i EditInput) {
 	C.ts_tree_edit(t.c, cEditInput)
 }
 
+// Language defines how to parse a particular programming language
 type Language struct {
 	ptr unsafe.Pointer
 }
 
+// NewLanguage creates new Language from c pointer
 func NewLanguage(ptr unsafe.Pointer) *Language {
 	return &Language{ptr}
 }
@@ -146,6 +159,9 @@ func (l *Language) SymbolCount() uint32 {
 	return uint32(C.ts_language_symbol_count((*C.TSLanguage)(l.ptr)))
 }
 
+// Node represents a single node in the syntax tree
+// It tracks its start and end positions in the source code,
+// as well as its relation to other nodes like its parent, siblings and children.
 type Node struct {
 	c C.TSNode
 	t *Tree // keep pointer on tree becase node is valid only as long as tree is
