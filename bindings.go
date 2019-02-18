@@ -21,7 +21,7 @@ func Parse(content []byte, lang *Language) *Node {
 	cTree := C.ts_parser_parse_string(cParser, nil, input, C.uint32_t(len(content)))
 	ptr := C.ts_tree_root_node(cTree)
 
-	return &Node{ptr, &Tree{cTree}}
+	return &Node{ptr, &Tree{cTree, make(map[C.TSNode]*Node)}}
 }
 
 // Parser produces concrete syntax tree based on source code using Language
@@ -53,7 +53,10 @@ func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 	}
 
 	input := (*C.char)(C.CBytes(content))
-	newTree := &Tree{C.ts_parser_parse_string(p.c, cTree, input, C.uint32_t(len(content)))}
+	newTree := &Tree{
+		C.ts_parser_parse_string(p.c, cTree, input, C.uint32_t(len(content))),
+		make(map[C.TSNode]*Node),
+	}
 	runtime.SetFinalizer(newTree, deleteTree)
 	return newTree
 }
@@ -119,11 +122,15 @@ type Range struct {
 // Tree represents the syntax tree of an entire source code file
 // Note: Tree instances are not thread safe;
 // you must copy a tree if you want to use it on multiple threads simultaneously.
-type Tree struct{ c *C.TSTree }
+type Tree struct {
+	c *C.TSTree
+	// most probably better save node.id
+	cache map[C.TSNode]*Node
+}
 
 // Copy returns a new copy of a tree
 func (t *Tree) Copy() *Tree {
-	newTree := &Tree{C.ts_tree_copy(t.c)}
+	newTree := &Tree{C.ts_tree_copy(t.c), make(map[C.TSNode]*Node)}
 	runtime.SetFinalizer(newTree, deleteTree)
 	return newTree
 }
@@ -131,10 +138,25 @@ func (t *Tree) Copy() *Tree {
 // RootNode returns root node of a tree
 func (t *Tree) RootNode() *Node {
 	ptr := C.ts_tree_root_node(t.c)
-	return &Node{ptr, t}
+	return t.cachedNode(ptr)
+}
+
+func (t *Tree) cachedNode(ptr C.TSNode) *Node {
+	if ptr.id == nil {
+		return nil
+	}
+
+	if n, ok := t.cache[ptr]; ok {
+		return n
+	}
+
+	n := &Node{ptr, t}
+	t.cache[ptr] = n
+	return n
 }
 
 func deleteTree(t *Tree) {
+	t.cache = nil
 	C.ts_tree_delete(t.c)
 }
 
@@ -257,7 +279,7 @@ func (n Node) String() string {
 	return C.GoString(ptr)
 }
 
-func (n Node) Equal(other Node) bool {
+func (n Node) Equal(other *Node) bool {
 	return bool(C.ts_node_eq(n.c, other.c))
 }
 
@@ -283,26 +305,17 @@ func (n Node) HasError() bool {
 
 func (n Node) Parent() *Node {
 	nn := C.ts_node_parent(n.c)
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }
 
 func (n Node) Child(idx int) *Node {
 	nn := C.ts_node_child(n.c, C.uint32_t(idx))
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }
 
 func (n Node) NamedChild(idx int) *Node {
 	nn := C.ts_node_named_child(n.c, C.uint32_t(idx))
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }
 
 func (n Node) ChildCount() uint32 {
@@ -315,32 +328,20 @@ func (n Node) NamedChildCount() uint32 {
 
 func (n Node) NextSibling() *Node {
 	nn := C.ts_node_next_sibling(n.c)
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }
 
 func (n Node) NextNamedSibling() *Node {
 	nn := C.ts_node_next_named_sibling(n.c)
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }
 
 func (n Node) PrevSibling() *Node {
 	nn := C.ts_node_prev_sibling(n.c)
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }
 
 func (n Node) PrevNamedSibling() *Node {
 	nn := C.ts_node_prev_named_sibling(n.c)
-	if nn.id == nil {
-		return nil
-	}
-	return &Node{nn, n.t}
+	return n.t.cachedNode(nn)
 }

@@ -169,3 +169,21 @@ func TestIncludedRanges(t *testing.T) {
 		jsTree.RootNode().String(),
 	)
 }
+
+func TestSameNode(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := sitter.NewParser()
+	parser.SetLanguage(javascript.GetLanguage())
+	tree := parser.Parse([]byte("let a = 1"))
+
+	n1 := tree.RootNode()
+	n2 := tree.RootNode()
+
+	assert.True(n1 == n2)
+
+	n1 = tree.RootNode().NamedChild(0)
+	n2 = tree.RootNode().NamedChild(0)
+
+	assert.True(n1 == n2)
+}
