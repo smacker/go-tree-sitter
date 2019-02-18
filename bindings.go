@@ -169,8 +169,8 @@ type EditInput struct {
 	NewEndPoint Point
 }
 
-func (t *Tree) Edit(i EditInput) {
-	cEditInput := &C.TSInputEdit{
+func (i EditInput) c() *C.TSInputEdit {
+	return &C.TSInputEdit{
 		start_byte:   C.uint32_t(i.StartIndex),
 		old_end_byte: C.uint32_t(i.OldEndIndex),
 		new_end_byte: C.uint32_t(i.NewEndIndex),
@@ -187,8 +187,10 @@ func (t *Tree) Edit(i EditInput) {
 			column: C.uint32_t(i.OldEndPoint.Column),
 		},
 	}
+}
 
-	C.ts_tree_edit(t.c, cEditInput)
+func (t *Tree) Edit(i EditInput) {
+	C.ts_tree_edit(t.c, i.c())
 }
 
 // Language defines how to parse a particular programming language
@@ -344,4 +346,8 @@ func (n Node) PrevSibling() *Node {
 func (n Node) PrevNamedSibling() *Node {
 	nn := C.ts_node_prev_named_sibling(n.c)
 	return n.t.cachedNode(nn)
+}
+
+func (n Node) Edit(i EditInput) {
+	C.ts_node_edit(&n.c, i.c())
 }
