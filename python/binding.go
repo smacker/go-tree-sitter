@@ -3,7 +3,7 @@ package python
 //#cgo LDFLAGS: ${SRCDIR}/../vendor/python/parser.o
 //#cgo LDFLAGS: ${SRCDIR}/../vendor/python/scanner.o
 //#cgo LDFLAGS: -lstdc++
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/include
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/lib/include
 //#include <stdlib.h>
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_python();

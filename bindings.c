@@ -1,4 +1,4 @@
-#include "tree_sitter/runtime.h"
+#include "tree_sitter/api.h"
 #include <string.h>
 #include <stdio.h>
 

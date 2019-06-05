@@ -3,7 +3,7 @@ package cpp
 //#cgo LDFLAGS: ${SRCDIR}/../vendor/cpp/parser.o
 //#cgo LDFLAGS: ${SRCDIR}/../vendor/cpp/scanner.o
 //#cgo LDFLAGS: -lstdc++
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/include
+//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/lib/include
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_cpp();
 import "C"
