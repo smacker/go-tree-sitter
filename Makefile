@@ -1,18 +1,18 @@
 # directory to download dependencies in
 vendor_dir = vendor
 
-# sha of the commit in tree-sitter (it doesn't have tags)
-tree_sitter_sha = fd39568823ba2c41644df3d213cc925822cac04a
+# tree-sitter runtime version
+tree_sitter_version = 0.14.7
 
 # list of versions per grammar
-bash_version = v0.13.6
-c_version = v0.13.10
-cpp_version = v0.13.11
+bash_version = v0.13.9
+c_version = v0.13.13
+cpp_version = v0.13.15
 go_version = v0.13.3
 java_version = v0.13.0
 javascript_version = v0.13.10
-python_version = v0.13.6
-ruby_version = v0.13.11
+python_version = v0.14.0
+ruby_version = v0.13.14
 
 all: | $(vendor_dir) tree-sitter grammars
 
@@ -25,7 +25,7 @@ tree_sitter_dir = $(vendor_dir)/tree-sitter
 tree_sitter_lib = $(vendor_dir)/tree_sitter.a
 
 # list of compiled files from C for tree-sitter
-targets = $(addprefix $(tree_sitter_dir)/src/runtime/,\
+targets = $(addprefix $(tree_sitter_dir)/lib/src/,\
 	get_changed_ranges.o \
 	language.o \
 	lexer.o \
@@ -38,23 +38,22 @@ targets = $(addprefix $(tree_sitter_dir)/src/runtime/,\
 	utf16.o \
 )
 
-utf8proc_target = $(tree_sitter_dir)/externals/utf8proc/utf8proc.o
+utf8proc_target = $(tree_sitter_dir)/lib/utf8proc/utf8proc.o
 
 .PHONY: tree-sitter
 tree-sitter: | $(tree_sitter_dir) $(tree_sitter_lib)
 
 $(tree_sitter_dir):
-	@git clone https://github.com/tree-sitter/tree-sitter.git $@; \
+	@git clone -b $(tree_sitter_version) https://github.com/tree-sitter/tree-sitter.git $@; \
 	cd $@; \
-	git checkout $(tree_sitter_sha); \
-	git submodule init externals/utf8proc; \
-	git submodule update externals/utf8proc;
+	git submodule init lib/utf8proc; \
+	git submodule update lib/utf8proc;
 
 $(tree_sitter_lib): $(targets) $(utf8proc_target)
 	ar rcs $@ $(targets) $(utf8proc_target)
 
 $(targets): %.o : %.c
-	gcc -I $(tree_sitter_dir)/include -I $(tree_sitter_dir)/externals/utf8proc -I $(tree_sitter_dir)/src -c $< -o $@
+	gcc -I $(tree_sitter_dir)/lib/include -I $(tree_sitter_dir)/lib/utf8proc -I $(tree_sitter_dir)/lib/src -c $< -o $@
 
 $(utf8proc_target): %.o : %.c
 	gcc -I $(@D) -c $< -o $@
@@ -91,10 +90,10 @@ $(targets_dirs):
 	mkdir -p $@
 
 $(targets_c): %.o: %.c
-	gcc -std=c99 -I vendor/tree-sitter/include -c $< -o $@
+	gcc -std=c99 -I $(tree_sitter_dir)/lib/include -c $< -o $@
 
 $(targets_cc): %.o: %.cc
-	g++ -I vendor/tree-sitter/include -c $< -o $@
+	g++ -I $(tree_sitter_dir)/lib/include -c $< -o $@
 
 $(patsubst %.o,%.c,$(targets_c)) $(patsubst %.o,%.cc,$(targets_cc)):
 	curl -s "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$(subst vendor/,,$(@D))/$($(subst vendor/,,$(@D))_version)/src/$(@F)" -o $@
