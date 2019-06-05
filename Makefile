@@ -24,22 +24,6 @@ $(vendor_dir):
 tree_sitter_dir = $(vendor_dir)/tree-sitter
 tree_sitter_lib = $(vendor_dir)/tree_sitter.a
 
-# list of compiled files from C for tree-sitter
-targets = $(addprefix $(tree_sitter_dir)/lib/src/,\
-	get_changed_ranges.o \
-	language.o \
-	lexer.o \
-	node.o \
-	parser.o \
-	stack.o \
-	subtree.o \
-	tree_cursor.o \
-	tree.o \
-	utf16.o \
-)
-
-utf8proc_target = $(tree_sitter_dir)/lib/utf8proc/utf8proc.o
-
 .PHONY: tree-sitter
 tree-sitter: | $(tree_sitter_dir) $(tree_sitter_lib)
 
@@ -49,14 +33,12 @@ $(tree_sitter_dir):
 	git submodule init lib/utf8proc; \
 	git submodule update lib/utf8proc;
 
-$(tree_sitter_lib): $(targets) $(utf8proc_target)
-	ar rcs $@ $(targets) $(utf8proc_target)
-
-$(targets): %.o : %.c
-	gcc -I $(tree_sitter_dir)/lib/include -I $(tree_sitter_dir)/lib/utf8proc -I $(tree_sitter_dir)/lib/src -c $< -o $@
-
-$(utf8proc_target): %.o : %.c
-	gcc -I $(@D) -c $< -o $@
+$(tree_sitter_lib):
+	gcc -c -O3 -std=c99 \
+	-I $(tree_sitter_dir)/lib/src -I $(tree_sitter_dir)/lib/include -I $(tree_sitter_dir)/lib/utf8proc \
+	-c $(tree_sitter_dir)/lib/src/lib.c -o tree_sitter.o
+	ar rcs $@ tree_sitter.o
+	rm tree_sitter.o
 
 # grammars rules
 
