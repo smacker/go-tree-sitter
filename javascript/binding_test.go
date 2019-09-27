@@ -18,7 +18,7 @@ func TestGrammar(t *testing.T) {
 	tree := parser.Parse(sourceCode)
 
 	assert.Equal(
-		"(program (lexical_declaration (variable_declarator (identifier) (number))))",
+		"(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))",
 		tree.RootNode().String(),
 	)
 }

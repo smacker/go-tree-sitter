@@ -5,14 +5,14 @@ vendor_dir = vendor
 tree_sitter_version = 0.15.9
 
 # list of versions per grammar
-bash_version = v0.13.9
-c_version = v0.13.13
-cpp_version = v0.13.15
-go_version = v0.13.3
+bash_version = v0.16.0
+c_version = v0.15.2
+cpp_version = v0.15.0
+go_version = v0.15.0
 java_version = v0.13.0
-javascript_version = v0.13.10
-python_version = v0.14.0
-ruby_version = v0.13.14
+javascript_version = v0.15.1
+python_version = v0.15.0
+ruby_version = v0.15.2
 
 all: | $(vendor_dir) tree-sitter grammars
 

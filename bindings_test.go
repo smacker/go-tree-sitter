@@ -26,9 +26,9 @@ func TestRootNode(t *testing.T) {
 		Row:    0,
 		Column: 9,
 	}, n.EndPoint())
-	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (number))))", n.String())
+	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))", n.String())
 	assert.Equal("program", n.Type())
-	assert.Equal(sitter.Symbol(117), n.Symbol())
+	assert.Equal(sitter.Symbol(119), n.Symbol())
 
 	assert.Equal(false, n.IsNull())
 	assert.Equal(true, n.IsNamed())
@@ -62,11 +62,11 @@ func TestTree(t *testing.T) {
 	assert.Equal(uint32(0), n.StartByte())
 	assert.Equal(uint32(9), n.EndByte())
 	assert.Equal("program", n.Type())
-	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (number))))", n.String())
+	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))", n.String())
 
 	tree2 := parser.Parse([]byte("let a = 'a'"))
 	n = tree2.RootNode()
-	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (string))))", n.String())
+	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (string))))", n.String())
 
 	// change 'a' -> true
 	newText := []byte("let a = true")
@@ -95,16 +95,16 @@ func TestTree(t *testing.T) {
 
 	tree3 := parser.ParseWithTree(newText, tree2)
 	n = tree3.RootNode()
-	assert.Equal("(program (lexical_declaration (variable_declarator (identifier) (true))))", n.String())
+	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (true))))", n.String())
 }
 
 func TestLanguage(t *testing.T) {
 	assert := assert.New(t)
 	js := javascript.GetLanguage()
 
-	assert.True(js.SymbolCount() > 169)
-	assert.Equal(js.SymbolName(169), "class")
-	assert.Equal(js.SymbolType(169), sitter.SymbolTypeRegular)
+	assert.True(js.SymbolCount() > 171)
+	assert.Equal(js.SymbolName(171), "class_declaration")
+	assert.Equal(js.SymbolType(171), sitter.SymbolTypeRegular)
 
 	assert.Equal(sitter.SymbolTypeRegular.String(), "Regular")
 }
@@ -132,7 +132,7 @@ func TestSetOperationLimit(t *testing.T) {
 	assert := assert.New(t)
 
 	parser := sitter.NewParser()
-	assert.Equal(-1, parser.OperationLimit())
+	assert.Equal(0, parser.OperationLimit())
 
 	parser.SetOperationLimit(10)
 	assert.Equal(10, parser.OperationLimit())
@@ -165,7 +165,7 @@ func TestIncludedRanges(t *testing.T) {
 	jsTree := parser.Parse([]byte(code))
 
 	assert.Equal(
-		"(program (expression_statement (call_expression (member_expression (identifier) (property_identifier)) (arguments (string)))))",
+		"(program (expression_statement (call_expression function: (member_expression object: (identifier) property: (property_identifier)) arguments: (arguments (string)))))",
 		jsTree.RootNode().String(),
 	)
 }
