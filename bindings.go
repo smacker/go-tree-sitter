@@ -61,14 +61,14 @@ func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 	return newTree
 }
 
-// OperationLimit returns current operatation limit of the tree
+// OperationLimit returns the duration in microseconds that parsing is allowed to take
 func (p *Parser) OperationLimit() int {
-	return int(C.ts_parser_operation_limit(p.c))
+	return int(C.ts_parser_timeout_micros(p.c))
 }
 
-// SetOperationLimit limits the amount of work the parser does on any given call to parse()
+// SetOperationLimit limits the maximum duration in microseconds that parsing should be allowed to take before halting
 func (p *Parser) SetOperationLimit(limit int) {
-	C.ts_parser_set_operation_limit(p.c, C.ulong(limit))
+	C.ts_parser_set_timeout_micros(p.c, C.uint64_t(limit))
 }
 
 // Reset causes the parser to parse from scratch on the next call to parse, instead of resuming
