@@ -2,7 +2,7 @@
 vendor_dir = vendor
 
 # tree-sitter runtime version
-tree_sitter_version = 0.14.7
+tree_sitter_version = 0.15.9
 
 # list of versions per grammar
 bash_version = v0.13.9
@@ -71,14 +71,21 @@ grammars: $(targets_dirs) $(targets_c) $(targets_cc)
 $(targets_dirs):
 	mkdir -p $@
 
-$(targets_c): %.o: %.c
-	gcc -std=c99 -I $(tree_sitter_dir)/lib/include -c $< -o $@
+.SECONDEXPANSION:
+$(targets_c): %.o: %.c $$(dir %)tree_sitter/parser.h
+	gcc -std=c99 -I $(@D) -c $< -o $@
 
-$(targets_cc): %.o: %.cc
-	g++ -I $(tree_sitter_dir)/lib/include -c $< -o $@
+$(targets_cc): %.o: %.cc $$(dir %)tree_sitter/parser.h
+	g++ -I $(@D) -c $< -o $@
 
 $(patsubst %.o,%.c,$(targets_c)) $(patsubst %.o,%.cc,$(targets_cc)):
-	curl -s "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$(subst vendor/,,$(@D))/$($(subst vendor/,,$(@D))_version)/src/$(@F)" -o $@
+	$(eval lang := $(word 1,$(subst /, ,$(subst $(vendor_dir)/,,$(@D)))))
+	curl -s "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$(lang)/$($(lang)_version)/src/$(@F)" -o $@
+
+$(addsuffix tree_sitter/parser.h,$(sort $(dir $(targets_c)))):
+	mkdir "$(@D)"
+	$(eval lang := $(word 1,$(subst /, ,$(subst $(vendor_dir)/,,$(@D)))))
+	curl -s "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$(lang)/$($(lang)_version)/src/tree_sitter/$(@F)" -o $@
 
 clean:
 	rm -rf $(vendor_dir)
