@@ -47,6 +47,9 @@ func TestRootNode(t *testing.T) {
 
 	assert.NotNil(n.Child(0))
 	assert.NotNil(n.NamedChild(0))
+	assert.Nil(n.ChildByFieldName("unknown"))
+
+	assert.NotNil(n.NamedChild(0).NamedChild(0).ChildByFieldName("name"))
 }
 
 func TestTree(t *testing.T) {

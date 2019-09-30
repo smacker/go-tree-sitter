@@ -328,6 +328,11 @@ func (n Node) NamedChildCount() uint32 {
 	return uint32(C.ts_node_named_child_count(n.c))
 }
 
+func (n Node) ChildByFieldName(name string) *Node {
+	nn := C.ts_node_child_by_field_name(n.c, C.CString(name), C.uint32_t(len(name)))
+	return n.t.cachedNode(nn)
+}
+
 func (n Node) NextSibling() *Node {
 	nn := C.ts_node_next_sibling(n.c)
 	return n.t.cachedNode(nn)
