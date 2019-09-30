@@ -77,10 +77,6 @@ func funcName(content []byte, n *sitter.Node) string {
 		return ""
 	}
 
-	c := n.NamedChild(0)
-	if c == nil {
-		return ""
-	}
-
-	return string(content[c.StartByte():c.EndByte()])
+	ident := n.ChildByFieldName("name")
+	return string(content[ident.StartByte():ident.EndByte()])
 }
