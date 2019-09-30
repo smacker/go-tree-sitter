@@ -25,7 +25,7 @@ func main() {
 	iter := sitter.NewNamedIterator(n, sitter.DFSMode)
 	var funcs []*sitter.Node
 	iter.ForEach(func(n *sitter.Node) error {
-		if n.Type() == "function" {
+		if n.Type() == "function_declaration" {
 			fmt.Println("-", funcName(input, n))
 			funcs = append(funcs, n)
 		}
@@ -73,7 +73,7 @@ func funcName(content []byte, n *sitter.Node) string {
 		return ""
 	}
 
-	if n.Type() != "function" {
+	if n.Type() != "function_declaration" {
 		return ""
 	}
 
