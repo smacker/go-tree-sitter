@@ -1,9 +1,5 @@
 package ruby
 
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/ruby/parser.o
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/ruby/scanner.o
-//#cgo LDFLAGS: -lstdc++
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/lib/include
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_ruby();
 import "C"

@@ -1,7 +1,5 @@
 package c
 
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/c/parser.o
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/lib/include
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_c();
 import "C"

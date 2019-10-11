@@ -1,8 +1,5 @@
 package javascript
 
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/javascript/parser.o
-//#cgo LDFLAGS: ${SRCDIR}/../vendor/javascript/scanner.o
-//#cgo CFLAGS: -I${SRCDIR}/../vendor/tree-sitter/lib/include
 //#include "tree_sitter/parser.h"
 //TSLanguage *tree_sitter_javascript();
 import "C"
