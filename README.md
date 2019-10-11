@@ -5,12 +5,6 @@
 
 Golang bindings for [tree-sitter](https://github.com/tree-sitter/tree-sitter)
 
-```bash
-$ go get -d github.com/smacker/go-tree-sitter
-$ cd $GOPATH/src/github.com/smacker/go-tree-sitter
-$ make
-```
-
 ## Usage
 
 Create a parser with that grammar:
