@@ -14,31 +14,15 @@ javascript_version = v0.15.1
 python_version = v0.15.0
 ruby_version = v0.15.2
 
-all: | $(vendor_dir) tree-sitter grammars
-
-$(vendor_dir):
-	mkdir -p $@
+all: grammars
 
 # tree-sitter rules
 
-tree_sitter_dir = $(vendor_dir)/tree-sitter
-tree_sitter_lib = $(vendor_dir)/tree_sitter.a
-
-.PHONY: tree-sitter
-tree-sitter: | $(tree_sitter_dir) $(tree_sitter_lib)
-
-$(tree_sitter_dir):
+$(vendor_dir)/tree-sitter:
 	@git clone -b $(tree_sitter_version) https://github.com/tree-sitter/tree-sitter.git $@; \
 	cd $@; \
 	git submodule init lib/utf8proc; \
 	git submodule update lib/utf8proc;
-
-$(tree_sitter_lib):
-	gcc -c -O3 -std=c99 \
-	-I $(tree_sitter_dir)/lib/src -I $(tree_sitter_dir)/lib/include -I $(tree_sitter_dir)/lib/utf8proc \
-	-c $(tree_sitter_dir)/lib/src/lib.c -o tree_sitter.o
-	ar rcs $@ tree_sitter.o
-	rm tree_sitter.o
 
 # grammars rules
 
