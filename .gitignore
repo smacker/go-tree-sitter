@@ -1,1 +1,11 @@
-/vendor
+/vendor/*
+!/vendor/tree-sitter
+/vendor/tree-sitter/*
+!/vendor/tree-sitter/lib
+/vendor/tree-sitter/lib/*
+!/vendor/tree-sitter/lib/include
+!/vendor/tree-sitter/lib/src
+!/vendor/tree-sitter/lib/utf8proc
+/vendor/tree-sitter/lib/utf8proc/*
+!/vendor/tree-sitter/lib/utf8proc/utf8proc.h
+!/vendor/tree-sitter/lib/utf8proc/*.c
