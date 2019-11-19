@@ -95,7 +95,7 @@ func (p *Parser) SetIncludedRanges(ranges []Range) {
 			end_byte:   C.uint32_t(r.EndByte),
 		}
 	}
-	C.ts_parser_set_included_ranges(p.c, (*C.TSRange)(unsafe.Pointer(&ranges[0])), C.uint(len(ranges)))
+	C.ts_parser_set_included_ranges(p.c, (*C.TSRange)(unsafe.Pointer(&cRanges[0])), C.uint(len(ranges)))
 }
 
 // Debug enables debug output to stderr
