@@ -7,11 +7,6 @@ set -e
 function download_sitter() {
     rm -rf vendor
     git clone -b $1 https://github.com/tree-sitter/tree-sitter.git vendor/tree-sitter
-	(
-        cd vendor/tree-sitter
-        git submodule init lib/utf8proc
-        git submodule update lib/utf8proc
-    )
 }
 
 function download_grammar() {
@@ -31,7 +26,7 @@ function download_grammar() {
     done
 }
 
-download_sitter 0.15.9
+download_sitter 0.15.13
 
 download_grammar bash v0.16.0 parser.c scanner.cc
 download_grammar c v0.15.2 parser.c

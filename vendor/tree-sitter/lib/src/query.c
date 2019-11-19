@@ -3,7 +3,7 @@
 #include "./array.h"
 #include "./bits.h"
 #include "./point.h"
-#include "utf8proc.h"
+#include "./tree_cursor.h"
 #include <wctype.h>
 
 /*
@@ -36,7 +36,8 @@ typedef struct {
   TSSymbol symbol;
   TSFieldId field;
   uint16_t capture_id;
-  uint16_t depth;
+  uint16_t depth: 15;
+  bool contains_captures: 1;
 } QueryStep;
 
 /*
@@ -112,6 +113,7 @@ struct TSQuery {
   const TSLanguage *language;
   uint16_t max_capture_count;
   uint16_t wildcard_root_pattern_count;
+  TSSymbol *symbol_map;
 };
 
 /*
@@ -147,16 +149,22 @@ static const uint16_t MAX_STATE_COUNT = 32;
 
 // Advance to the next unicode code point in the stream.
 static bool stream_advance(Stream *self) {
-  if (self->input >= self->end) return false;
   self->input += self->next_size;
-  int size = utf8proc_iterate(
-    (const uint8_t *)self->input,
-    self->end - self->input,
-    &self->next
-  );
-  if (size <= 0) return false;
-  self->next_size = size;
-  return true;
+  if (self->input < self->end) {
+    uint32_t size = ts_decode_utf8(
+      (const uint8_t *)self->input,
+      self->end - self->input,
+      &self->next
+    );
+    if (size > 0) {
+      self->next_size = size;
+      return true;
+    }
+  } else {
+    self->next_size = 0;
+    self->next = '\0';
+  }
+  return false;
 }
 
 // Reset the stream to the given input position, represented as a pointer
@@ -194,7 +202,7 @@ static void stream_skip_whitespace(Stream *stream) {
 }
 
 static bool stream_is_ident_start(Stream *stream) {
-  return iswalpha(stream->next) || stream->next == '_' || stream->next == '-';
+  return iswalnum(stream->next) || stream->next == '_' || stream->next == '-';
 }
 
 static void stream_scan_identifier(Stream *stream) {
@@ -320,6 +328,7 @@ static TSSymbol ts_query_intern_node_name(
   uint32_t length,
   TSSymbolType symbol_type
 ) {
+  if (!strncmp(name, "ERROR", length)) return ts_builtin_sym_error;
   uint32_t symbol_count = ts_language_symbol_count(self->language);
   for (TSSymbol i = 0; i < symbol_count; i++) {
     if (ts_language_symbol_type(self->language, i) != symbol_type) continue;
@@ -396,6 +405,23 @@ static inline void ts_query__pattern_map_insert(
   }));
 }
 
+static void ts_query__finalize_steps(TSQuery *self) {
+  for (unsigned i = 0; i < self->steps.size; i++) {
+    QueryStep *step = &self->steps.contents[i];
+    uint32_t depth = step->depth;
+    if (step->capture_id != NONE) {
+      step->contains_captures = true;
+    } else {
+      step->contains_captures = false;
+      for (unsigned j = i + 1; j < self->steps.size; j++) {
+        QueryStep *s = &self->steps.contents[j];
+        if (s->depth == PATTERN_DONE_MARKER || s->depth <= depth) break;
+        if (s->capture_id != NONE) step->contains_captures = true;
+      }
+    }
+  }
+}
+
 // Parse a single predicate associated with a pattern, adding it to the
 // query's internal `predicate_steps` array. Predicates are arbitrary
 // S-expressions associated with a pattern which are meant to be handled at
@@ -415,6 +441,7 @@ static TSQueryError ts_query_parse_predicate(
   for (;;) {
     if (stream->next == ')') {
       stream_advance(stream);
+      stream_skip_whitespace(stream);
       array_back(&self->predicates_by_pattern)->length++;
       array_push(&self->predicate_steps, ((TSQueryPredicateStep) {
         .type = TSQueryPredicateStepTypeDone,
@@ -458,7 +485,7 @@ static TSQueryError ts_query_parse_predicate(
       // Parse the string content
       const char *string_content = stream->input;
       while (stream->next != '"') {
-        if (!stream_advance(stream)) {
+        if (stream->next == '\n' || !stream_advance(stream)) {
           stream_reset(stream, string_content - 1);
           return TSQueryErrorSyntax;
         }
@@ -585,6 +612,7 @@ static TSQueryError ts_query_parse_pattern(
       .symbol = symbol,
       .field = 0,
       .capture_id = NONE,
+      .contains_captures = false,
     }));
 
     // Parse the child patterns
@@ -630,6 +658,7 @@ static TSQueryError ts_query_parse_pattern(
       .symbol = symbol,
       .field = 0,
       .capture_id = NONE,
+      .contains_captures = false,
     }));
 
     if (stream->next != '"') return TSQueryErrorSyntax;
@@ -680,6 +709,7 @@ static TSQueryError ts_query_parse_pattern(
       .depth = depth,
       .symbol = WILDCARD_SYMBOL,
       .field = 0,
+      .contains_captures = false,
     }));
   }
 
@@ -721,6 +751,27 @@ TSQuery *ts_query_new(
   uint32_t *error_offset,
   TSQueryError *error_type
 ) {
+  // Work around the fact that multiple symbols can currently be
+  // associated with the same name, due to "simple aliases".
+  // In the next language ABI version, this map should be contained
+  // within the language itself.
+  uint32_t symbol_count = ts_language_symbol_count(language);
+  TSSymbol *symbol_map = ts_malloc(sizeof(TSSymbol) * symbol_count);
+  for (unsigned i = 0; i < symbol_count; i++) {
+    const char *name = ts_language_symbol_name(language, i);
+    const TSSymbolType symbol_type = ts_language_symbol_type(language, i);
+
+    symbol_map[i] = i;
+    for (unsigned j = 0; j < i; j++) {
+      if (ts_language_symbol_type(language, j) == symbol_type) {
+        if (!strcmp(name, ts_language_symbol_name(language, j))) {
+          symbol_map[i] = j;
+          break;
+        }
+      }
+    }
+  }
+
   TSQuery *self = ts_malloc(sizeof(TSQuery));
   *self = (TSQuery) {
     .steps = array_new(),
@@ -729,6 +780,7 @@ TSQuery *ts_query_new(
     .predicate_values = symbol_table_new(),
     .predicate_steps = array_new(),
     .predicates_by_pattern = array_new(),
+    .symbol_map = symbol_map,
     .wildcard_root_pattern_count = 0,
     .max_capture_count = 0,
     .language = language,
@@ -738,7 +790,7 @@ TSQuery *ts_query_new(
   Stream stream = stream_new(source, source_len);
   stream_skip_whitespace(&stream);
   uint32_t start_step_index;
-  for (;;) {
+  while (stream.input < stream.end) {
     start_step_index = self->steps.size;
     uint32_t capture_count = 0;
     array_push(&self->start_bytes_by_pattern, stream.input - source);
@@ -773,10 +825,9 @@ TSQuery *ts_query_new(
     if (capture_count > self->max_capture_count) {
       self->max_capture_count = capture_count;
     }
-
-    if (stream.input == stream.end) break;
   }
 
+  ts_query__finalize_steps(self);
   return self;
 }
 
@@ -789,6 +840,7 @@ void ts_query_delete(TSQuery *self) {
     array_delete(&self->start_bytes_by_pattern);
     symbol_table_delete(&self->captures);
     symbol_table_delete(&self->predicate_values);
+    ts_free(self->symbol_map);
     ts_free(self);
   }
 }
@@ -836,6 +888,23 @@ uint32_t ts_query_start_byte_for_pattern(
   uint32_t pattern_index
 ) {
   return self->start_bytes_by_pattern.contents[pattern_index];
+}
+
+void ts_query_disable_capture(
+  TSQuery *self,
+  const char *name,
+  uint32_t length
+) {
+  int id = symbol_table_id_for_name(&self->captures, name, length);
+  if (id != -1) {
+    for (unsigned i = 0; i < self->steps.size; i++) {
+      QueryStep *step = &self->steps.contents[i];
+      if (step->capture_id == id) {
+        step->capture_id = NONE;
+      }
+    }
+  }
+  ts_query__finalize_steps(self);
 }
 
 /***************
@@ -969,7 +1038,7 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
       } else if (ts_tree_cursor_goto_parent(&self->cursor)) {
         self->depth--;
       } else {
-        return false;
+        return self->finished_states.size > 0;
       }
     } else {
       bool can_have_later_siblings;
@@ -981,6 +1050,9 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
       );
       TSNode node = ts_tree_cursor_current_node(&self->cursor);
       TSSymbol symbol = ts_node_symbol(node);
+      if (symbol != ts_builtin_sym_error) {
+        symbol = self->query->symbol_map[symbol];
+      }
 
       // If this node is before the selected range, then avoid descending
       // into it.
@@ -1113,11 +1185,15 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
         // capturing different children. If this pattern step could match
         // later children within the same parent, then this query state
         // cannot simply be updated in place. It must be split into two
-        // states: one that captures this node, and one which skips over
-        // this node, to preserve the possibility of capturing later
+        // states: one that matches this node, and one which skips over
+        // this node, to preserve the possibility of matching later
         // siblings.
         QueryState *next_state = state;
-        if (step->depth > 0 && later_sibling_can_match) {
+        if (
+          step->depth > 0 &&
+          step->contains_captures &&
+          later_sibling_can_match
+        ) {
           LOG(
             "  split state. pattern:%u, step:%u\n",
             state->pattern_index,
@@ -1156,7 +1232,7 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
         next_state->step_index++;
         QueryStep *next_step = step + 1;
         if (next_step->depth == PATTERN_DONE_MARKER) {
-          LOG("finish pattern %u\n", next_state->pattern_index);
+          LOG("  finish pattern %u\n", next_state->pattern_index);
 
           next_state->id = self->next_state_id++;
           array_push(&self->finished_states, *next_state);
@@ -1203,6 +1279,23 @@ bool ts_query_cursor_next_match(
   capture_list_pool_release(&self->capture_list_pool, state->capture_list_id);
   array_erase(&self->finished_states, 0);
   return true;
+}
+
+void ts_query_cursor_remove_match(
+  TSQueryCursor *self,
+  uint32_t match_id
+) {
+  for (unsigned i = 0; i < self->finished_states.size; i++) {
+    const QueryState *state = &self->finished_states.contents[i];
+    if (state->id == match_id) {
+      capture_list_pool_release(
+        &self->capture_list_pool,
+        state->capture_list_id
+      );
+      array_erase(&self->finished_states, i);
+      return;
+    }
+  }
 }
 
 bool ts_query_cursor_next_capture(
