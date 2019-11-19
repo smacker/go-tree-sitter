@@ -17,6 +17,9 @@ function download_grammar() {
     if [ "$lang" == "go" ]; then
         target="golang"
     fi
+    if [ "$lang" == "c-sharp" ]; then
+        target="csharp"
+    fi
 
     echo "downloading $lang $version"
     mkdir -p "$target/tree_sitter"
@@ -38,3 +41,4 @@ download_grammar php v0.13.1 parser.c scanner.cc
 download_grammar python v0.15.0 parser.c scanner.cc
 download_grammar ruby v0.15.2 parser.c scanner.cc
 download_grammar rust v0.15.1 parser.c scanner.c
+download_grammar c-sharp master parser.c
