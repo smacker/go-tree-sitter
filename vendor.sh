@@ -34,5 +34,7 @@ download_grammar cpp v0.15.0 parser.c scanner.cc
 download_grammar go v0.15.0 parser.c
 download_grammar java v0.13.0 parser.c
 download_grammar javascript v0.15.1 parser.c scanner.c
+download_grammar php v0.13.1 parser.c scanner.cc
 download_grammar python v0.15.0 parser.c scanner.cc
 download_grammar ruby v0.15.2 parser.c scanner.cc
+download_grammar rust v0.15.1 parser.c scanner.c
