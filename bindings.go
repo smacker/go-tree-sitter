@@ -7,6 +7,8 @@ package sitter
 import "C"
 import (
 	"runtime"
+	"reflect"
+	"fmt"
 	"unsafe"
 )
 
@@ -225,7 +227,7 @@ func (l *Language) SymbolCount() uint32 {
 // as well as its relation to other nodes like its parent, siblings and children.
 type Node struct {
 	c C.TSNode
-	t *Tree // keep pointer on tree becase node is valid only as long as tree is
+	t *Tree // keep pointer on tree because node is valid only as long as tree is
 }
 
 type Symbol = C.TSSymbol
@@ -387,4 +389,145 @@ func (n Node) PrevNamedSibling() *Node {
 // Edit the node to keep it in-sync with source code that has been edited.
 func (n Node) Edit(i EditInput) {
 	C.ts_node_edit(&n.c, i.c())
+}
+
+// QueryErrorType - value that indicates the type of QueryError.
+type QueryErrorType int
+const (
+	QueryErrorNone QueryErrorType = iota
+	QueryErrorSyntax
+	QueryErrorNodeType
+	QueryErrorField
+	QueryErrorCapture
+)
+
+// QueryError - if there is an error in the query,
+// then the Offset argument will be set to the byte offset of the error,
+// and the Type argument will be set to a value that indicates the type of error.
+type QueryError struct {
+	Offset uint32
+	Type QueryErrorType
+}
+func (qe *QueryError) Error() string {
+	switch qe.Type {
+	case QueryErrorNone:
+		return ""
+
+	case QueryErrorSyntax:
+		return fmt.Sprintf("syntax error (offset: %d)", qe.Offset)
+
+	case QueryErrorNodeType:
+		return fmt.Sprintf("node type error (offset: %d)", qe.Offset)
+
+	case QueryErrorField:
+		return fmt.Sprintf("field error (offset: %d)", qe.Offset)
+
+	case QueryErrorCapture:
+		return fmt.Sprintf("capture error (offset: %d)", qe.Offset)
+
+	default:
+		return fmt.Sprintf("unknown error (offset: %d)", qe.Offset)
+	}
+}
+
+// Query API
+type Query struct { c *C.TSQuery }
+
+// NewQuery creates a query by specifying a string containing one or more patterns.
+func NewQuery(pattern []byte, lang *Language) (*Query, *QueryError) {
+	var (
+		erroff C.uint32_t
+		errtype C.TSQueryError
+	)
+
+	c := C.ts_query_new(
+		(*C.struct_TSLanguage)(lang.ptr),
+		(*C.char)(C.CBytes(pattern)),
+		C.uint32_t(len(pattern)),
+		&erroff,
+		&errtype,
+	)
+	if errtype != C.TSQueryError(QueryErrorNone) {
+		return nil, &QueryError{Offset: uint32(erroff), Type: QueryErrorType(errtype)}
+	}
+
+	q := &Query{c}
+	runtime.SetFinalizer(q, deleteQuery)
+
+	return q, nil
+}
+func deleteQuery(q *Query) {
+	C.ts_query_delete(q.c)
+}
+
+// QueryCursor carries the state needed for processing the queries.
+type QueryCursor struct {c *C.TSQueryCursor }
+
+// NewQueryCursor creates a query cursor.
+func NewQueryCursor() *QueryCursor {
+	qc := &QueryCursor{C.ts_query_cursor_new()}
+	runtime.SetFinalizer(qc, deleteQueryCursor)
+
+	return qc
+}
+func deleteQueryCursor(qc *QueryCursor) {
+	C.ts_query_cursor_delete(qc.c)
+}
+
+// Exec executes the query on a given syntax node.
+func (qc *QueryCursor) Exec(q *Query, n *Node) {
+	C.ts_query_cursor_exec(qc.c, q.c, n.c)
+}
+
+// QueryCapture
+type QueryCapture struct {
+	Index uint32
+	Node *Node
+}
+
+// QueryMatch - you can then iterate over the matches.
+type QueryMatch struct {
+	Id uint32
+	PatternIndex uint16
+	Captures []QueryCapture
+}
+
+// NextMatch iterates over matches.
+// This function will return (nil, false) when there are no more matches.
+// Otherwise, it will populate the QueryMatch with data
+// about which pattern matched and which nodes were captured.
+func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
+	var (
+		cqm C.TSQueryMatch
+		cqc []C.TSQueryCapture
+	)
+
+	if ok := C.ts_query_cursor_next_match(qc.c, &cqm); !bool(ok) {
+		return nil, false
+	}
+
+	qm := &QueryMatch{
+		Id: uint32(cqm.id),
+		PatternIndex: uint16(cqm.pattern_index),
+	}
+
+	count := int(cqm.capture_count)
+	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
+	slice.Cap = count
+	slice.Len = count
+	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
+	for _, c := range cqc {
+		idx := uint32(c.index)
+		node := &Node{
+			c: c.node,
+			t: &Tree{
+				c: c.node.tree,
+				cache: make(map[C.TSNode]*Node),
+			},
+		}
+
+		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
+	}
+
+	return qm, true
 }

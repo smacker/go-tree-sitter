@@ -7,7 +7,9 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/golang"
+	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
+	"github.com/smacker/go-tree-sitter/python"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -189,4 +191,60 @@ func TestSameNode(t *testing.T) {
 	n2 = tree.RootNode().NamedChild(0)
 
 	assert.True(n1 == n2)
+}
+
+func TestQuery(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := sitter.NewParser()
+	parser.SetLanguage(python.GetLanguage())
+	py := `
+	# Standard library imports
+	import datetime
+	import os
+
+	# Third party imports
+	from flask import Flask
+	from flask_restful import Api
+	from flask_sqlalchemy import SQLAlchemy
+
+	another = import_file('relative_subdir/another.py')
+	`
+	tree := parser.Parse([]byte(py))
+	root := tree.RootNode()
+
+	q, err := sitter.NewQuery([]byte("((import_from_statement) @constant)"), python.GetLanguage())
+	assert.Nil(err)
+
+	qc := sitter.NewQueryCursor()
+	qc.Exec(q, root)
+
+	expCaps := []string{
+		"from flask import Flask",
+		"from flask_restful import Api",
+		"from flask_sqlalchemy import SQLAlchemy",
+	}
+	actCaps := []string{}
+	for {
+		m, ok := qc.NextMatch()
+		if !ok {
+			break
+		}
+
+		for _, c := range m.Captures {
+			actCaps = append(actCaps, py[c.Node.StartByte():c.Node.EndByte()])
+		}
+	}
+
+	assert.EqualValues(expCaps, actCaps)
+}
+
+func TestQueryError(t *testing.T) {
+	assert := assert.New(t)
+
+	q, err := sitter.NewQuery([]byte("((import_statement) name: (identifier))"), java.GetLanguage())
+
+	assert.Nil(q)
+	assert.NotNil(err)
+	assert.EqualValues(&sitter.QueryError{Offset: 0x02, Type: sitter.QueryErrorNodeType}, err)
 }
