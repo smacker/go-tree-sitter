@@ -190,6 +190,7 @@ func (i EditInput) c() *C.TSInputEdit {
 	}
 }
 
+// Edit the syntax tree to keep it in sync with source code that has been edited.
 func (t *Tree) Edit(i EditInput) {
 	C.ts_tree_edit(t.c, i.c())
 }
@@ -204,14 +205,17 @@ func NewLanguage(ptr unsafe.Pointer) *Language {
 	return &Language{ptr}
 }
 
+// SymbolName returns a node type string for the given Symbol.
 func (l *Language) SymbolName(s Symbol) string {
 	return C.GoString(C.ts_language_symbol_name((*C.TSLanguage)(l.ptr), s))
 }
 
+// SymbolType returns named, anonymous, or a hidden type for a Symbol.
 func (l *Language) SymbolType(s Symbol) SymbolType {
 	return SymbolType(C.ts_language_symbol_type((*C.TSLanguage)(l.ptr), s))
 }
 
+// SymbolCount returns the number of distinct field names in the language.
 func (l *Language) SymbolCount() uint32 {
 	return uint32(C.ts_language_symbol_count((*C.TSLanguage)(l.ptr)))
 }
@@ -244,14 +248,17 @@ func (t SymbolType) String() string {
 	return symbolTypeNames[t]
 }
 
+// StartByte returns the node's start byte.
 func (n Node) StartByte() uint32 {
 	return uint32(C.ts_node_start_byte(n.c))
 }
 
+// EndByte returns the node's end byte.
 func (n Node) EndByte() uint32 {
 	return uint32(C.ts_node_end_byte(n.c))
 }
 
+// StartPoint returns the node's start position in terms of rows and columns.
 func (n Node) StartPoint() Point {
 	p := C.ts_node_start_point(n.c)
 	return Point{
@@ -260,6 +267,7 @@ func (n Node) StartPoint() Point {
 	}
 }
 
+// EndPoint returns the node's end position in terms of rows and columns.
 func (n Node) EndPoint() Point {
 	p := C.ts_node_end_point(n.c)
 	return Point{
@@ -268,92 +276,115 @@ func (n Node) EndPoint() Point {
 	}
 }
 
+// Symbol returns the node's type as a Symbol.
 func (n Node) Symbol() Symbol {
 	return C.ts_node_symbol(n.c)
 }
 
+// Type returns the node's type as a string.
 func (n Node) Type() string {
 	return C.GoString(C.ts_node_type(n.c))
 }
 
+// String returns an S-expression representing the node as a string.
 func (n Node) String() string {
 	ptr := C.ts_node_string(n.c)
 	defer C.free(unsafe.Pointer(ptr))
 	return C.GoString(ptr)
 }
 
+// Equal checks if two nodes are identical.
 func (n Node) Equal(other *Node) bool {
 	return bool(C.ts_node_eq(n.c, other.c))
 }
 
+// IsNull checks if the node is null.
 func (n Node) IsNull() bool {
 	return bool(C.ts_node_is_null(n.c))
 }
 
+// IsNamed checks if the node is *named*.
+// Named nodes correspond to named rules in the grammar,
+// whereas *anonymous* nodes correspond to string literals in the grammar.
 func (n Node) IsNamed() bool {
 	return bool(C.ts_node_is_named(n.c))
 }
 
+// IsMissing checks if the node is *missing*.
+// Missing nodes are inserted by the parser in order to recover from certain kinds of syntax errors.
 func (n Node) IsMissing() bool {
 	return bool(C.ts_node_is_missing(n.c))
 }
 
+// HasChanges checks if a syntax node has been edited.
 func (n Node) HasChanges() bool {
 	return bool(C.ts_node_has_changes(n.c))
 }
 
+// HasError check if the node is a syntax error or contains any syntax errors.
 func (n Node) HasError() bool {
 	return bool(C.ts_node_has_error(n.c))
 }
 
+// Parent returns the node's immediate parent.
 func (n Node) Parent() *Node {
 	nn := C.ts_node_parent(n.c)
 	return n.t.cachedNode(nn)
 }
 
+// Child returns the node's child at the given index, where zero represents the first child.
 func (n Node) Child(idx int) *Node {
 	nn := C.ts_node_child(n.c, C.uint32_t(idx))
 	return n.t.cachedNode(nn)
 }
 
+// NamedChild returns the node's *named* child at the given index.
 func (n Node) NamedChild(idx int) *Node {
 	nn := C.ts_node_named_child(n.c, C.uint32_t(idx))
 	return n.t.cachedNode(nn)
 }
 
+// ChildCount returns the node's number of children.
 func (n Node) ChildCount() uint32 {
 	return uint32(C.ts_node_child_count(n.c))
 }
 
+// NamedChildCount returns the node's number of *named* children.
 func (n Node) NamedChildCount() uint32 {
 	return uint32(C.ts_node_named_child_count(n.c))
 }
 
+// ChildByFieldName returns the node's child with the given field name.
 func (n Node) ChildByFieldName(name string) *Node {
 	nn := C.ts_node_child_by_field_name(n.c, C.CString(name), C.uint32_t(len(name)))
 	return n.t.cachedNode(nn)
 }
 
+// NextSibling returns the node's next sibling.
 func (n Node) NextSibling() *Node {
 	nn := C.ts_node_next_sibling(n.c)
 	return n.t.cachedNode(nn)
 }
 
+// NextNamedSibling returns the node's next *named* sibling.
 func (n Node) NextNamedSibling() *Node {
 	nn := C.ts_node_next_named_sibling(n.c)
 	return n.t.cachedNode(nn)
 }
 
+// PrevSibling returns the node's previous sibling.
 func (n Node) PrevSibling() *Node {
 	nn := C.ts_node_prev_sibling(n.c)
 	return n.t.cachedNode(nn)
 }
 
+// PrevNamedSibling returns the node's previous *named* sibling.
 func (n Node) PrevNamedSibling() *Node {
 	nn := C.ts_node_prev_named_sibling(n.c)
 	return n.t.cachedNode(nn)
 }
 
+// Edit the node to keep it in-sync with source code that has been edited.
 func (n Node) Edit(i EditInput) {
 	C.ts_node_edit(&n.c, i.c())
 }
