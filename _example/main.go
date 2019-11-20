@@ -22,15 +22,22 @@ func main() {
 	fmt.Println("Root children:", n.ChildCount())
 
 	fmt.Println("\nFunctions in input:")
-	iter := sitter.NewNamedIterator(n, sitter.DFSMode)
+	q, _ := sitter.NewQuery([]byte("(function_declaration) @func"), javascript.GetLanguage())
+	qc := sitter.NewQueryCursor()
+	qc.Exec(q, n)
+
 	var funcs []*sitter.Node
-	iter.ForEach(func(n *sitter.Node) error {
-		if n.Type() == "function_declaration" {
-			fmt.Println("-", funcName(input, n))
-			funcs = append(funcs, n)
+	for {
+		m, ok := qc.NextMatch()
+		if !ok {
+			break
 		}
-		return nil
-	})
+
+		for _, c := range m.Captures {
+			funcs = append(funcs, c.Node)
+			fmt.Println("-", funcName(input, c.Node))
+		}
+	}
 
 	fmt.Println("\nEdit input")
 	input = []byte("function hello() { console.log('hello') }; function goodbye(){ console.log('goodbye') }")
