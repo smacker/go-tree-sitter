@@ -38,3 +38,24 @@ download_grammar php v0.13.1 parser.c scanner.cc
 download_grammar python v0.15.0 parser.c scanner.cc
 download_grammar ruby v0.15.2 parser.c scanner.cc
 download_grammar rust v0.15.1 parser.c scanner.c
+
+# typescript is special as it contains 2 different grammars
+function download_typescript() {
+    version=$1; shift
+    langs="typescript tsx"
+    files="parser.c scanner.c"
+
+    echo "downloading typescript $version"
+    mkdir -p "typescript/common"
+    curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/common/scanner.h" -o "typescript/common/scanner.h"
+    for lang in $langs; do
+        mkdir -p "typescript/$lang/tree_sitter"
+        curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/$lang/src/tree_sitter/parser.h" -o "typescript/$lang/tree_sitter/parser.h"
+        for file in $files; do
+            curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/$lang/src/$file" -o "typescript/$lang/$file"
+            sed -i '' -e 's/\.\.\/\.\./\.\./g' "typescript/$lang/$file"
+        done
+    done
+}
+
+download_typescript v0.15.1
