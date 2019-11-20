@@ -7,9 +7,7 @@ import (
 
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/golang"
-	"github.com/smacker/go-tree-sitter/java"
 	"github.com/smacker/go-tree-sitter/javascript"
-	"github.com/smacker/go-tree-sitter/python"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -194,37 +192,64 @@ func TestSameNode(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
+	js := `
+	class Person {
+		constructor(firstName, parent) {}
+		getName() {}
+	}
+	`
+
+	// test single capture
+	testCaptures(t, js, "(class_declaration name: (identifier) @class-name)", []string{
+		"Person",
+	})
+
+	// test multiple captures
+	testCaptures(t, js, "(method_definition name: * @method-name)", []string{
+		"constructor",
+		"getName",
+	})
+
+	// test match only
+	parser := sitter.NewParser()
+	parser.SetLanguage(javascript.GetLanguage())
+	tree := parser.Parse([]byte(js))
+	root := tree.RootNode()
+
+	q, err := sitter.NewQuery([]byte("(identifier) (method_definition)"), javascript.GetLanguage())
+	assert.Nil(t, err)
+
+	qc := sitter.NewQueryCursor()
+	qc.Exec(q, root)
+
+	var matched int
+	for {
+		_, ok := qc.NextMatch()
+		if !ok {
+			break
+		}
+
+		matched++
+	}
+
+	assert.Equal(t, 5, matched)
+}
+
+func testCaptures(t *testing.T, body, sq string, expected []string) {
 	assert := assert.New(t)
 
 	parser := sitter.NewParser()
-	parser.SetLanguage(python.GetLanguage())
-	py := `
-	# Standard library imports
-	import datetime
-	import os
-
-	# Third party imports
-	from flask import Flask
-	from flask_restful import Api
-	from flask_sqlalchemy import SQLAlchemy
-
-	another = import_file('relative_subdir/another.py')
-	`
-	tree := parser.Parse([]byte(py))
+	parser.SetLanguage(javascript.GetLanguage())
+	tree := parser.Parse([]byte(body))
 	root := tree.RootNode()
 
-	q, err := sitter.NewQuery([]byte("((import_from_statement) @constant)"), python.GetLanguage())
+	q, err := sitter.NewQuery([]byte(sq), javascript.GetLanguage())
 	assert.Nil(err)
 
 	qc := sitter.NewQueryCursor()
 	qc.Exec(q, root)
 
-	expCaps := []string{
-		"from flask import Flask",
-		"from flask_restful import Api",
-		"from flask_sqlalchemy import SQLAlchemy",
-	}
-	actCaps := []string{}
+	actual := []string{}
 	for {
 		m, ok := qc.NextMatch()
 		if !ok {
@@ -232,17 +257,17 @@ func TestQuery(t *testing.T) {
 		}
 
 		for _, c := range m.Captures {
-			actCaps = append(actCaps, py[c.Node.StartByte():c.Node.EndByte()])
+			actual = append(actual, body[c.Node.StartByte():c.Node.EndByte()])
 		}
 	}
 
-	assert.EqualValues(expCaps, actCaps)
+	assert.EqualValues(expected, actual)
 }
 
 func TestQueryError(t *testing.T) {
 	assert := assert.New(t)
 
-	q, err := sitter.NewQuery([]byte("((import_statement) name: (identifier))"), java.GetLanguage())
+	q, err := sitter.NewQuery([]byte("((unknown) name: (identifier))"), javascript.GetLanguage())
 
 	assert.Nil(q)
 	assert.NotNil(err)
