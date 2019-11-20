@@ -6,9 +6,9 @@ package sitter
 //#include "bindings.h"
 import "C"
 import (
-	"runtime"
-	"reflect"
 	"fmt"
+	"reflect"
+	"runtime"
 	"unsafe"
 )
 
@@ -393,6 +393,7 @@ func (n Node) Edit(i EditInput) {
 
 // QueryErrorType - value that indicates the type of QueryError.
 type QueryErrorType int
+
 const (
 	QueryErrorNone QueryErrorType = iota
 	QueryErrorSyntax
@@ -406,7 +407,7 @@ const (
 // and the Type argument will be set to a value that indicates the type of error.
 type QueryError struct {
 	Offset uint32
-	Type QueryErrorType
+	Type   QueryErrorType
 }
 
 func (qe *QueryError) Error() string {
@@ -432,13 +433,13 @@ func (qe *QueryError) Error() string {
 }
 
 // Query API
-type Query struct { c *C.TSQuery }
+type Query struct{ c *C.TSQuery }
 
 // NewQuery creates a query by specifying a string containing one or more patterns.
 // In case of error returns QueryError.
 func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 	var (
-		erroff C.uint32_t
+		erroff  C.uint32_t
 		errtype C.TSQueryError
 	)
 
@@ -463,11 +464,14 @@ func deleteQuery(q *Query) {
 }
 
 // QueryCursor carries the state needed for processing the queries.
-type QueryCursor struct {c *C.TSQueryCursor }
+type QueryCursor struct {
+	c *C.TSQueryCursor
+	t *Tree
+}
 
 // NewQueryCursor creates a query cursor.
 func NewQueryCursor() *QueryCursor {
-	qc := &QueryCursor{C.ts_query_cursor_new()}
+	qc := &QueryCursor{c: C.ts_query_cursor_new(), t: nil}
 	runtime.SetFinalizer(qc, deleteQueryCursor)
 
 	return qc
@@ -478,20 +482,21 @@ func deleteQueryCursor(qc *QueryCursor) {
 
 // Exec executes the query on a given syntax node.
 func (qc *QueryCursor) Exec(q *Query, n *Node) {
+	qc.t = n.t
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
 }
 
 // QueryCapture
 type QueryCapture struct {
 	Index uint32
-	Node *Node
+	Node  *Node
 }
 
 // QueryMatch - you can then iterate over the matches.
 type QueryMatch struct {
-	Id uint32
+	Id           uint32
 	PatternIndex uint16
-	Captures []QueryCapture
+	Captures     []QueryCapture
 }
 
 // NextMatch iterates over matches.
@@ -509,7 +514,7 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 	}
 
 	qm := &QueryMatch{
-		Id: uint32(cqm.id),
+		Id:           uint32(cqm.id),
 		PatternIndex: uint16(cqm.pattern_index),
 	}
 
@@ -520,14 +525,7 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
 	for _, c := range cqc {
 		idx := uint32(c.index)
-		node := &Node{
-			c: c.node,
-			t: &Tree{
-				c: c.node.tree,
-				cache: make(map[C.TSNode]*Node),
-			},
-		}
-
+		node := qc.t.cachedNode(c.node)
 		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
 	}
 
