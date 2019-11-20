@@ -408,6 +408,7 @@ type QueryError struct {
 	Offset uint32
 	Type QueryErrorType
 }
+
 func (qe *QueryError) Error() string {
 	switch qe.Type {
 	case QueryErrorNone:
@@ -434,7 +435,8 @@ func (qe *QueryError) Error() string {
 type Query struct { c *C.TSQuery }
 
 // NewQuery creates a query by specifying a string containing one or more patterns.
-func NewQuery(pattern []byte, lang *Language) (*Query, *QueryError) {
+// In case of error returns QueryError.
+func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 	var (
 		erroff C.uint32_t
 		errtype C.TSQueryError
