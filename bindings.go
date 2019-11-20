@@ -486,7 +486,7 @@ func (qc *QueryCursor) Exec(q *Query, n *Node) {
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
 }
 
-// QueryCapture
+// QueryCapture is a captured node by a query with an index
 type QueryCapture struct {
 	Index uint32
 	Node  *Node
@@ -494,7 +494,7 @@ type QueryCapture struct {
 
 // QueryMatch - you can then iterate over the matches.
 type QueryMatch struct {
-	Id           uint32
+	ID           uint32
 	PatternIndex uint16
 	Captures     []QueryCapture
 }
@@ -514,7 +514,7 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 	}
 
 	qm := &QueryMatch{
-		Id:           uint32(cqm.id),
+		ID:           uint32(cqm.id),
 		PatternIndex: uint16(cqm.pattern_index),
 	}
 
