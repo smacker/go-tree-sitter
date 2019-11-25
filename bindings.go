@@ -458,8 +458,36 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 
 	return q, nil
 }
+
 func deleteQuery(q *Query) {
 	C.ts_query_delete(q.c)
+}
+
+// FindAll returns all query captures for a node
+func (q *Query) FindAll(n *Node) map[string][]*Node {
+	qc := NewQueryCursor()
+	qc.Exec(q, n)
+
+	var length C.uint32_t
+	names := make(map[uint32]string)
+	result := make(map[string][]*Node)
+	for {
+		m, ok := qc.NextMatch()
+		if !ok {
+			break
+		}
+
+		for _, c := range m.Captures {
+			if _, ok := names[c.Index]; !ok {
+				names[c.Index] = C.GoString(C.ts_query_capture_name_for_id(q.c, C.uint32_t(c.Index), &length))
+			}
+
+			name := names[c.Index]
+			result[name] = append(result[name], c.Node)
+		}
+	}
+
+	return result
 }
 
 // QueryCursor carries the state needed for processing the queries.

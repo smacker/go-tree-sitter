@@ -23,20 +23,9 @@ func main() {
 
 	fmt.Println("\nFunctions in input:")
 	q, _ := sitter.NewQuery([]byte("(function_declaration) @func"), javascript.GetLanguage())
-	qc := sitter.NewQueryCursor()
-	qc.Exec(q, n)
-
-	var funcs []*sitter.Node
-	for {
-		m, ok := qc.NextMatch()
-		if !ok {
-			break
-		}
-
-		for _, c := range m.Captures {
-			funcs = append(funcs, c.Node)
-			fmt.Println("-", funcName(input, c.Node))
-		}
+	funcs := q.FindAll(n)["func"]
+	for _, f := range funcs {
+		fmt.Println("-", funcName(input, f))
 	}
 
 	fmt.Println("\nEdit input")

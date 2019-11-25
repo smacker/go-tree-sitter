@@ -277,6 +277,29 @@ func TestQueryError(t *testing.T) {
 	assert.EqualValues(&sitter.QueryError{Offset: 0x02, Type: sitter.QueryErrorNodeType}, err)
 }
 
+func TestQueryFindAll(t *testing.T) {
+	assert := assert.New(t)
+
+	js := `
+	class Person {
+		constructor(firstName, parent) {}
+		getName() {}
+	}
+	`
+	node := sitter.Parse([]byte(js), javascript.GetLanguage())
+
+	q, err := sitter.NewQuery([]byte(`
+		(class_declaration name: (identifier) @class-name)
+		(method_definition name: * @method-name)
+	`), javascript.GetLanguage())
+	assert.Nil(err)
+
+	result := q.FindAll(node)
+	assert.Len(result, 2)
+	assert.Len(result["class-name"], 1)
+	assert.Len(result["method-name"], 2)
+}
+
 func doWorkLifetime(t testing.TB, n *sitter.Node) {
 	for i := 0; i < 100; i++ {
 		// this will trigger an actual bug (if it still there)
