@@ -1,7 +1,9 @@
 package sitter_test
 
 import (
+	"bytes"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/smacker/go-tree-sitter/golang"
 	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRootNode(t *testing.T) {
@@ -272,4 +275,36 @@ func TestQueryError(t *testing.T) {
 	assert.Nil(q)
 	assert.NotNil(err)
 	assert.EqualValues(&sitter.QueryError{Offset: 0x02, Type: sitter.QueryErrorNodeType}, err)
+}
+
+func doWorkLifetime(t testing.TB, n *sitter.Node) {
+	for i := 0; i < 100; i++ {
+		// this will trigger an actual bug (if it still there)
+		s := n.String()
+		require.Equal(t, "(program (variable_declaration (variable_declarator name: (identifier))))", s)
+	}
+}
+
+func TestParserLifetime(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 10; i++ {
+				p := sitter.NewParser()
+				p.SetLanguage(javascript.GetLanguage())
+				data := []byte("var a;")
+				// create some memory/CPU pressure
+				data = append(data, bytes.Repeat([]byte(" "), 1024*1024)...)
+
+				root := p.Parse(data).RootNode()
+				// make sure we have no references to the Parser
+				p = nil
+				// must be a separate function, and it shouldn't accept the parser, only the Tree
+				doWorkLifetime(t, root)
+			}
+		}()
+	}
+	wg.Wait()
 }
