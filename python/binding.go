@@ -1,6 +1,6 @@
 package python
 
-//#include "tree_sitter/parser.h"
+//#include "parser.h"
 //TSLanguage *tree_sitter_python();
 import "C"
 import (

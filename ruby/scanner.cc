@@ -1,4 +1,4 @@
-#include <tree_sitter/parser.h>
+#include "parser.h"
 #include <vector>
 #include <string>
 #include <cwctype>

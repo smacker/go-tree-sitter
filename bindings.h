@@ -1,7 +1,9 @@
 #ifndef TREE_SITTER_BINDINGS_H_
 #define TREE_SITTER_BINDINGS_H_
 
-#include "tree_sitter/api.h"
+#include "api.h"
+#include "unicode.h"
+#include "unicode.h"
 
 TSLogger stderr_logger_new(bool include_lexing);
 

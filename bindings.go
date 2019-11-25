@@ -1,8 +1,5 @@
 package sitter
 
-//#cgo CFLAGS: -g -I${SRCDIR}/vendor/tree-sitter/lib/include
-//#cgo CFLAGS: -g -I${SRCDIR}/vendor/tree-sitter/lib/src
-//#include "vendor/tree-sitter/lib/src/lib.c"
 //#include "bindings.h"
 import "C"
 import (

@@ -5,8 +5,27 @@
 set -e
 
 function download_sitter() {
-    rm -rf vendor
+    rm -rf vendor;
     git clone -b $1 https://github.com/tree-sitter/tree-sitter.git vendor/tree-sitter
+    for file in ./vendor/tree-sitter/lib/include/tree_sitter/*.h; do
+        cp "$file" ./
+    done
+    for file in ./vendor/tree-sitter/lib/src/*.c; do
+        cp "$file" ./
+    done
+    for file in ./vendor/tree-sitter/lib/src/*.h; do
+        cp "$file" ./
+    done
+    for file in ./vendor/tree-sitter/lib/src/unicode/*.h; do
+        cp "$file" ./
+    done
+    rm -rf vendor
+
+    rm ./lib.c
+    sed -i 's/"tree_sitter\//"/g' ./*.c
+    sed -i 's/"tree_sitter\//"/g' ./*.h
+    sed -i 's/"unicode\//"/g' ./*.h
+    sed -i 's/"api\.h"/"api\.h"\n#include "unicode\.h"/g' ./*.h
 }
 
 function download_grammar() {
@@ -19,10 +38,10 @@ function download_grammar() {
     fi
 
     echo "downloading $lang $version"
-    mkdir -p "$target/tree_sitter"
-    curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$lang/$version/src/tree_sitter/parser.h" -o "$target/tree_sitter/parser.h"
+    curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$lang/$version/src/tree_sitter/parser.h" -o "$target/parser.h"
     for file in $files; do
         curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$lang/$version/src/$file" -o "$target/$file"
+        sed -i 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
     done
 }
 
@@ -46,15 +65,15 @@ function download_typescript() {
     files="parser.c scanner.c"
 
     echo "downloading typescript $version"
-    mkdir -p "typescript/common"
-    curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/common/scanner.h" -o "typescript/common/scanner.h"
     for lang in $langs; do
-        mkdir -p "typescript/$lang/tree_sitter"
-        curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/$lang/src/tree_sitter/parser.h" -o "typescript/$lang/tree_sitter/parser.h"
+        curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/common/scanner.h" -o "typescript/$lang/scanner.h"
+        curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/$lang/src/tree_sitter/parser.h" -o "typescript/$lang/parser.h"
         for file in $files; do
             curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/$version/$lang/src/$file" -o "typescript/$lang/$file"
-            sed -i '' -e 's/\.\.\/\.\./\.\./g' "typescript/$lang/$file"
+            sed -i 's/"\.\.\/\.\.\/common\/scanner\.h"/"scanner\.h"/g' "typescript/$lang/$file"
+            sed -i 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "typescript/$lang/$file"
         done
+        sed -i 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "typescript/$lang/scanner.h"
     done
 }
 

@@ -1,6 +1,6 @@
 package rust
 
-//#include "tree_sitter/parser.h"
+//#include "parser.h"
 //TSLanguage *tree_sitter_rust();
 import "C"
 import (
