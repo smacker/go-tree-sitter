@@ -19,6 +19,7 @@ function download_sitter() {
     cp vendor/lib/src/unicode/*.h ./
     rm -rf vendor
 
+    # avoid "duplicate symbols" errors as go compiles all c files separately
     rm ./lib.c
 }
 
