@@ -4,7 +4,7 @@
 
 set -e
 
-sitter_version=0.15.13
+sitter_version=0.15.14
 grammars=(
     "bash;v0.16.0;parser.c;scanner.cc"
     "c;v0.15.2;parser.c"
@@ -14,7 +14,7 @@ grammars=(
     "javascript;v0.15.1;parser.c;scanner.c"
     "php;v0.13.1;parser.c;scanner.cc"
     "python;v0.15.0;parser.c;scanner.cc"
-    "ruby;v0.15.2;parser.c;scanner.cc"
+    "ruby;v0.15.3;parser.c;scanner.cc"
     "rust;v0.15.1;parser.c;scanner.c"
     "typescript;v0.15.1"
 )

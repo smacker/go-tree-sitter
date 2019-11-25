@@ -18,7 +18,7 @@ func TestGrammar(t *testing.T) {
 	tree := parser.Parse(sourceCode)
 
 	assert.Equal(
-		"(program (method_call (identifier) (argument_list (integer))))",
+		"(program (method_call method: (identifier) arguments: (argument_list (integer))))",
 		tree.RootNode().String(),
 	)
 }

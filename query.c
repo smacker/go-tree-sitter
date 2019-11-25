@@ -323,22 +323,6 @@ static uint16_t symbol_table_insert_name(
  * Query
  *********/
 
-static TSSymbol ts_query_intern_node_name(
-  const TSQuery *self,
-  const char *name,
-  uint32_t length,
-  TSSymbolType symbol_type
-) {
-  if (!strncmp(name, "ERROR", length)) return ts_builtin_sym_error;
-  uint32_t symbol_count = ts_language_symbol_count(self->language);
-  for (TSSymbol i = 0; i < symbol_count; i++) {
-    if (ts_language_symbol_type(self->language, i) != symbol_type) continue;
-    const char *symbol_name = ts_language_symbol_name(self->language, i);
-    if (!strncmp(symbol_name, name, length) && !symbol_name[length]) return i;
-  }
-  return 0;
-}
-
 // The `pattern_map` contains a mapping from TSSymbol values to indices in the
 // `steps` array. For a given syntax node, the `pattern_map` makes it possible
 // to quickly find the starting steps of all of the patterns whose root matches
@@ -593,11 +577,11 @@ static TSQueryError ts_query_parse_pattern(
       const char *node_name = stream->input;
       stream_scan_identifier(stream);
       uint32_t length = stream->input - node_name;
-      symbol = ts_query_intern_node_name(
-        self,
+      symbol = ts_language_symbol_for_name(
+        self->language,
         node_name,
         length,
-        TSSymbolTypeRegular
+        true
       );
       if (!symbol) {
         stream_reset(stream, node_name);
@@ -644,11 +628,11 @@ static TSQueryError ts_query_parse_pattern(
     uint32_t length = stream->input - string_content;
 
     // Add a step for the node
-    TSSymbol symbol = ts_query_intern_node_name(
-      self,
+    TSSymbol symbol = ts_language_symbol_for_name(
+      self->language,
       string_content,
       length,
-      TSSymbolTypeAnonymous
+      false
     );
     if (!symbol) {
       stream_reset(stream, string_content);
@@ -1015,7 +999,7 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
         QueryState *state = &self->states.contents[i];
         QueryStep *step = &self->query->steps.contents[state->step_index];
 
-        if (state->start_depth + step->depth > self->depth) {
+        if ((uint32_t)state->start_depth + (uint32_t)step->depth > self->depth) {
           LOG(
             "  failed to match. pattern:%u, step:%u\n",
             state->pattern_index,
@@ -1147,7 +1131,7 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
 
         // Check that the node matches all of the criteria for the next
         // step of the pattern.if (
-        if (state->start_depth + step->depth != self->depth) continue;
+        if ((uint32_t)state->start_depth + (uint32_t)step->depth != self->depth) continue;
 
         // Determine if this node matches this step of the pattern, and also
         // if this node can have later siblings that match this step of the
@@ -1242,7 +1226,7 @@ static inline bool ts_query_cursor__advance(TSQueryCursor *self) {
             i--;
             n--;
           } else {
-            array_pop(&self->states);
+            self->states.size--;
           }
         }
       }
