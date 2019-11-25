@@ -260,7 +260,7 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 		}
 
 		for _, c := range m.Captures {
-			actual = append(actual, body[c.Node.StartByte():c.Node.EndByte()])
+			actual = append(actual, c.Node.Content([]byte(body)))
 		}
 	}
 
