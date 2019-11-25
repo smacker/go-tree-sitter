@@ -4,6 +4,21 @@
 
 set -e
 
+sitter_version=0.15.13
+grammars=(
+    "bash;v0.16.0;parser.c;scanner.cc"
+    "c;v0.15.2;parser.c"
+    "cpp;v0.15.0;parser.c;scanner.cc"
+    "go;v0.15.0;parser.c"
+    "java;v0.13.0;parser.c"
+    "javascript;v0.15.1;parser.c;scanner.c"
+    "php;v0.13.1;parser.c;scanner.cc"
+    "python;v0.15.0;parser.c;scanner.cc"
+    "ruby;v0.15.2;parser.c;scanner.cc"
+    "rust;v0.15.1;parser.c;scanner.c"
+    "typescript;v0.15.1"
+)
+
 function download_sitter() {
     rm -rf vendor
     git clone -b $1 https://github.com/tree-sitter/tree-sitter.git vendor
@@ -41,19 +56,6 @@ function download_grammar() {
     done
 }
 
-download_sitter 0.15.13
-
-download_grammar bash v0.16.0 parser.c scanner.cc
-download_grammar c v0.15.2 parser.c
-download_grammar cpp v0.15.0 parser.c scanner.cc
-download_grammar go v0.15.0 parser.c
-download_grammar java v0.13.0 parser.c
-download_grammar javascript v0.15.1 parser.c scanner.c
-download_grammar php v0.13.1 parser.c scanner.cc
-download_grammar python v0.15.0 parser.c scanner.cc
-download_grammar ruby v0.15.2 parser.c scanner.cc
-download_grammar rust v0.15.1 parser.c scanner.c
-
 # typescript is special as it contains 2 different grammars
 function download_typescript() {
     version=$1; shift
@@ -74,4 +76,54 @@ function download_typescript() {
     done
 }
 
-download_typescript v0.15.1
+function download() {
+    download_sitter $sitter_version
+
+    for grammar in ${grammars[@]}; do
+        if [[ "$grammar" == typescript* ]]; then
+            download_typescript `echo $grammar | cut -d';' -f2`
+        else
+            download_grammar `echo $grammar | tr ';' ' '`
+        fi
+    done
+}
+
+function print_grammar_version() {
+    lang=$1
+    version=$2
+    remote_version=`git ls-remote --tags --refs --sort='-v:refname' "https://github.com/tree-sitter/tree-sitter-$lang.git" v\* | head -n 1 | cut -f2 | cut -d'/' -f3`
+    outdated=""
+    if [ "$version" != "$remote_version" ]; then
+        outdated="outdated"
+    fi
+
+    echo -e "$lang\t\tvendored: $version\tremote: $remote_version\t$outdated"
+}
+
+function check-updates() {
+    remote_version=`git ls-remote --tags --refs --sort='-v:refname' "https://github.com/tree-sitter/tree-sitter.git" | head -n 1 | cut -f2 | cut -d'/' -f3`
+    outdated=""
+    if [ "$sitter_version" != "$remote_version" ]; then
+        outdated="outdated"
+    fi
+    echo -e "tree-sitter\tvendored: $sitter_version\tremote: $remote_version\t$outdated"
+
+    for grammar in ${grammars[@]}; do
+        print_grammar_version `echo $grammar | tr ';' ' '`
+    done
+}
+
+function help() {
+    echo "this script supports 2 subcommands:"
+    echo "* check-updates - compares vendored versions with remote"
+    echo "* download - re-downloads vendored files"
+}
+
+case $1 in
+check-updates) check-updates
+;;
+download) download
+;;
+*) help
+;;
+esac
