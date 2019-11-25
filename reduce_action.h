@@ -7,7 +7,6 @@ extern "C" {
 
 #include "./array.h"
 #include "api.h"
-#include "unicode.h"
 
 typedef struct {
   uint32_t count;

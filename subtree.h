@@ -12,7 +12,6 @@ extern "C" {
 #include "./array.h"
 #include "./error_costs.h"
 #include "api.h"
-#include "unicode.h"
 #include "parser.h"
 
 static const TSStateId TS_TREE_STATE_NONE = USHRT_MAX;

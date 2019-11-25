@@ -8,7 +8,6 @@ extern "C" {
 #include "./length.h"
 #include "./subtree.h"
 #include "api.h"
-#include "unicode.h"
 #include "parser.h"
 
 typedef struct {

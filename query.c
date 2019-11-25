@@ -1,3 +1,4 @@
+#include "unicode.h"
 #include "api.h"
 #include "./alloc.h"
 #include "./array.h"

@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include "./point.h"
 #include "api.h"
-#include "unicode.h"
 
 typedef struct {
   uint32_t bytes;
