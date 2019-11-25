@@ -478,11 +478,12 @@ func (q *Query) FindAll(n *Node) map[string][]*Node {
 		}
 
 		for _, c := range m.Captures {
-			if _, ok := names[c.Index]; !ok {
-				names[c.Index] = C.GoString(C.ts_query_capture_name_for_id(q.c, C.uint32_t(c.Index), &length))
+			name, ok := names[c.Index]
+			if  !ok {
+				name = C.GoString(C.ts_query_capture_name_for_id(q.c, C.uint32_t(c.Index), &length))
+				names[c.Index] = name
 			}
 
-			name := names[c.Index]
 			result[name] = append(result[name], c.Node)
 		}
 	}
