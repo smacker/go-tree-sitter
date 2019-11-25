@@ -12,8 +12,8 @@ import (
 	"unsafe"
 )
 
-// Parse is shortcut for parsing bytes of source code
-// return root node and close function
+// Parse is a shortcut for parsing bytes of source code,
+// returns root node
 func Parse(content []byte, lang *Language) *Node {
 	p := NewParser()
 	p.SetLanguage(lang)
