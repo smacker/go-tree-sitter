@@ -15,16 +15,9 @@ import (
 // Parse is shortcut for parsing bytes of source code
 // return root node and close function
 func Parse(content []byte, lang *Language) *Node {
-	input := (*C.char)(C.CBytes(content))
-
-	cParser := C.ts_parser_new()
-	cLang := (*C.struct_TSLanguage)(lang.ptr)
-	C.ts_parser_set_language(cParser, cLang)
-
-	cTree := C.ts_parser_parse_string(cParser, nil, input, C.uint32_t(len(content)))
-	ptr := C.ts_tree_root_node(cTree)
-
-	return &Node{ptr, &Tree{cTree, make(map[C.TSNode]*Node)}}
+	p := NewParser()
+	p.SetLanguage(lang)
+	return p.Parse(content).RootNode()
 }
 
 // Parser produces concrete syntax tree based on source code using Language
@@ -55,13 +48,10 @@ func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
 		cTree = t.c
 	}
 
-	input := (*C.char)(C.CBytes(content))
-	newTree := &Tree{
-		C.ts_parser_parse_string(p.c, cTree, input, C.uint32_t(len(content))),
-		make(map[C.TSNode]*Node),
-	}
-	runtime.SetFinalizer(newTree, deleteTree)
-	return newTree
+	input := C.CBytes(content)
+	cTree = C.ts_parser_parse_string(p.c, cTree, (*C.char)(input), C.uint32_t(len(content)))
+	C.free(input)
+	return p.newTree(cTree)
 }
 
 // OperationLimit returns the duration in microseconds that parsing is allowed to take
@@ -122,10 +112,22 @@ type Range struct {
 	EndByte    uint32
 }
 
+// newTree creates a new tree object from a C pointer. The function will set a finalizer for the object,
+// thus no free is needed for it.
+func (p *Parser) newTree(c *C.TSTree) *Tree {
+	newTree := &Tree{p: p, c: c, cache: make(map[C.TSNode]*Node)}
+	runtime.SetFinalizer(newTree, deleteTree)
+	return newTree
+}
+
 // Tree represents the syntax tree of an entire source code file
 // Note: Tree instances are not thread safe;
 // you must copy a tree if you want to use it on multiple threads simultaneously.
 type Tree struct {
+	// p is a pointer to a Parser that produced the Tree. Only used to keep Parser alive.
+	// Otherwise Parser may be GC'ed (and deleted by the finalizer) while some Tree objects are still in use.
+	p *Parser
+
 	c *C.TSTree
 	// most probably better save node.id
 	cache map[C.TSNode]*Node
@@ -133,9 +135,7 @@ type Tree struct {
 
 // Copy returns a new copy of a tree
 func (t *Tree) Copy() *Tree {
-	newTree := &Tree{C.ts_tree_copy(t.c), make(map[C.TSNode]*Node)}
-	runtime.SetFinalizer(newTree, deleteTree)
-	return newTree
+	return t.p.newTree(C.ts_tree_copy(t.c))
 }
 
 // RootNode returns root node of a tree
@@ -443,13 +443,15 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 		errtype C.TSQueryError
 	)
 
+	input := C.CBytes(pattern)
 	c := C.ts_query_new(
 		(*C.struct_TSLanguage)(lang.ptr),
-		(*C.char)(C.CBytes(pattern)),
+		(*C.char)(input),
 		C.uint32_t(len(pattern)),
 		&erroff,
 		&errtype,
 	)
+	C.free(input)
 	if errtype != C.TSQueryError(QueryErrorNone) {
 		return nil, &QueryError{Offset: uint32(erroff), Type: QueryErrorType(errtype)}
 	}
