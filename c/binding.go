@@ -1,6 +1,6 @@
 package c
 
-//#include "tree_sitter/parser.h"
+//#include "parser.h"
 //TSLanguage *tree_sitter_c();
 import "C"
 import (

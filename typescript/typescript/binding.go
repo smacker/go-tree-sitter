@@ -1,6 +1,6 @@
 package typescript
 
-//#include "tree_sitter/parser.h"
+//#include "parser.h"
 //TSLanguage *tree_sitter_typescript();
 import "C"
 import (
