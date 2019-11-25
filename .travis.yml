@@ -1,6 +1,10 @@
 dist: xenial
 sudo: required
 
+branches:
+  only:
+    - master
+
 language: go
 
 go:
