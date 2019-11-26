@@ -308,3 +308,40 @@ func TestParserLifetime(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestTreeCursor(t *testing.T) {
+	assert := assert.New(t)
+
+	input := []byte(`let a = 1;`)
+
+	root := sitter.Parse(input, javascript.GetLanguage())
+	c := sitter.NewTreeCursor(root)
+
+	assert.True(c.CurrentNode() == root)
+	assert.Equal("", c.CurrentFieldName())
+
+	assert.False(c.GoToParent())
+	assert.False(c.GoToNextSibling())
+	assert.Equal(int64(-1), c.GoToFirstChildForByte(100))
+
+	assert.True(c.GoToFirstChild())
+	assert.Equal("lexical_declaration", c.CurrentNode().Type())
+	assert.True(c.GoToFirstChild())
+	assert.Equal("let", c.CurrentNode().Type())
+	assert.True(c.GoToNextSibling())
+	assert.Equal("variable_declarator", c.CurrentNode().Type())
+	assert.True(c.GoToFirstChild())
+	assert.Equal("identifier", c.CurrentNode().Type())
+	assert.Equal("name", c.CurrentFieldName())
+
+	assert.True(c.GoToParent())
+	assert.Equal("variable_declarator", c.CurrentNode().Type())
+	nodeForReset := c.CurrentNode()
+
+	assert.Equal(int64(2), c.GoToFirstChildForByte(7))
+	assert.Equal("number", c.CurrentNode().Type())
+
+	c.Reset(nodeForReset)
+	assert.Equal("variable_declarator", c.CurrentNode().Type())
+	assert.False(c.GoToParent())
+}
