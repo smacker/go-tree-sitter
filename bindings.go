@@ -388,6 +388,11 @@ func (n Node) Edit(i EditInput) {
 	C.ts_node_edit(&n.c, i.c())
 }
 
+// Content returns node's source code from input as a string
+func (n Node) Content(input []byte) string {
+	return string(input[n.StartByte():n.EndByte()])
+}
+
 // QueryErrorType - value that indicates the type of QueryError.
 type QueryErrorType int
 

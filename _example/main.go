@@ -84,6 +84,5 @@ func funcName(content []byte, n *sitter.Node) string {
 		return ""
 	}
 
-	ident := n.ChildByFieldName("name")
-	return string(content[ident.StartByte():ident.EndByte()])
+	return n.ChildByFieldName("name").Content(content)
 }
