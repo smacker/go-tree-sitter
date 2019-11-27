@@ -13,7 +13,7 @@ grammars=(
     "java;v0.13.0;parser.c"
     "javascript;v0.15.1;parser.c;scanner.c"
     "php;v0.13.1;parser.c;scanner.cc"
-    "python;v0.15.0;parser.c;scanner.cc"
+    "python;ba2b9d0790363f6162187f643e4e40acd62cf9dc;parser.c;scanner.cc"
     "ruby;v0.15.3;parser.c;scanner.cc"
     "rust;v0.15.1;parser.c;scanner.c"
     "typescript;v0.15.1"
