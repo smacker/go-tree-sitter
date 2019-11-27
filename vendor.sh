@@ -16,6 +16,7 @@ grammars=(
     "python;v0.15.0;parser.c;scanner.cc"
     "ruby;v0.15.3;parser.c;scanner.cc"
     "rust;v0.15.1;parser.c;scanner.c"
+    "c-sharp;adc4bd7d89a5ce58c89fbd4b44d009e7429d2ffd;parser.c"
     "typescript;v0.15.1"
 )
 
@@ -46,6 +47,10 @@ function download_grammar() {
     if [ "$lang" == "go" ]; then
         target="golang"
     fi
+    if [ "$lang" == "c-sharp" ]; then
+        target="csharp"
+    fi
+    mkdir -p "$target"
 
     echo "downloading $lang $version"
     curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$lang/$version/src/tree_sitter/parser.h" -o "$target/parser.h"
