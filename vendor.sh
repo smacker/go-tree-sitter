@@ -9,7 +9,7 @@ grammars=(
     "bash;v0.16.0;parser.c;scanner.cc"
     "c;v0.15.2;parser.c"
     "cpp;v0.15.0;parser.c;scanner.cc"
-    "go;v0.15.0;parser.c"
+    "go;v0.15.1;parser.c"
     "java;v0.13.0;parser.c"
     "javascript;v0.15.1;parser.c;scanner.c"
     "php;v0.13.1;parser.c;scanner.cc"
