@@ -18,7 +18,7 @@ func TestGrammar(t *testing.T) {
 	tree := parser.Parse(sourceCode)
 
 	assert.Equal(
-		"(compilation_unit (using_directive (qualified_name (identifier_name) (identifier_name))))",
+		"(compilation_unit (using_directive (qualified_name (identifier) (identifier))))",
 		tree.RootNode().String(),
 	)
 }

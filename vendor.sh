@@ -16,7 +16,7 @@ grammars=(
     "python;v0.15.1;parser.c;scanner.cc"
     "ruby;v0.15.3;parser.c;scanner.cc"
     "rust;v0.15.1;parser.c;scanner.c"
-    "c-sharp;adc4bd7d89a5ce58c89fbd4b44d009e7429d2ffd;parser.c"
+    "c-sharp;v0.15.0;parser.c"
     "typescript;v0.15.1"
 )
 
