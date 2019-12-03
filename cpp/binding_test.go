@@ -18,7 +18,7 @@ func TestGrammar(t *testing.T) {
 	tree := parser.Parse(sourceCode)
 
 	assert.Equal(
-		"(translation_unit (declaration (primitive_type) (init_declarator (identifier) (number_literal))))",
+		"(translation_unit (declaration type: (primitive_type) declarator: (init_declarator declarator: (identifier) value: (number_literal))))",
 		tree.RootNode().String(),
 	)
 }
