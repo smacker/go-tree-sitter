@@ -1,5 +1,6 @@
 package csharp
 
+//#cgo CFLAGS: -Wno-trigraphs
 //#include "parser.h"
 //TSLanguage *tree_sitter_c_sharp();
 import "C"
