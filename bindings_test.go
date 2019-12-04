@@ -1,4 +1,4 @@
-package sitter_test
+package sitter
 
 import (
 	"bytes"
@@ -7,9 +7,6 @@ import (
 	"testing"
 	"time"
 
-	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/golang"
-	"github.com/smacker/go-tree-sitter/javascript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,21 +14,21 @@ import (
 func TestRootNode(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
+	n := Parse([]byte("1 + 2"), getTestGrammar())
 
 	assert.Equal(uint32(0), n.StartByte())
-	assert.Equal(uint32(9), n.EndByte())
-	assert.Equal(sitter.Point{
+	assert.Equal(uint32(5), n.EndByte())
+	assert.Equal(Point{
 		Row:    0,
 		Column: 0,
 	}, n.StartPoint())
-	assert.Equal(sitter.Point{
+	assert.Equal(Point{
 		Row:    0,
-		Column: 9,
+		Column: 5,
 	}, n.EndPoint())
-	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))", n.String())
-	assert.Equal("program", n.Type())
-	assert.Equal(sitter.Symbol(119), n.Symbol())
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
+	assert.Equal("expression", n.Type())
+	assert.Equal(Symbol(7), n.Symbol())
 
 	assert.Equal(false, n.IsNull())
 	assert.Equal(true, n.IsNamed())
@@ -52,83 +49,81 @@ func TestRootNode(t *testing.T) {
 	assert.NotNil(n.NamedChild(0))
 	assert.Nil(n.ChildByFieldName("unknown"))
 
-	assert.NotNil(n.NamedChild(0).NamedChild(0).ChildByFieldName("name"))
+	assert.NotNil(n.NamedChild(0).ChildByFieldName("left"))
 }
 
 func TestTree(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
+	parser := NewParser()
 
 	parser.Debug()
-	parser.SetLanguage(javascript.GetLanguage())
-	tree := parser.Parse([]byte("let a = 1"))
+	parser.SetLanguage(getTestGrammar())
+	tree := parser.Parse([]byte("1 + 2"))
 	n := tree.RootNode()
 
 	assert.Equal(uint32(0), n.StartByte())
-	assert.Equal(uint32(9), n.EndByte())
-	assert.Equal("program", n.Type())
-	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))", n.String())
+	assert.Equal(uint32(5), n.EndByte())
+	assert.Equal("expression", n.Type())
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
 
-	tree2 := parser.Parse([]byte("let a = 'a'"))
-	n = tree2.RootNode()
-	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (string))))", n.String())
-
-	// change 'a' -> true
-	newText := []byte("let a = true")
-	tree2.Edit(sitter.EditInput{
-		StartIndex:  8,
-		OldEndIndex: 11,
-		NewEndIndex: 12,
-		StartPoint: sitter.Point{
+	// change 2 -> (3 + 3)
+	newText := []byte("1 + (3 + 3)")
+	tree.Edit(EditInput{
+		StartIndex:  4,
+		OldEndIndex: 5,
+		NewEndIndex: 11,
+		StartPoint: Point{
 			Row:    0,
-			Column: 8,
+			Column: 4,
 		},
-		OldEndPoint: sitter.Point{
+		OldEndPoint: Point{
+			Row:    0,
+			Column: 5,
+		},
+		NewEndPoint: Point{
 			Row:    0,
 			Column: 11,
-		},
-		NewEndPoint: sitter.Point{
-			Row:    0,
-			Column: 12,
 		},
 	})
 	// check that it changed tree
 	assert.True(n.HasChanges())
 	assert.True(n.Child(0).HasChanges())
-	assert.False(n.Child(0).Child(0).HasChanges()) // left side of tree didn't change
-	assert.True(n.Child(0).Child(1).HasChanges())
+	assert.False(n.Child(0).Child(0).HasChanges()) // left side of the sum didn't change
+	assert.True(n.Child(0).Child(2).HasChanges())
 
-	tree3 := parser.ParseWithTree(newText, tree2)
-	n = tree3.RootNode()
-	assert.Equal("(program (lexical_declaration (variable_declarator name: (identifier) value: (true))))", n.String())
+	tree2 := parser.ParseWithTree(newText, tree)
+	n = tree2.RootNode()
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (expression (sum left: (expression (number)) right: (expression (number)))))))", n.String())
 }
 
 func TestLanguage(t *testing.T) {
 	assert := assert.New(t)
-	js := javascript.GetLanguage()
+	js := getTestGrammar()
 
-	assert.True(js.SymbolCount() > 171)
-	assert.Equal(js.SymbolName(171), "class_declaration")
-	assert.Equal(js.SymbolType(171), sitter.SymbolTypeRegular)
+	assert.Equal(uint32(9), js.SymbolCount())
+	assert.Equal(js.SymbolName(3), "+")
+	assert.Equal(js.SymbolType(3), SymbolTypeAnonymous)
+	assert.Equal(js.SymbolName(4), "number")
+	assert.Equal(js.SymbolType(4), SymbolTypeRegular)
 
-	assert.Equal(sitter.SymbolTypeRegular.String(), "Regular")
+	assert.Equal(SymbolTypeRegular.String(), "Regular")
 }
 
 func TestGC(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
+	parser := NewParser()
 
-	parser.SetLanguage(javascript.GetLanguage())
-	tree := parser.Parse([]byte("let a = 1"))
+	parser.SetLanguage(getTestGrammar())
+	tree := parser.Parse([]byte("1 + 2"))
 	n := tree.RootNode()
 
 	r := isNamedWithGC(n)
 	assert.True(r)
 }
 
-func isNamedWithGC(n *sitter.Node) bool {
+func isNamedWithGC(n *Node) bool {
 	runtime.GC()
 	time.Sleep(500 * time.Microsecond)
 	return n.IsNamed()
@@ -137,7 +132,7 @@ func isNamedWithGC(n *sitter.Node) bool {
 func TestSetOperationLimit(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
+	parser := NewParser()
 	assert.Equal(0, parser.OperationLimit())
 
 	parser.SetOperationLimit(10)
@@ -147,17 +142,21 @@ func TestSetOperationLimit(t *testing.T) {
 func TestIncludedRanges(t *testing.T) {
 	assert := assert.New(t)
 
-	// go code with JS in comment
-	code := "package main\n//console.log('sup');"
+	// sum code with sum code in a comment
+	code := "1 + 2\n//3 + 5"
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(golang.GetLanguage())
-	goTree := parser.Parse([]byte(code))
-	commentNode := goTree.RootNode().NamedChild(1)
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+	mainTree := parser.Parse([]byte(code))
+	assert.Equal(
+		"(expression (sum left: (expression (number)) right: (expression (number))) (comment))",
+		mainTree.RootNode().String(),
+	)
+	commentNode := mainTree.RootNode().NamedChild(1)
 	assert.Equal("comment", commentNode.Type())
 
-	jsRange := sitter.Range{
-		StartPoint: sitter.Point{
+	commentRange := Range{
+		StartPoint: Point{
 			Row:    commentNode.StartPoint().Row,
 			Column: commentNode.StartPoint().Column + 2,
 		},
@@ -166,22 +165,21 @@ func TestIncludedRanges(t *testing.T) {
 		EndByte:   commentNode.EndByte(),
 	}
 
-	parser.SetIncludedRanges([]sitter.Range{jsRange})
-	parser.SetLanguage(javascript.GetLanguage())
-	jsTree := parser.Parse([]byte(code))
+	parser.SetIncludedRanges([]Range{commentRange})
+	commentTree := parser.Parse([]byte(code))
 
 	assert.Equal(
-		"(program (expression_statement (call_expression function: (member_expression object: (identifier) property: (property_identifier)) arguments: (arguments (string)))))",
-		jsTree.RootNode().String(),
+		"(expression (sum left: (expression (number)) right: (expression (number))))",
+		commentTree.RootNode().String(),
 	)
 }
 
 func TestSameNode(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(javascript.GetLanguage())
-	tree := parser.Parse([]byte("let a = 1"))
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+	tree := parser.Parse([]byte("1 + 2"))
 
 	n1 := tree.RootNode()
 	n2 := tree.RootNode()
@@ -195,34 +193,29 @@ func TestSameNode(t *testing.T) {
 }
 
 func TestQuery(t *testing.T) {
-	js := `
-	class Person {
-		constructor(firstName, parent) {}
-		getName() {}
-	}
-	`
+	js := "1 + 2"
 
 	// test single capture
-	testCaptures(t, js, "(class_declaration name: (identifier) @class-name)", []string{
-		"Person",
+	testCaptures(t, js, "(sum left: (expression) @left)", []string{
+		"1",
 	})
 
 	// test multiple captures
-	testCaptures(t, js, "(method_definition name: * @method-name)", []string{
-		"constructor",
-		"getName",
+	testCaptures(t, js, "(sum left: * @left right: * @right)", []string{
+		"1",
+		"2",
 	})
 
 	// test match only
-	parser := sitter.NewParser()
-	parser.SetLanguage(javascript.GetLanguage())
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
 	tree := parser.Parse([]byte(js))
 	root := tree.RootNode()
 
-	q, err := sitter.NewQuery([]byte("(identifier) (method_definition)"), javascript.GetLanguage())
+	q, err := NewQuery([]byte("(sum) (number)"), getTestGrammar())
 	assert.Nil(t, err)
 
-	qc := sitter.NewQueryCursor()
+	qc := NewQueryCursor()
 	qc.Exec(q, root)
 
 	var matched int
@@ -235,21 +228,21 @@ func TestQuery(t *testing.T) {
 		matched++
 	}
 
-	assert.Equal(t, 5, matched)
+	assert.Equal(t, 3, matched)
 }
 
 func testCaptures(t *testing.T, body, sq string, expected []string) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(javascript.GetLanguage())
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
 	tree := parser.Parse([]byte(body))
 	root := tree.RootNode()
 
-	q, err := sitter.NewQuery([]byte(sq), javascript.GetLanguage())
+	q, err := NewQuery([]byte(sq), getTestGrammar())
 	assert.Nil(err)
 
-	qc := sitter.NewQueryCursor()
+	qc := NewQueryCursor()
 	qc.Exec(q, root)
 
 	actual := []string{}
@@ -270,18 +263,18 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 func TestQueryError(t *testing.T) {
 	assert := assert.New(t)
 
-	q, err := sitter.NewQuery([]byte("((unknown) name: (identifier))"), javascript.GetLanguage())
+	q, err := NewQuery([]byte("((unknown) name: (identifier))"), getTestGrammar())
 
 	assert.Nil(q)
 	assert.NotNil(err)
-	assert.EqualValues(&sitter.QueryError{Offset: 0x02, Type: sitter.QueryErrorNodeType}, err)
+	assert.EqualValues(&QueryError{Offset: 0x02, Type: QueryErrorNodeType}, err)
 }
 
-func doWorkLifetime(t testing.TB, n *sitter.Node) {
+func doWorkLifetime(t testing.TB, n *Node) {
 	for i := 0; i < 100; i++ {
 		// this will trigger an actual bug (if it still there)
 		s := n.String()
-		require.Equal(t, "(program (variable_declaration (variable_declarator name: (identifier))))", s)
+		require.Equal(t, "(expression (sum left: (expression (number)) right: (expression (number))))", s)
 	}
 }
 
@@ -292,9 +285,9 @@ func TestParserLifetime(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for i := 0; i < 10; i++ {
-				p := sitter.NewParser()
-				p.SetLanguage(javascript.GetLanguage())
-				data := []byte("var a;")
+				p := NewParser()
+				p.SetLanguage(getTestGrammar())
+				data := []byte("1 + 2")
 				// create some memory/CPU pressure
 				data = append(data, bytes.Repeat([]byte(" "), 1024*1024)...)
 
@@ -312,10 +305,10 @@ func TestParserLifetime(t *testing.T) {
 func TestTreeCursor(t *testing.T) {
 	assert := assert.New(t)
 
-	input := []byte(`let a = 1;`)
+	input := []byte(`1 + 2`)
 
-	root := sitter.Parse(input, javascript.GetLanguage())
-	c := sitter.NewTreeCursor(root)
+	root := Parse(input, getTestGrammar())
+	c := NewTreeCursor(root)
 
 	assert.True(c.CurrentNode() == root)
 	assert.Equal("", c.CurrentFieldName())
@@ -325,23 +318,27 @@ func TestTreeCursor(t *testing.T) {
 	assert.Equal(int64(-1), c.GoToFirstChildForByte(100))
 
 	assert.True(c.GoToFirstChild())
-	assert.Equal("lexical_declaration", c.CurrentNode().Type())
+	assert.Equal("sum", c.CurrentNode().Type())
 	assert.True(c.GoToFirstChild())
-	assert.Equal("let", c.CurrentNode().Type())
+	assert.Equal("expression", c.CurrentNode().Type())
+	assert.Equal("left", c.CurrentFieldName())
 	assert.True(c.GoToNextSibling())
-	assert.Equal("variable_declarator", c.CurrentNode().Type())
+	assert.Equal("+", c.CurrentNode().Type())
+	assert.False(c.GoToFirstChild())
+	assert.True(c.GoToNextSibling())
+	assert.Equal("expression", c.CurrentNode().Type())
 	assert.True(c.GoToFirstChild())
-	assert.Equal("identifier", c.CurrentNode().Type())
-	assert.Equal("name", c.CurrentFieldName())
-
-	assert.True(c.GoToParent())
-	assert.Equal("variable_declarator", c.CurrentNode().Type())
-	nodeForReset := c.CurrentNode()
-
-	assert.Equal(int64(2), c.GoToFirstChildForByte(7))
 	assert.Equal("number", c.CurrentNode().Type())
 
+	assert.True(c.GoToParent())
+	assert.True(c.GoToParent())
+	assert.Equal("sum", c.CurrentNode().Type())
+	nodeForReset := c.CurrentNode()
+
+	assert.Equal(int64(2), c.GoToFirstChildForByte(3))
+	assert.Equal("expression", c.CurrentNode().Type())
+
 	c.Reset(nodeForReset)
-	assert.Equal("variable_declarator", c.CurrentNode().Type())
+	assert.Equal("sum", c.CurrentNode().Type())
 	assert.False(c.GoToParent())
 }
