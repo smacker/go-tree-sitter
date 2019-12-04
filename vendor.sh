@@ -7,7 +7,8 @@ set -e
 sitter_version=0.15.14
 grammars=(
     "bash;v0.16.0;parser.c;scanner.cc"
-    "c;v0.15.2;parser.c"
+    "c-sharp;v0.15.0;parser.c"
+    "c;v0.15.3;parser.c"
     "cpp;v0.15.1;parser.c;scanner.cc"
     "go;v0.15.1;parser.c"
     "java;v0.15.0;parser.c"
@@ -16,7 +17,6 @@ grammars=(
     "python;v0.15.1;parser.c;scanner.cc"
     "ruby;v0.15.3;parser.c;scanner.cc"
     "rust;v0.15.1;parser.c;scanner.c"
-    "c-sharp;v0.15.0;parser.c"
     "typescript;v0.15.1"
 )
 
