@@ -18,7 +18,7 @@ func TestGrammar(t *testing.T) {
 	tree := parser.Parse(sourceCode)
 
 	assert.Equal(
-		"(source_file (mod_item (identifier)))",
+		"(source_file (mod_item name: (identifier)))",
 		tree.RootNode().String(),
 	)
 }

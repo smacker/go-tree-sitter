@@ -16,7 +16,7 @@ grammars=(
     "php;v0.13.1;parser.c;scanner.cc"
     "python;v0.15.1;parser.c;scanner.cc"
     "ruby;v0.15.3;parser.c;scanner.cc"
-    "rust;v0.15.1;parser.c;scanner.c"
+    "rust;v0.15.2;parser.c;scanner.c"
     "typescript;v0.15.1"
 )
 
