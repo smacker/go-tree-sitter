@@ -4,20 +4,20 @@
 
 set -e
 
-sitter_version=0.15.14
+sitter_version=0.16.1
 grammars=(
     "bash;v0.16.0;parser.c;scanner.cc"
-    "c-sharp;v0.15.0;parser.c"
+    "c-sharp;v0.16.0;parser.c;scanner.c"
     "c;v0.15.3;parser.c"
     "cpp;v0.15.1;parser.c;scanner.cc"
-    "go;v0.15.1;parser.c"
-    "java;v0.15.0;parser.c"
-    "javascript;v0.15.1;parser.c;scanner.c"
+    "go;v0.16.0;parser.c"
+    "java;v0.16.0;parser.c"
+    "javascript;v0.16.0;parser.c;scanner.c"
     "php;v0.13.1;parser.c;scanner.cc"
-    "python;v0.15.1;parser.c;scanner.cc"
-    "ruby;v0.15.3;parser.c;scanner.cc"
-    "rust;v0.15.2;parser.c;scanner.c"
-    "typescript;v0.15.1"
+    "python;v0.16.0;parser.c;scanner.cc"
+    "ruby;v0.16.1;parser.c;scanner.cc"
+    "rust;v0.16.0;parser.c;scanner.c"
+    "typescript;v0.16.0"
 )
 
 function download_sitter() {
@@ -26,8 +26,8 @@ function download_sitter() {
 
     sed -i.bak 's/"tree_sitter\//"/g' vendor/lib/src/*.c vendor/lib/src/*.h
     sed -i.bak 's/"unicode\//"/g' vendor/lib/src/unicode/*.h vendor/lib/src/*.h
-    # tree-sitter 0.15.13 misses include, might be fixed in newer version
-    echo "#include \"unicode.h\"" | cat - vendor/lib/src/query.c > /tmp/out && mv /tmp/out vendor/lib/src/query.c
+    # tree-sitter 0.16.1 misses include, might be fixed in newer version
+    echo "#include \"language.h\"" | cat - vendor/lib/src/query.c > /tmp/out && mv /tmp/out vendor/lib/src/query.c
 
     cp vendor/lib/include/tree_sitter/*.h ./
     cp vendor/lib/src/*.c ./

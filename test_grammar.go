@@ -117,6 +117,10 @@ package sitter
 //  const TSFieldMapSlice *field_map_slices;
 //  const TSFieldMapEntry *field_map_entries;
 //  const char **field_names;
+//  uint32_t large_state_count;
+//  const uint16_t *small_parse_table;
+//  const uint32_t *small_parse_table_map;
+//  const TSSymbol *public_symbol_map;
 //};
 //
 ///*
@@ -158,6 +162,8 @@ package sitter
 ///*
 // *  Parse Table Macros
 // */
+//
+//#define SMALL_STATE(id) id - LARGE_STATE_COUNT
 //
 //#define STATE(id) id
 //
@@ -223,8 +229,9 @@ package sitter
 //#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 //#endif
 //
-//#define LANGUAGE_VERSION 10
+//#define LANGUAGE_VERSION 11
 //#define STATE_COUNT 9
+//#define LARGE_STATE_COUNT 4
 //#define SYMBOL_COUNT 9
 //#define ALIAS_COUNT 0
 //#define TOKEN_COUNT 7
@@ -253,6 +260,18 @@ package sitter
 //  [sym_variable] = "variable",
 //  [sym_expression] = "expression",
 //  [sym_sum] = "sum",
+//};
+//
+//static TSSymbol ts_symbol_map[] = {
+//  [ts_builtin_sym_end] = ts_builtin_sym_end,
+//  [anon_sym_LPAREN] = anon_sym_LPAREN,
+//  [anon_sym_RPAREN] = anon_sym_RPAREN,
+//  [anon_sym_PLUS] = anon_sym_PLUS,
+//  [sym_number] = sym_number,
+//  [sym_comment] = sym_comment,
+//  [sym_variable] = sym_variable,
+//  [sym_expression] = sym_expression,
+//  [sym_sum] = sym_sum,
 //};
 //
 //static const TSSymbolMetadata ts_symbol_metadata[] = {
@@ -305,7 +324,7 @@ package sitter
 //  [field_right] = "right",
 //};
 //
-//static const TSFieldMapSlice ts_field_map_slices[] = {
+//static const TSFieldMapSlice ts_field_map_slices[2] = {
 //  [1] = {.index = 0, .length = 2},
 //};
 //
@@ -321,7 +340,7 @@ package sitter
 //
 //static bool ts_lex(TSLexer *lexer, TSStateId state) {
 //  START_LEXER();
-//  eof = lookahead == 0;
+//  eof = lexer->eof(lexer);
 //  switch (state) {
 //    case 0:
 //      if (eof) ADVANCE(3);
@@ -385,7 +404,7 @@ package sitter
 //  [8] = {.lex_state = 0},
 //};
 //
-//static uint16_t ts_parse_table[STATE_COUNT][SYMBOL_COUNT] = {
+//static uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
 //  [0] = {
 //    [ts_builtin_sym_end] = ACTIONS(1),
 //    [anon_sym_LPAREN] = ACTIONS(1),
@@ -419,34 +438,52 @@ package sitter
 //    [sym_comment] = ACTIONS(3),
 //    [sym_variable] = ACTIONS(7),
 //  },
-//  [4] = {
-//    [ts_builtin_sym_end] = ACTIONS(9),
-//    [anon_sym_RPAREN] = ACTIONS(9),
-//    [anon_sym_PLUS] = ACTIONS(9),
-//    [sym_comment] = ACTIONS(3),
-//  },
-//  [5] = {
-//    [ts_builtin_sym_end] = ACTIONS(11),
-//    [anon_sym_RPAREN] = ACTIONS(11),
-//    [anon_sym_PLUS] = ACTIONS(11),
-//    [sym_comment] = ACTIONS(3),
-//  },
-//  [6] = {
-//    [ts_builtin_sym_end] = ACTIONS(13),
-//    [anon_sym_RPAREN] = ACTIONS(13),
-//    [anon_sym_PLUS] = ACTIONS(13),
-//    [sym_comment] = ACTIONS(3),
-//  },
-//  [7] = {
-//    [ts_builtin_sym_end] = ACTIONS(15),
-//    [anon_sym_PLUS] = ACTIONS(17),
-//    [sym_comment] = ACTIONS(3),
-//  },
-//  [8] = {
-//    [anon_sym_RPAREN] = ACTIONS(19),
-//    [anon_sym_PLUS] = ACTIONS(17),
-//    [sym_comment] = ACTIONS(3),
-//  },
+//};
+//
+//static uint16_t ts_small_parse_table[] = {
+//  [0] = 2,
+//    ACTIONS(3), 1,
+//      sym_comment,
+//    ACTIONS(9), 3,
+//      ts_builtin_sym_end,
+//      anon_sym_RPAREN,
+//      anon_sym_PLUS,
+//  [9] = 2,
+//    ACTIONS(3), 1,
+//      sym_comment,
+//    ACTIONS(11), 3,
+//      ts_builtin_sym_end,
+//      anon_sym_RPAREN,
+//      anon_sym_PLUS,
+//  [18] = 2,
+//    ACTIONS(3), 1,
+//      sym_comment,
+//    ACTIONS(13), 3,
+//      ts_builtin_sym_end,
+//      anon_sym_RPAREN,
+//      anon_sym_PLUS,
+//  [27] = 3,
+//    ACTIONS(3), 1,
+//      sym_comment,
+//    ACTIONS(15), 1,
+//      ts_builtin_sym_end,
+//    ACTIONS(17), 1,
+//      anon_sym_PLUS,
+//  [37] = 3,
+//    ACTIONS(3), 1,
+//      sym_comment,
+//    ACTIONS(17), 1,
+//      anon_sym_PLUS,
+//    ACTIONS(19), 1,
+//      anon_sym_RPAREN,
+//};
+//
+//static uint32_t ts_small_parse_table_map[] = {
+//  [SMALL_STATE(4)] = 0,
+//  [SMALL_STATE(5)] = 9,
+//  [SMALL_STATE(6)] = 18,
+//  [SMALL_STATE(7)] = 27,
+//  [SMALL_STATE(8)] = 37,
 //};
 //
 //static TSParseActionEntry ts_parse_actions[] = {
@@ -473,11 +510,15 @@ package sitter
 //    .symbol_count = SYMBOL_COUNT,
 //    .alias_count = ALIAS_COUNT,
 //    .token_count = TOKEN_COUNT,
+//    .large_state_count = LARGE_STATE_COUNT,
 //    .symbol_metadata = ts_symbol_metadata,
 //    .parse_table = (const unsigned short *)ts_parse_table,
+//    .small_parse_table = (const uint16_t *)ts_small_parse_table,
+//    .small_parse_table_map = (const uint32_t *)ts_small_parse_table_map,
 //    .parse_actions = ts_parse_actions,
 //    .lex_modes = ts_lex_modes,
 //    .symbol_names = ts_symbol_names,
+//    .public_symbol_map = ts_symbol_map,
 //    .alias_sequences = (const TSSymbol *)ts_alias_sequences,
 //    .field_count = FIELD_COUNT,
 //    .field_names = ts_field_names,

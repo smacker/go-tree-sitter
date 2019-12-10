@@ -18,7 +18,7 @@ func TestGrammar(t *testing.T) {
 	tree := parser.Parse(sourceCode)
 
 	assert.Equal(
-		"(program (expression_statement (jsx_self_closing_element (identifier))))",
+		"(program (expression_statement (jsx_self_closing_element name: (identifier))))",
 		tree.RootNode().String(),
 	)
 }
