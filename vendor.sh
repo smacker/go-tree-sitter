@@ -13,7 +13,7 @@ grammars=(
     "go;v0.16.0;parser.c"
     "java;v0.16.0;parser.c"
     "javascript;v0.16.0;parser.c;scanner.c"
-    "php;v0.13.1;parser.c;scanner.cc"
+    "php;v0.16.0;parser.c;scanner.cc"
     "python;v0.16.0;parser.c;scanner.cc"
     "ruby;v0.16.1;parser.c;scanner.cc"
     "rust;v0.16.0;parser.c;scanner.c"
