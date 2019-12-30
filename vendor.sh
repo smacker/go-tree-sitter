@@ -4,7 +4,7 @@
 
 set -e
 
-sitter_version=0.16.1
+sitter_version=0.16.2
 grammars=(
     "bash;v0.16.0;parser.c;scanner.cc"
     "c-sharp;v0.16.0;parser.c;scanner.c"
@@ -26,8 +26,6 @@ function download_sitter() {
 
     sed -i.bak 's/"tree_sitter\//"/g' vendor/lib/src/*.c vendor/lib/src/*.h
     sed -i.bak 's/"unicode\//"/g' vendor/lib/src/unicode/*.h vendor/lib/src/*.h
-    # tree-sitter 0.16.1 misses include, might be fixed in newer version
-    echo "#include \"language.h\"" | cat - vendor/lib/src/query.c > /tmp/out && mv /tmp/out vendor/lib/src/query.c
 
     cp vendor/lib/include/tree_sitter/*.h ./
     cp vendor/lib/src/*.c ./
