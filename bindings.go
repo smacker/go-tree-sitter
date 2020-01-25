@@ -545,6 +545,66 @@ func deleteQuery(q *Query) {
 	C.ts_query_delete(q.c)
 }
 
+func (q *Query) PatternCount() uint32 {
+	return uint32(C.ts_query_pattern_count(q.c))
+}
+
+func (q *Query) CaptureCount() uint32 {
+	return uint32(C.ts_query_capture_count(q.c))
+}
+
+func (q *Query) StringCount() uint32 {
+	return uint32(C.ts_query_string_count(q.c))
+}
+
+type QueryPredicateStepType int
+
+const (
+	QueryPredicateStepTypeDone QueryPredicateStepType = iota
+	QueryPredicateStepTypeCapture
+	QueryPredicateStepTypeString
+)
+
+type QueryPredicateStep struct {
+	Type    QueryPredicateStepType
+	ValueId uint32
+}
+
+func (q *Query) PredicatesForPattern(patternIndex uint32) []QueryPredicateStep {
+	var (
+		length C.uint32_t
+		cPredicateSteps []C.TSQueryPredicateStep
+		predicateSteps []QueryPredicateStep
+	)
+
+	cPredicateStep := C.ts_query_predicates_for_pattern(q.c, C.uint32_t(patternIndex), &length)
+
+	count := int(length)
+	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cPredicateSteps)))
+	slice.Cap = count
+	slice.Len = count
+	slice.Data = uintptr(unsafe.Pointer(cPredicateStep))
+	for _, s := range cPredicateSteps {
+		stepType := QueryPredicateStepType(s._type)
+		valueId := uint32(s.value_id)
+		predicateSteps = append(predicateSteps, QueryPredicateStep{stepType, valueId})
+	}
+
+	return predicateSteps
+}
+
+func (q *Query) CaptureNameForId(id uint32) string {
+	var length C.uint32_t
+	name := C.ts_query_capture_name_for_id(q.c, C.uint32_t(id), &length)
+	return C.GoStringN(name, C.int(length))
+}
+
+func (q *Query) StringValueForId(id uint32) string {
+	var length C.uint32_t
+	value := C.ts_query_string_value_for_id(q.c, C.uint32_t(id), &length)
+	return C.GoStringN(value, C.int(length))
+}
+
 // QueryCursor carries the state needed for processing the queries.
 type QueryCursor struct {
 	c *C.TSQueryCursor
@@ -558,6 +618,7 @@ func NewQueryCursor() *QueryCursor {
 
 	return qc
 }
+
 func deleteQueryCursor(qc *QueryCursor) {
 	C.ts_query_cursor_delete(qc.c)
 }
@@ -566,6 +627,18 @@ func deleteQueryCursor(qc *QueryCursor) {
 func (qc *QueryCursor) Exec(q *Query, n *Node) {
 	qc.t = n.t
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
+}
+
+func (qc *QueryCursor) SetPointRange(startPoint Point, endPoint Point) {
+	cStartPoint := C.TSPoint{
+		row:    C.uint32_t(startPoint.Row),
+		column: C.uint32_t(startPoint.Column),
+	}
+	cEndPoint := C.TSPoint{
+		row:    C.uint32_t(endPoint.Row),
+		column: C.uint32_t(endPoint.Column),
+	}
+	C.ts_query_cursor_set_point_range(qc.c, cStartPoint, cEndPoint)
 }
 
 // QueryCapture is a captured node by a query with an index
@@ -612,4 +685,34 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 	}
 
 	return qm, true
+}
+
+func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
+	var (
+		cqm C.TSQueryMatch
+		cqc []C.TSQueryCapture
+		captureIndex C.uint32_t
+	)
+
+	if ok := C.ts_query_cursor_next_capture(qc.c, &cqm, &captureIndex); !bool(ok) {
+		return nil, 0, false
+	}
+
+	qm := &QueryMatch{
+		ID:           uint32(cqm.id),
+		PatternIndex: uint16(cqm.pattern_index),
+	}
+
+	count := int(cqm.capture_count)
+	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
+	slice.Cap = count
+	slice.Len = count
+	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
+	for _, c := range cqc {
+		idx := uint32(c.index)
+		node := qc.t.cachedNode(c.node)
+		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
+	}
+
+	return qm, uint32(captureIndex), true
 }
