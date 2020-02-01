@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(ruby.GetLanguage())
 
 	sourceCode := []byte("puts 1")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(program (method_call method: (identifier) arguments: (argument_list (integer))))",

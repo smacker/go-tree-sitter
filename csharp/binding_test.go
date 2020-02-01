@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(csharp.GetLanguage())
 
 	sourceCode := []byte("using static System.Math;")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(compilation_unit (using_directive (qualified_name (identifier) (identifier))))",

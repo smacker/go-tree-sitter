@@ -1,11 +1,63 @@
 package sitter
 
-//#include "bindings.h"
+/*
+#include "bindings.h"
+
+typedef struct {
+	int read_function_id;
+	char *previous_content;
+} ParsePayload;
+
+extern char *callReadFunction(
+	int id,
+	uint32_t byteIndex,
+	TSPoint position,
+	uint32_t *bytesRead
+);
+
+static inline const char *call_callReadFunction(
+	void *payload,
+	uint32_t byte_index,
+	TSPoint position,
+	uint32_t *bytes_read
+) {
+	ParsePayload *p = payload;
+	if (p->previous_content != NULL) {
+		free(p->previous_content);
+	}
+	p->previous_content = callReadFunction(p->read_function_id, byte_index, position, bytes_read);
+	return p->previous_content;
+}
+
+static inline TSTree *call_ts_parser_parse(
+	TSParser *self,
+	const TSTree *old_tree,
+	int read_function_id,
+	TSInputEncoding encoding
+) {
+	ParsePayload payload = {
+		read_function_id,
+		NULL
+	};
+	TSInput input = {
+		&payload,
+		call_callReadFunction,
+		encoding
+	};
+	TSTree *tree = ts_parser_parse(self, old_tree, input);
+	if (payload.previous_content != NULL) {
+		free(payload.previous_content);
+	}
+	return tree;
+}
+*/
 import "C"
+
 import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"sync"
 	"unsafe"
 )
 
@@ -14,7 +66,7 @@ import (
 func Parse(content []byte, lang *Language) *Node {
 	p := NewParser()
 	p.SetLanguage(lang)
-	return p.Parse(content).RootNode()
+	return p.ParseString(nil, content).RootNode()
 }
 
 // Parser produces concrete syntax tree based on source code using Language
@@ -33,21 +85,85 @@ func (p *Parser) SetLanguage(lang *Language) {
 	C.ts_parser_set_language(p.c, cLang)
 }
 
-// Parse produces new Tree from content
-func (p *Parser) Parse(content []byte) *Tree {
-	return p.ParseWithTree(content, nil)
+type ReadFunction func(uint32, Point) []byte
+
+type InputEncoding int
+
+const (
+	InputEncodingUTF8 InputEncoding = iota
+	InputEncodingUTF16
+)
+
+type Input struct {
+	Read     ReadFunction
+	Encoding InputEncoding
 }
 
-// ParseWithTree produces new Tree from content using old tree
-func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
+var readFunctionLock sync.Mutex
+var readFunctionCount int
+var readFunctions = make(map[int]ReadFunction)
+
+func registerReadFunction(readFunction ReadFunction) int {
+	readFunctionLock.Lock()
+	defer readFunctionLock.Unlock()
+	readFunctionCount++
+	readFunctions[readFunctionCount] = readFunction
+	return readFunctionCount
+}
+
+func unregisterReadFunction(id int) {
+	readFunctionLock.Lock()
+	defer readFunctionLock.Unlock()
+	delete(readFunctions, id)
+}
+
+func getReadFunction(id int) ReadFunction {
+	readFunctionLock.Lock()
+	defer readFunctionLock.Unlock()
+	return readFunctions[id]
+}
+
+//export callReadFunction
+func callReadFunction(id C.int, byteIndex C.uint32_t, position C.TSPoint, bytesRead *C.uint32_t) *C.char {
+	readFunction := getReadFunction(int(id))
+
+	content := readFunction(uint32(byteIndex), Point{
+		Row:    uint32(position.row),
+		Column: uint32(position.column),
+	})
+
+	*bytesRead = C.uint32_t(len(content))
+
+	// Note: This memory is freed inside the C code; see above
+	input := C.CBytes(content)
+	return (*C.char)(input)
+}
+
+// Parse produces new Tree from input using old tree
+func (p *Parser) Parse(oldTree *Tree, input Input) *Tree {
 	var cTree *C.TSTree
-	if t != nil {
-		cTree = t.c
+	if oldTree != nil {
+		cTree = oldTree.c
+	}
+
+	readFunctionId := registerReadFunction(input.Read)
+	cTree = C.call_ts_parser_parse(p.c, cTree, C.int(readFunctionId), C.TSInputEncoding(input.Encoding))
+	unregisterReadFunction(readFunctionId)
+
+	return p.newTree(cTree)
+}
+
+// ParseString produces new Tree from content using old tree
+func (p *Parser) ParseString(oldTree *Tree, content []byte) *Tree {
+	var cTree *C.TSTree
+	if oldTree != nil {
+		cTree = oldTree.c
 	}
 
 	input := C.CBytes(content)
 	cTree = C.ts_parser_parse_string(p.c, cTree, (*C.char)(input), C.uint32_t(len(content)))
 	C.free(input)
+
 	return p.newTree(cTree)
 }
 
@@ -402,7 +518,6 @@ func (n Node) Content(input []byte) string {
 	return string(input[n.StartByte():n.EndByte()])
 }
 
-
 // TreeCursor allows you to walk a syntax tree more efficiently than is
 // possible using the `Node` functions. It is a mutable object that is always
 // on a certain syntax node, and can be moved imperatively to different nodes.
@@ -414,7 +529,7 @@ type TreeCursor struct {
 // NewTreeCursor creates a new tree cursor starting from the given node.
 func NewTreeCursor(n *Node) *TreeCursor {
 	cc := C.ts_tree_cursor_new(n.c)
-	c:= &TreeCursor{
+	c := &TreeCursor{
 		c: &cc,
 		t: n.t,
 	}
@@ -581,9 +696,9 @@ type QueryPredicateStep struct {
 
 func (q *Query) PredicatesForPattern(patternIndex uint32) []QueryPredicateStep {
 	var (
-		length C.uint32_t
+		length          C.uint32_t
 		cPredicateSteps []C.TSQueryPredicateStep
-		predicateSteps []QueryPredicateStep
+		predicateSteps  []QueryPredicateStep
 	)
 
 	cPredicateStep := C.ts_query_predicates_for_pattern(q.c, C.uint32_t(patternIndex), &length)
@@ -698,8 +813,8 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 
 func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	var (
-		cqm C.TSQueryMatch
-		cqc []C.TSQueryCapture
+		cqm          C.TSQueryMatch
+		cqc          []C.TSQueryCapture
 		captureIndex C.uint32_t
 	)
 

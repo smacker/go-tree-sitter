@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(php.GetLanguage())
 
 	sourceCode := []byte("<?php print(1);")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(program (expression_statement (print_intrinsic (parenthesized_expression (integer)))))",

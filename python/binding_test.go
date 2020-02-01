@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(python.GetLanguage())
 
 	sourceCode := []byte("print(1)")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(module (expression_statement (call function: (identifier) arguments: (argument_list (integer)))))",
