@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(java.GetLanguage())
 
 	sourceCode := []byte("import java.io.*;")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(program (import_declaration (identifier) (identifier) (asterisk)))",

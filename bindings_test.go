@@ -59,7 +59,7 @@ func TestTree(t *testing.T) {
 
 	parser.Debug()
 	parser.SetLanguage(getTestGrammar())
-	tree := parser.Parse([]byte("1 + 2"))
+	tree := parser.ParseString(nil, []byte("1 + 2"))
 	n := tree.RootNode()
 
 	assert.Equal(uint32(0), n.StartByte())
@@ -92,7 +92,7 @@ func TestTree(t *testing.T) {
 	assert.False(n.Child(0).Child(0).HasChanges()) // left side of the sum didn't change
 	assert.True(n.Child(0).Child(2).HasChanges())
 
-	tree2 := parser.ParseWithTree(newText, tree)
+	tree2 := parser.ParseString(tree, newText)
 	n = tree2.RootNode()
 	assert.Equal("(expression (sum left: (expression (number)) right: (expression (expression (sum left: (expression (number)) right: (expression (number)))))))", n.String())
 }
@@ -116,7 +116,7 @@ func TestGC(t *testing.T) {
 	parser := NewParser()
 
 	parser.SetLanguage(getTestGrammar())
-	tree := parser.Parse([]byte("1 + 2"))
+	tree := parser.ParseString(nil, []byte("1 + 2"))
 	n := tree.RootNode()
 
 	r := isNamedWithGC(n)
@@ -147,7 +147,7 @@ func TestIncludedRanges(t *testing.T) {
 
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	mainTree := parser.Parse([]byte(code))
+	mainTree := parser.ParseString(nil, []byte(code))
 	assert.Equal(
 		"(expression (sum left: (expression (number)) right: (expression (number))) (comment))",
 		mainTree.RootNode().String(),
@@ -166,7 +166,7 @@ func TestIncludedRanges(t *testing.T) {
 	}
 
 	parser.SetIncludedRanges([]Range{commentRange})
-	commentTree := parser.Parse([]byte(code))
+	commentTree := parser.ParseString(nil, []byte(code))
 
 	assert.Equal(
 		"(expression (sum left: (expression (number)) right: (expression (number))))",
@@ -179,7 +179,7 @@ func TestSameNode(t *testing.T) {
 
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	tree := parser.Parse([]byte("1 + 2"))
+	tree := parser.ParseString(nil, []byte("1 + 2"))
 
 	n1 := tree.RootNode()
 	n2 := tree.RootNode()
@@ -209,7 +209,7 @@ func TestQuery(t *testing.T) {
 	// test match only
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	tree := parser.Parse([]byte(js))
+	tree := parser.ParseString(nil, []byte(js))
 	root := tree.RootNode()
 
 	q, err := NewQuery([]byte("(sum) (number)"), getTestGrammar())
@@ -236,7 +236,7 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	tree := parser.Parse([]byte(body))
+	tree := parser.ParseString(nil, []byte(body))
 	root := tree.RootNode()
 
 	q, err := NewQuery([]byte(sq), getTestGrammar())
@@ -291,7 +291,7 @@ func TestParserLifetime(t *testing.T) {
 				// create some memory/CPU pressure
 				data = append(data, bytes.Repeat([]byte(" "), 1024*1024)...)
 
-				root := p.Parse(data).RootNode()
+				root := p.ParseString(nil, data).RootNode()
 				// make sure we have no references to the Parser
 				p = nil
 				// must be a separate function, and it shouldn't accept the parser, only the Tree

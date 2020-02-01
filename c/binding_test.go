@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(c.GetLanguage())
 
 	sourceCode := []byte("int a = 2;")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(translation_unit (declaration type: (primitive_type) declarator: (init_declarator declarator: (identifier) value: (number_literal))))",

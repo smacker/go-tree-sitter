@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(golang.GetLanguage())
 
 	sourceCode := []byte("package main")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(source_file (package_clause (package_identifier)))",

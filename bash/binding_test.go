@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(bash.GetLanguage())
 
 	sourceCode := []byte("echo 1")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(program (command (command_name (word)) (word)))",

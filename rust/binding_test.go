@@ -15,7 +15,7 @@ func TestGrammar(t *testing.T) {
 	parser.SetLanguage(rust.GetLanguage())
 
 	sourceCode := []byte("mod one;")
-	tree := parser.Parse(sourceCode)
+	tree := parser.ParseString(nil, sourceCode)
 
 	assert.Equal(
 		"(source_file (mod_item name: (identifier)))",
