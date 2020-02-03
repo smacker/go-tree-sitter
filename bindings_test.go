@@ -342,3 +342,38 @@ func TestTreeCursor(t *testing.T) {
 	assert.Equal("sum", c.CurrentNode().Type())
 	assert.False(c.GoToParent())
 }
+
+func TestLeakParse(t *testing.T) {
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	for i := 0; i < 100000; i++ {
+		_ = parser.Parse([]byte("1 + 2"))
+	}
+
+	runtime.GC()
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	// shouldn't exceed 1mb that go runtime takes
+	assert.Less(t, m.Alloc, uint64(1024*1024))
+}
+
+func TestLeakRootNode(t *testing.T) {
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	for i := 0; i < 100000; i++ {
+		tree := parser.Parse([]byte("1 + 2"))
+		_ = tree.RootNode()
+	}
+
+	runtime.GC()
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	// shouldn't exceed 1mb go runtime takes
+	assert.Less(t, m.Alloc, uint64(1024*1024))
+}

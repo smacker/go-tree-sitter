@@ -109,11 +109,24 @@ type Range struct {
 	EndByte    uint32
 }
 
+// we use cache for nodes on normal tree object
+// it prevent run of SetFinalizer as it introduces cycle
+// we can workaround it using separate object
+// for detauls see: https://github.com/golang/go/issues/7358#issuecomment-66091558
+type cTree struct {
+	c *C.TSTree
+}
+
+func deleteTree(t *cTree) {
+	C.ts_tree_delete(t.c)
+}
+
 // newTree creates a new tree object from a C pointer. The function will set a finalizer for the object,
 // thus no free is needed for it.
 func (p *Parser) newTree(c *C.TSTree) *Tree {
-	newTree := &Tree{p: p, c: c, cache: make(map[C.TSNode]*Node)}
-	runtime.SetFinalizer(newTree, deleteTree)
+	cTree := &cTree{c:c}
+	runtime.SetFinalizer(cTree, deleteTree)
+	newTree := &Tree{p: p, cTree: cTree, cache: make(map[C.TSNode]*Node)}
 	return newTree
 }
 
@@ -121,11 +134,12 @@ func (p *Parser) newTree(c *C.TSTree) *Tree {
 // Note: Tree instances are not thread safe;
 // you must copy a tree if you want to use it on multiple threads simultaneously.
 type Tree struct {
+	*cTree
+
 	// p is a pointer to a Parser that produced the Tree. Only used to keep Parser alive.
 	// Otherwise Parser may be GC'ed (and deleted by the finalizer) while some Tree objects are still in use.
 	p *Parser
 
-	c *C.TSTree
 	// most probably better save node.id
 	cache map[C.TSNode]*Node
 }
@@ -153,11 +167,6 @@ func (t *Tree) cachedNode(ptr C.TSNode) *Node {
 	n := &Node{ptr, t}
 	t.cache[ptr] = n
 	return n
-}
-
-func deleteTree(t *Tree) {
-	t.cache = nil
-	C.ts_tree_delete(t.c)
 }
 
 type EditInput struct {
