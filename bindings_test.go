@@ -343,7 +343,7 @@ func TestTreeCursor(t *testing.T) {
 	assert.False(c.GoToParent())
 }
 
-func TestLeakParse(t *testing.T) {
+func TestLeakParseString(t *testing.T) {
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
 
@@ -376,4 +376,121 @@ func TestLeakRootNode(t *testing.T) {
 
 	// shouldn't exceed 1mb go runtime takes
 	assert.Less(t, m.Alloc, uint64(1024*1024))
+}
+
+func TestParserParse(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	// empty input
+	input := Input{
+		Encoding: InputEncodingUTF8,
+		Read: func(offset uint32, position Point) []byte {
+			return nil
+		},
+	}
+	tree := parser.Parse(nil, input)
+	n := tree.RootNode()
+	assert.Equal("(ERROR)", n.String())
+
+	// return all data in one go
+	var readTimes int
+	inputData := []byte("12345 + 23456")
+
+	input.Read = func(offset uint32, position Point) []byte {
+		if readTimes > 0 {
+			return nil
+		}
+		readTimes++
+
+		return inputData
+	}
+	tree = parser.Parse(nil, input)
+	n = tree.RootNode()
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
+	assert.Equal(readTimes, 1)
+
+	// return all data in multiple sequantial reads
+	input.Read = func(offset uint32, position Point) []byte {
+		if int(offset) >= len(inputData) {
+			return nil
+		}
+		readTimes++
+		end := int(offset + 5)
+		if len(inputData) < end {
+			end = len(inputData)
+		}
+
+		return inputData[offset:end]
+	}
+	tree = parser.Parse(nil, input)
+	n = tree.RootNode()
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
+	assert.Equal(readTimes, 4)
+}
+
+func TestLeakParse(t *testing.T) {
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	inputData := []byte("1 + 2")
+	input := Input{
+		Encoding: InputEncodingUTF8,
+		Read: func(offset uint32, position Point) []byte {
+			if offset > 0 {
+				return nil
+			}
+
+			return inputData
+		},
+	}
+
+	for i := 0; i < 100000; i++ {
+		_ = parser.Parse(nil, input)
+	}
+
+	runtime.GC()
+
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	// shouldn't exceed 1mb that go runtime takes
+	assert.Less(t, m.Alloc, uint64(1024*1024))
+}
+
+func BenchmarkParse(b *testing.B) {
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	inputData := []byte("1 + 2")
+	input := Input{
+		Encoding: InputEncodingUTF8,
+		Read: func(offset uint32, position Point) []byte {
+			if offset > 0 {
+				return nil
+			}
+
+			return inputData
+		},
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_ = parser.Parse(nil, input)
+	}
+}
+
+func BenchmarkParseString(b *testing.B) {
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+	inputData := []byte("1 + 2")
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_ = parser.ParseString(nil, inputData)
+	}
 }
