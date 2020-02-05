@@ -11,14 +11,9 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(javascript.GetLanguage())
-
-	sourceCode := []byte("let a = 1")
-	tree := parser.ParseString(nil, sourceCode)
-
+	n := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
 	assert.Equal(
 		"(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))",
-		tree.RootNode().String(),
+		n.String(),
 	)
 }

@@ -11,14 +11,9 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(tsx.GetLanguage())
-
-	sourceCode := []byte("<foo />")
-	tree := parser.ParseString(nil, sourceCode)
-
+	n := sitter.Parse([]byte("<foo />"), tsx.GetLanguage())
 	assert.Equal(
 		"(program (expression_statement (jsx_self_closing_element name: (identifier))))",
-		tree.RootNode().String(),
+		n.String(),
 	)
 }
