@@ -23,7 +23,7 @@ Parse some code:
 
 ```go
 sourceCode = []byte("let a = 1")
-tree := parser.ParseString(nil, sourceCode)
+tree := parser.Parse(nil, sourceCode)
 ```
 
 Inspect the syntax tree:
@@ -69,5 +69,5 @@ assert.False(n.Child(0).Child(0).HasChanges()) // left side of the tree didn't c
 assert.True(n.Child(0).Child(1).HasChanges())
 
 // generate new tree
-newTree := parser.ParseString(tree, newText)
+newTree := parser.Parse(tree, newText)
 ```

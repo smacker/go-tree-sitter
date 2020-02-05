@@ -19,7 +19,7 @@ var readFuncs = &readFuncsMap{funcs: make(map[int]ReadFunc)}
 func Parse(content []byte, lang *Language) *Node {
 	p := NewParser()
 	p.SetLanguage(lang)
-	return p.ParseString(nil, content).RootNode()
+	return p.Parse(nil, content).RootNode()
 }
 
 // Parser produces concrete syntax tree based on source code using Language
@@ -56,22 +56,8 @@ type Input struct {
 	Encoding InputEncoding
 }
 
-// Parse produces new Tree from input using old tree
-func (p *Parser) Parse(oldTree *Tree, input Input) *Tree {
-	var cTree *C.TSTree
-	if oldTree != nil {
-		cTree = oldTree.c
-	}
-
-	funcID := readFuncs.register(input.Read)
-	cTree = C.call_ts_parser_parse(p.c, cTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
-	readFuncs.unregister(funcID)
-
-	return p.newTree(cTree)
-}
-
-// ParseString produces new Tree from content using old tree
-func (p *Parser) ParseString(oldTree *Tree, content []byte) *Tree {
+// Parse produces new Tree from content using old tree
+func (p *Parser) Parse(oldTree *Tree, content []byte) *Tree {
 	var cTree *C.TSTree
 	if oldTree != nil {
 		cTree = oldTree.c
@@ -80,6 +66,23 @@ func (p *Parser) ParseString(oldTree *Tree, content []byte) *Tree {
 	input := C.CBytes(content)
 	cTree = C.ts_parser_parse_string(p.c, cTree, (*C.char)(input), C.uint32_t(len(content)))
 	C.free(input)
+
+	return p.newTree(cTree)
+}
+
+// ParseInput produces new Tree by reading from a callback defined in input
+// it is useful if your data is stored in specialized data structure
+// as it will avoid copying the data into []bytes
+// and faster access to edited part of the data
+func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
+	var cTree *C.TSTree
+	if oldTree != nil {
+		cTree = oldTree.c
+	}
+
+	funcID := readFuncs.register(input.Read)
+	cTree = C.call_ts_parser_parse(p.c, cTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
+	readFuncs.unregister(funcID)
 
 	return p.newTree(cTree)
 }

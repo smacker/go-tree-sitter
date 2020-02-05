@@ -13,7 +13,7 @@ func main() {
 	parser := sitter.NewParser()
 	parser.SetLanguage(javascript.GetLanguage())
 
-	tree := parser.Parse(input)
+	tree := parser.Parse(nil, input)
 
 	n := tree.RootNode()
 
@@ -70,7 +70,7 @@ func main() {
 		fmt.Println("-", funcName(input, f), ">", textChange)
 	}
 
-	newTree := parser.ParseWithTree(input, tree)
+	newTree := parser.Parse(input, tree)
 	n = newTree.RootNode()
 	fmt.Println("\nNew AST:", n)
 }
