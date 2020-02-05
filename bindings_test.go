@@ -348,7 +348,7 @@ func TestLeakParse(t *testing.T) {
 	parser.SetLanguage(getTestGrammar())
 
 	for i := 0; i < 100000; i++ {
-		_ = parser.Parse([]byte("1 + 2"))
+		_ = parser.ParseString(nil, []byte("1 + 2"))
 	}
 
 	runtime.GC()
@@ -365,7 +365,7 @@ func TestLeakRootNode(t *testing.T) {
 	parser.SetLanguage(getTestGrammar())
 
 	for i := 0; i < 100000; i++ {
-		tree := parser.Parse([]byte("1 + 2"))
+		tree := parser.ParseString(nil, []byte("1 + 2"))
 		_ = tree.RootNode()
 	}
 
