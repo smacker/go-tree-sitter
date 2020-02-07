@@ -2,19 +2,24 @@ package sitter
 
 //#include "bindings.h"
 import "C"
+
 import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"sync"
 	"unsafe"
 )
+
+// maintain a map of read functions that can be called from C
+var readFuncs = &readFuncsMap{funcs: make(map[int]ReadFunc)}
 
 // Parse is a shortcut for parsing bytes of source code,
 // returns root node
 func Parse(content []byte, lang *Language) *Node {
 	p := NewParser()
 	p.SetLanguage(lang)
-	return p.Parse(content).RootNode()
+	return p.Parse(nil, content).RootNode()
 }
 
 // Parser produces concrete syntax tree based on source code using Language
@@ -33,21 +38,52 @@ func (p *Parser) SetLanguage(lang *Language) {
 	C.ts_parser_set_language(p.c, cLang)
 }
 
-// Parse produces new Tree from content
-func (p *Parser) Parse(content []byte) *Tree {
-	return p.ParseWithTree(content, nil)
+// ReadFunc is a function to retrieve a chunk of text at a given byte offset and (row, column) position
+// it should return nil to indicate the end of the document
+type ReadFunc func(offset uint32, position Point) []byte
+
+// InputEncoding is a encoding of the text to parse
+type InputEncoding int
+
+const (
+	InputEncodingUTF8 InputEncoding = iota
+	InputEncodingUTF16
+)
+
+// Input defines parameters for parse method
+type Input struct {
+	Read     ReadFunc
+	Encoding InputEncoding
 }
 
-// ParseWithTree produces new Tree from content using old tree
-func (p *Parser) ParseWithTree(content []byte, t *Tree) *Tree {
+// Parse produces new Tree from content using old tree
+func (p *Parser) Parse(oldTree *Tree, content []byte) *Tree {
 	var cTree *C.TSTree
-	if t != nil {
-		cTree = t.c
+	if oldTree != nil {
+		cTree = oldTree.c
 	}
 
 	input := C.CBytes(content)
 	cTree = C.ts_parser_parse_string(p.c, cTree, (*C.char)(input), C.uint32_t(len(content)))
 	C.free(input)
+
+	return p.newTree(cTree)
+}
+
+// ParseInput produces new Tree by reading from a callback defined in input
+// it is useful if your data is stored in specialized data structure
+// as it will avoid copying the data into []bytes
+// and faster access to edited part of the data
+func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
+	var cTree *C.TSTree
+	if oldTree != nil {
+		cTree = oldTree.c
+	}
+
+	funcID := readFuncs.register(input.Read)
+	cTree = C.call_ts_parser_parse(p.c, cTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
+	readFuncs.unregister(funcID)
+
 	return p.newTree(cTree)
 }
 
@@ -124,7 +160,7 @@ func deleteTree(t *cTree) {
 // newTree creates a new tree object from a C pointer. The function will set a finalizer for the object,
 // thus no free is needed for it.
 func (p *Parser) newTree(c *C.TSTree) *Tree {
-	cTree := &cTree{c:c}
+	cTree := &cTree{c: c}
 	runtime.SetFinalizer(cTree, deleteTree)
 	newTree := &Tree{p: p, cTree: cTree, cache: make(map[C.TSNode]*Node)}
 	return newTree
@@ -402,7 +438,6 @@ func (n Node) Content(input []byte) string {
 	return string(input[n.StartByte():n.EndByte()])
 }
 
-
 // TreeCursor allows you to walk a syntax tree more efficiently than is
 // possible using the `Node` functions. It is a mutable object that is always
 // on a certain syntax node, and can be moved imperatively to different nodes.
@@ -414,7 +449,7 @@ type TreeCursor struct {
 // NewTreeCursor creates a new tree cursor starting from the given node.
 func NewTreeCursor(n *Node) *TreeCursor {
 	cc := C.ts_tree_cursor_new(n.c)
-	c:= &TreeCursor{
+	c := &TreeCursor{
 		c: &cc,
 		t: n.t,
 	}
@@ -581,9 +616,9 @@ type QueryPredicateStep struct {
 
 func (q *Query) PredicatesForPattern(patternIndex uint32) []QueryPredicateStep {
 	var (
-		length C.uint32_t
+		length          C.uint32_t
 		cPredicateSteps []C.TSQueryPredicateStep
-		predicateSteps []QueryPredicateStep
+		predicateSteps  []QueryPredicateStep
 	)
 
 	cPredicateStep := C.ts_query_predicates_for_pattern(q.c, C.uint32_t(patternIndex), &length)
@@ -698,8 +733,8 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 
 func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	var (
-		cqm C.TSQueryMatch
-		cqc []C.TSQueryCapture
+		cqm          C.TSQueryMatch
+		cqc          []C.TSQueryCapture
 		captureIndex C.uint32_t
 	)
 
@@ -724,4 +759,49 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	}
 
 	return qm, uint32(captureIndex), true
+}
+
+// keeps callbacks for parser.parse method
+type readFuncsMap struct {
+	sync.Mutex
+
+	funcs map[int]ReadFunc
+	count int
+}
+
+func (m *readFuncsMap) register(f ReadFunc) int {
+	m.Lock()
+	defer m.Unlock()
+
+	m.count++
+	m.funcs[m.count] = f
+	return m.count
+}
+
+func (m *readFuncsMap) unregister(id int) {
+	m.Lock()
+	defer m.Unlock()
+
+	delete(m.funcs, id)
+}
+
+func (m *readFuncsMap) get(id int) ReadFunc {
+	m.Lock()
+	defer m.Unlock()
+
+	return m.funcs[id]
+}
+
+//export callReadFunc
+func callReadFunc(id C.int, byteIndex C.uint32_t, position C.TSPoint, bytesRead *C.uint32_t) *C.char {
+	readFunc := readFuncs.get(int(id))
+	content := readFunc(uint32(byteIndex), Point{
+		Row:    uint32(position.row),
+		Column: uint32(position.column),
+	})
+	*bytesRead = C.uint32_t(len(content))
+
+	// Note: This memory is freed inside the C code; see bindings.c
+	input := C.CBytes(content)
+	return (*C.char)(input)
 }

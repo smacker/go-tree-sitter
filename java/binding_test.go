@@ -11,14 +11,9 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(java.GetLanguage())
-
-	sourceCode := []byte("import java.io.*;")
-	tree := parser.Parse(sourceCode)
-
+	n := sitter.Parse([]byte("import java.io.*;"), java.GetLanguage())
 	assert.Equal(
 		"(program (import_declaration (identifier) (identifier) (asterisk)))",
-		tree.RootNode().String(),
+		n.String(),
 	)
 }

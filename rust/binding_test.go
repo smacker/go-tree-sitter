@@ -11,14 +11,9 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	parser := sitter.NewParser()
-	parser.SetLanguage(rust.GetLanguage())
-
-	sourceCode := []byte("mod one;")
-	tree := parser.Parse(sourceCode)
-
+	n := sitter.Parse([]byte("mod one;"), rust.GetLanguage())
 	assert.Equal(
 		"(source_file (mod_item name: (identifier)))",
-		tree.RootNode().String(),
+		n.String(),
 	)
 }
