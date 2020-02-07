@@ -801,7 +801,7 @@ func callReadFunc(id C.int, byteIndex C.uint32_t, position C.TSPoint, bytesRead 
 	})
 	*bytesRead = C.uint32_t(len(content))
 
-	// Note: This memory is freed inside the C code; see above
+	// Note: This memory is freed inside the C code; see bindings.c
 	input := C.CBytes(content)
 	return (*C.char)(input)
 }
