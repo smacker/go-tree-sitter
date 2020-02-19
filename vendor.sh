@@ -18,7 +18,19 @@ grammars=(
     "ruby;v0.16.1;parser.c;scanner.cc"
     "rust;v0.16.0;parser.c;scanner.c"
     "typescript;v0.16.0"
+    "elm;v2.7.6;parser.c;scanner.cc"
+    "lua;v1.6.0;parser.c;scanner.cc"
+    "ocaml;v0.15.0;parser.c;scanner.cc"
+    "css;v0.16.0;parser.c;scanner.c"
+    "html;v0.16.0;parser.c;scanner.cc;tag.h"
 )
+
+declare -A repositories
+repositories=(
+    ["elm"]="Razzeee/tree-sitter-elm"
+    ["lua"]="Azganoth/tree-sitter-lua"
+)
+
 
 function download_sitter() {
     rm -rf vendor
@@ -48,12 +60,19 @@ function download_grammar() {
     if [ "$lang" == "c-sharp" ]; then
         target="csharp"
     fi
+
+    repository=${repositories[$lang]}
+    if [ "$repository" == "" ]; then
+        repository="tree-sitter/tree-sitter-$lang"
+    fi
+
+    url="https://raw.githubusercontent.com/$repository"
     mkdir -p "$target"
 
     echo "downloading $lang $version"
-    curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$lang/$version/src/tree_sitter/parser.h" -o "$target/parser.h"
+    curl -s -f -S "$url/$version/src/tree_sitter/parser.h" -o "$target/parser.h"
     for file in $files; do
-        curl -s -f -S "https://raw.githubusercontent.com/tree-sitter/tree-sitter-$lang/$version/src/$file" -o "$target/$file"
+        curl -s -f -S "$url/$version/src/$file" -o "$target/$file"
         sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
         rm "$target/$file.bak"
     done
