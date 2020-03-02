@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte("<?php print(1);"), php.GetLanguage())
 	assert.Equal(
-		"(program (expression_statement (print_intrinsic (parenthesized_expression (integer)))))",
+		"(program (php_tag) (expression_statement (print_intrinsic (parenthesized_expression (integer)))))",
 		n.String(),
 	)
 }
