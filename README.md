@@ -71,3 +71,16 @@ assert.True(n.Child(0).Child(1).HasChanges())
 // generate new tree
 newTree := parser.Parse(tree, newText)
 ```
+
+## Development
+
+Check if any updates for vendored files are available:
+
+```
+./vendor.sh check-updates
+```
+
+Update vendor files:
+
+- modify `grammars` array in `vendor.sh`
+- run `./vendor.sh download`
