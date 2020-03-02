@@ -113,7 +113,11 @@ function download() {
 function print_grammar_version() {
     lang=$1
     version=$2
-    remote_version=`git ls-remote --tags --refs --sort='-v:refname' "https://github.com/tree-sitter/tree-sitter-$lang.git" v\* | head -n 1 | cut -f2 | cut -d'/' -f3`
+    repository=${repositories[$lang]}
+    if [ "$repository" == "" ]; then
+        repository="tree-sitter/tree-sitter-$lang"
+    fi
+    remote_version=`git ls-remote --tags --refs --sort='-v:refname' "https://github.com/$repository.git" v\* | head -n 1 | cut -f2 | cut -d'/' -f3`
     outdated=""
     if [ "$version" != "$remote_version" ]; then
         outdated="outdated"
