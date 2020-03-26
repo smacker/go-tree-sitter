@@ -148,7 +148,7 @@ type Range struct {
 // we use cache for nodes on normal tree object
 // it prevent run of SetFinalizer as it introduces cycle
 // we can workaround it using separate object
-// for detauls see: https://github.com/golang/go/issues/7358#issuecomment-66091558
+// for details see: https://github.com/golang/go/issues/7358#issuecomment-66091558
 type cTree struct {
 	c *C.TSTree
 }
