@@ -23,6 +23,7 @@ grammars=(
     "ocaml;v0.15.0;parser.c;scanner.cc"
     "css;v0.16.0;parser.c;scanner.c"
     "html;v0.16.0;parser.c;scanner.cc;tag.h"
+    "scala;v0.13.0;parser.c;scanner.c"
 )
 
 declare -A repositories
