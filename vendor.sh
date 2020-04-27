@@ -4,32 +4,36 @@
 
 set -e
 
-sitter_version=0.16.4
+sitter_version=0.16.5
 grammars=(
-    "bash;v0.16.0;parser.c;scanner.cc"
-    "c-sharp;v0.16.0;parser.c;scanner.c"
+    "bash;v0.16.1;parser.c;scanner.cc"
+    "c-sharp;v0.16.1;parser.c;scanner.c"
     "c;v0.16.0;parser.c"
     "cpp;v0.16.0;parser.c;scanner.cc"
     "go;v0.16.0;parser.c"
     "java;v0.16.0;parser.c"
     "javascript;v0.16.0;parser.c;scanner.c"
     "php;v0.16.1;parser.c;scanner.cc"
-    "python;v0.16.0;parser.c;scanner.cc"
+    "python;v0.16.1;parser.c;scanner.cc"
     "ruby;v0.16.1;parser.c;scanner.cc"
     "rust;v0.16.0;parser.c;scanner.c"
-    "typescript;v0.16.0"
-    "elm;v2.7.6;parser.c;scanner.cc"
+    "typescript;v0.16.1"
+    "elm;v2.7.7;parser.c;scanner.cc"
     "lua;v1.6.0;parser.c;scanner.cc"
     "ocaml;v0.15.0;parser.c;scanner.cc"
     "css;v0.16.0;parser.c;scanner.c"
     "html;v0.16.0;parser.c;scanner.cc;tag.h"
     "scala;v0.13.0;parser.c;scanner.c"
+    "yaml;v0.1.0;parser.c;scanner.cc"
+    "toml;v0.2.0;parser.c;scanner.c"
 )
 
 declare -A repositories
 repositories=(
     ["elm"]="Razzeee/tree-sitter-elm"
     ["lua"]="Azganoth/tree-sitter-lua"
+    ["yaml"]="ikatyang/tree-sitter-yaml"
+    ["toml"]="ikatyang/tree-sitter-toml"
 )
 
 
