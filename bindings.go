@@ -419,7 +419,9 @@ func (n Node) NamedChildCount() uint32 {
 
 // ChildByFieldName returns the node's child with the given field name.
 func (n Node) ChildByFieldName(name string) *Node {
-	nn := C.ts_node_child_by_field_name(n.c, C.CString(name), C.uint32_t(len(name)))
+	str := C.CString(name)
+	defer C.free(unsafe.Pointer(str))
+	nn := C.ts_node_child_by_field_name(n.c, str, C.uint32_t(len(name)))
 	return n.t.cachedNode(nn)
 }
 
