@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte("echo 1"), bash.GetLanguage())
 	assert.Equal(
-		"(program (command (command_name (word)) (word)))",
+		"(program (command name: (command_name (word)) argument: (word)))",
 		n.String(),
 	)
 }
