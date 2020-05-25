@@ -23,12 +23,15 @@ func Parse(content []byte, lang *Language) *Node {
 }
 
 // Parser produces concrete syntax tree based on source code using Language
-type Parser struct{ c *C.TSParser }
+type Parser struct {
+	isClosed bool
+	c        *C.TSParser
+}
 
 // NewParser creates new Parser
 func NewParser() *Parser {
-	p := &Parser{C.ts_parser_new()}
-	runtime.SetFinalizer(p, deleteParser)
+	p := &Parser{c: C.ts_parser_new()}
+	runtime.SetFinalizer(p, (*Parser).Close)
 	return p
 }
 
@@ -58,16 +61,16 @@ type Input struct {
 
 // Parse produces new Tree from content using old tree
 func (p *Parser) Parse(oldTree *Tree, content []byte) *Tree {
-	var cTree *C.TSTree
+	var BaseTree *C.TSTree
 	if oldTree != nil {
-		cTree = oldTree.c
+		BaseTree = oldTree.c
 	}
 
 	input := C.CBytes(content)
-	cTree = C.ts_parser_parse_string(p.c, cTree, (*C.char)(input), C.uint32_t(len(content)))
+	BaseTree = C.ts_parser_parse_string(p.c, BaseTree, (*C.char)(input), C.uint32_t(len(content)))
 	C.free(input)
 
-	return p.newTree(cTree)
+	return p.newTree(BaseTree)
 }
 
 // ParseInput produces new Tree by reading from a callback defined in input
@@ -75,16 +78,16 @@ func (p *Parser) Parse(oldTree *Tree, content []byte) *Tree {
 // as it will avoid copying the data into []bytes
 // and faster access to edited part of the data
 func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
-	var cTree *C.TSTree
+	var BaseTree *C.TSTree
 	if oldTree != nil {
-		cTree = oldTree.c
+		BaseTree = oldTree.c
 	}
 
 	funcID := readFuncs.register(input.Read)
-	cTree = C.call_ts_parser_parse(p.c, cTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
+	BaseTree = C.call_ts_parser_parse(p.c, BaseTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
 	readFuncs.unregister(funcID)
 
-	return p.newTree(cTree)
+	return p.newTree(BaseTree)
 }
 
 // OperationLimit returns the duration in microseconds that parsing is allowed to take
@@ -129,8 +132,13 @@ func (p *Parser) Debug() {
 	C.ts_parser_set_logger(p.c, logger)
 }
 
-func deleteParser(p *Parser) {
-	C.ts_parser_delete(p.c)
+// Close should be called to ensure that all the memory used by the parse is freed.
+func (p *Parser) Close() {
+	if !p.isClosed {
+		C.ts_parser_delete(p.c)
+	}
+
+	p.isClosed = true
 }
 
 type Point struct {
@@ -149,20 +157,18 @@ type Range struct {
 // it prevent run of SetFinalizer as it introduces cycle
 // we can workaround it using separate object
 // for details see: https://github.com/golang/go/issues/7358#issuecomment-66091558
-type cTree struct {
-	c *C.TSTree
-}
-
-func deleteTree(t *cTree) {
-	C.ts_tree_delete(t.c)
+type BaseTree struct {
+	c        *C.TSTree
+	isClosed bool
 }
 
 // newTree creates a new tree object from a C pointer. The function will set a finalizer for the object,
 // thus no free is needed for it.
 func (p *Parser) newTree(c *C.TSTree) *Tree {
-	cTree := &cTree{c: c}
-	runtime.SetFinalizer(cTree, deleteTree)
-	newTree := &Tree{p: p, cTree: cTree, cache: make(map[C.TSNode]*Node)}
+	base := &BaseTree{c: c}
+	runtime.SetFinalizer(base, (*BaseTree).Close)
+
+	newTree := &Tree{p: p, BaseTree: base, cache: make(map[C.TSNode]*Node)}
 	return newTree
 }
 
@@ -170,7 +176,7 @@ func (p *Parser) newTree(c *C.TSTree) *Tree {
 // Note: Tree instances are not thread safe;
 // you must copy a tree if you want to use it on multiple threads simultaneously.
 type Tree struct {
-	*cTree
+	*BaseTree
 
 	// p is a pointer to a Parser that produced the Tree. Only used to keep Parser alive.
 	// Otherwise Parser may be GC'ed (and deleted by the finalizer) while some Tree objects are still in use.
@@ -203,6 +209,15 @@ func (t *Tree) cachedNode(ptr C.TSNode) *Node {
 	n := &Node{ptr, t}
 	t.cache[ptr] = n
 	return n
+}
+
+// Close should be called to ensure that all the memory used by the tree is freed.
+func (t *BaseTree) Close() {
+	if !t.isClosed {
+		C.ts_tree_delete(t.c)
+	}
+
+	t.isClosed = true
 }
 
 type EditInput struct {
@@ -262,6 +277,10 @@ func (l *Language) SymbolType(s Symbol) SymbolType {
 // SymbolCount returns the number of distinct field names in the language.
 func (l *Language) SymbolCount() uint32 {
 	return uint32(C.ts_language_symbol_count((*C.TSLanguage)(l.ptr)))
+}
+
+func (l *Language) FieldName(idx int) string {
+	return C.GoString(C.ts_language_field_name_for_id((*C.TSLanguage)(l.ptr), C.ushort(idx)))
 }
 
 // Node represents a single node in the syntax tree
@@ -400,7 +419,9 @@ func (n Node) NamedChildCount() uint32 {
 
 // ChildByFieldName returns the node's child with the given field name.
 func (n Node) ChildByFieldName(name string) *Node {
-	nn := C.ts_node_child_by_field_name(n.c, C.CString(name), C.uint32_t(len(name)))
+	str := C.CString(name)
+	defer C.free(unsafe.Pointer(str))
+	nn := C.ts_node_child_by_field_name(n.c, str, C.uint32_t(len(name)))
 	return n.t.cachedNode(nn)
 }
 
@@ -444,6 +465,8 @@ func (n Node) Content(input []byte) string {
 type TreeCursor struct {
 	c *C.TSTreeCursor
 	t *Tree
+
+	isClosed bool
 }
 
 // NewTreeCursor creates a new tree cursor starting from the given node.
@@ -453,13 +476,19 @@ func NewTreeCursor(n *Node) *TreeCursor {
 		c: &cc,
 		t: n.t,
 	}
-	runtime.SetFinalizer(c, deleteTreeCursor)
 
+	runtime.SetFinalizer(c, (*TreeCursor).Close)
 	return c
 }
 
-func deleteTreeCursor(c *TreeCursor) {
-	C.ts_tree_cursor_delete(c.c)
+// Close should be called to ensure that all the memory used by the tree cursor
+// is freed.
+func (c *TreeCursor) Close() {
+	if !c.isClosed {
+		C.ts_tree_cursor_delete(c.c)
+	}
+
+	c.isClosed = true
 }
 
 // Reset re-initializes a tree cursor to start at a different node.
@@ -556,7 +585,10 @@ func (qe *QueryError) Error() string {
 }
 
 // Query API
-type Query struct{ c *C.TSQuery }
+type Query struct {
+	c        *C.TSQuery
+	isClosed bool
+}
 
 // NewQuery creates a query by specifying a string containing one or more patterns.
 // In case of error returns QueryError.
@@ -579,14 +611,19 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 		return nil, &QueryError{Offset: uint32(erroff), Type: QueryErrorType(errtype)}
 	}
 
-	q := &Query{c}
-	runtime.SetFinalizer(q, deleteQuery)
+	q := &Query{c: c}
+	runtime.SetFinalizer(q, (*Query).Close)
 
 	return q, nil
 }
 
-func deleteQuery(q *Query) {
-	C.ts_query_delete(q.c)
+// Close should be called to ensure that all the memory used by the query is freed.
+func (q *Query) Close() {
+	if !q.isClosed {
+		C.ts_query_delete(q.c)
+	}
+
+	q.isClosed = true
 }
 
 func (q *Query) PatternCount() uint32 {
@@ -653,18 +690,16 @@ func (q *Query) StringValueForId(id uint32) string {
 type QueryCursor struct {
 	c *C.TSQueryCursor
 	t *Tree
+
+	isClosed bool
 }
 
 // NewQueryCursor creates a query cursor.
 func NewQueryCursor() *QueryCursor {
 	qc := &QueryCursor{c: C.ts_query_cursor_new(), t: nil}
-	runtime.SetFinalizer(qc, deleteQueryCursor)
+	runtime.SetFinalizer(qc, (*QueryCursor).Close)
 
 	return qc
-}
-
-func deleteQueryCursor(qc *QueryCursor) {
-	C.ts_query_cursor_delete(qc.c)
 }
 
 // Exec executes the query on a given syntax node.
@@ -683,6 +718,16 @@ func (qc *QueryCursor) SetPointRange(startPoint Point, endPoint Point) {
 		column: C.uint32_t(endPoint.Column),
 	}
 	C.ts_query_cursor_set_point_range(qc.c, cStartPoint, cEndPoint)
+}
+
+// Close should be called to ensure that all the memory used by the query
+// cursor is freed.
+func (qc *QueryCursor) Close() {
+	if !qc.isClosed {
+		C.ts_query_cursor_delete(qc.c)
+	}
+
+	qc.isClosed = true
 }
 
 // QueryCapture is a captured node by a query with an index
