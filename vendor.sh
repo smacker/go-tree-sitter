@@ -26,6 +26,7 @@ grammars=(
     "scala;v0.13.0;parser.c;scanner.c"
     "yaml;v0.1.0;parser.c;scanner.cc"
     "toml;v0.2.0;parser.c;scanner.c"
+    "svelte;v0.6.0;parser.c;scanner.cc;tag.hh"
 )
 
 declare -A repositories
@@ -34,6 +35,7 @@ repositories=(
     ["lua"]="Azganoth/tree-sitter-lua"
     ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
+    ["svelte"]="Himujjal/tree-sitter-svelte"
 )
 
 
