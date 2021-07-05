@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte(`key = "value"`), toml.GetLanguage())
 	assert.Equal(
-		"(document (pair (key) (string)))",
+		"(document (pair (bare_key) (string)))",
 		n.String(),
 	)
 }
