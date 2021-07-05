@@ -159,10 +159,43 @@ int64_t ts_tree_cursor_goto_first_child_for_byte(TSTreeCursor *_self, uint32_t g
     }
   } while (did_descend);
 
-  if (self->stack.size > initial_size &&
-      ts_tree_cursor_goto_next_sibling((TSTreeCursor *)self)) {
-    return visible_child_index;
-  }
+  self->stack.size = initial_size;
+  return -1;
+}
+
+int64_t ts_tree_cursor_goto_first_child_for_point(TSTreeCursor *_self, TSPoint goal_point) {
+  TreeCursor *self = (TreeCursor *)_self;
+  uint32_t initial_size = self->stack.size;
+  uint32_t visible_child_index = 0;
+
+  bool did_descend;
+  do {
+    did_descend = false;
+
+    bool visible;
+    TreeCursorEntry entry;
+    CursorChildIterator iterator = ts_tree_cursor_iterate_children(self);
+    while (ts_tree_cursor_child_iterator_next(&iterator, &entry, &visible)) {
+      TSPoint end_point = point_add(entry.position.extent, ts_subtree_size(*entry.subtree).extent);
+      bool at_goal = point_gt(end_point, goal_point);
+      uint32_t visible_child_count = ts_subtree_visible_child_count(*entry.subtree);
+      if (at_goal) {
+        if (visible) {
+          array_push(&self->stack, entry);
+          return visible_child_index;
+        }
+        if (visible_child_count > 0) {
+          array_push(&self->stack, entry);
+          did_descend = true;
+          break;
+        }
+      } else if (visible) {
+        visible_child_index++;
+      } else {
+        visible_child_index += visible_child_count;
+      }
+    }
+  } while (did_descend);
 
   self->stack.size = initial_size;
   return -1;
@@ -353,14 +386,12 @@ void ts_tree_cursor_current_status(
       // Determine if the current node can have later siblings with the same field name.
       if (*field_id) {
         for (const TSFieldMapEntry *i = field_map; i < field_map_end; i++) {
-          if (i->field_id == *field_id) {
-            if (
-              i->child_index > entry->structural_child_index ||
-              (i->child_index == entry->structural_child_index && *has_later_named_siblings)
-            ) {
-              *can_have_later_siblings_with_this_field = true;
-              break;
-            }
+          if (
+            i->field_id == *field_id &&
+            i->child_index > entry->structural_child_index
+          ) {
+            *can_have_later_siblings_with_this_field = true;
+            break;
           }
         }
       }
@@ -448,6 +479,7 @@ TSTreeCursor ts_tree_cursor_copy(const TSTreeCursor *_cursor) {
   TSTreeCursor res = {NULL, NULL, {0, 0}};
   TreeCursor *copy = (TreeCursor *)&res;
   copy->tree = cursor->tree;
+  array_init(&copy->stack);
   array_push_all(&copy->stack, &cursor->stack);
   return res;
 }

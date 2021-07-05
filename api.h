@@ -21,13 +21,13 @@ extern "C" {
  * The Tree-sitter library is generally backwards-compatible with languages
  * generated using older CLI versions, but is not forwards-compatible.
  */
-#define TREE_SITTER_LANGUAGE_VERSION 12
+#define TREE_SITTER_LANGUAGE_VERSION 13
 
 /**
  * The earliest ABI version that is supported by the current version of the
  * library.
  */
-#define TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION 9
+#define TREE_SITTER_MIN_COMPATIBLE_LANGUAGE_VERSION 13
 
 /*******************/
 /* Section - Types */
@@ -488,6 +488,12 @@ TSNode ts_node_parent(TSNode);
 TSNode ts_node_child(TSNode, uint32_t);
 
 /**
+ * Get the field name for node's child at the given index, where zero represents
+ * the first child. Returns NULL, if no field is found.
+ */
+const char *ts_node_field_name_for_child(TSNode, uint32_t);
+
+/**
  * Get the node's number of children.
  */
 uint32_t ts_node_child_count(TSNode);
@@ -645,12 +651,13 @@ bool ts_tree_cursor_goto_first_child(TSTreeCursor *);
 
 /**
  * Move the cursor to the first child of its current node that extends beyond
- * the given byte offset.
+ * the given byte offset or point.
  *
  * This returns the index of the child node if one was found, and returns -1
  * if no such child was found.
  */
 int64_t ts_tree_cursor_goto_first_child_for_byte(TSTreeCursor *, uint32_t);
+int64_t ts_tree_cursor_goto_first_child_for_point(TSTreeCursor *, TSPoint);
 
 TSTreeCursor ts_tree_cursor_copy(const TSTreeCursor *);
 
@@ -790,6 +797,21 @@ void ts_query_cursor_delete(TSQueryCursor *);
  * Start running a given query on a given node.
  */
 void ts_query_cursor_exec(TSQueryCursor *, const TSQuery *, TSNode);
+
+/**
+ * Manage the maximum number of in-progress matches allowed by this query
+ * cursor.
+ *
+ * Query cursors have an optional maximum capacity for storing lists of
+ * in-progress captures. If this capacity is exceeded, then the
+ * earliest-starting match will silently be dropped to make room for further
+ * matches. This maximum capacity is optional — by default, query cursors allow
+ * any number of pending matches, dynamically allocating new space for them as
+ * needed as the query is executed.
+ */
+bool ts_query_cursor_did_exceed_match_limit(const TSQueryCursor *);
+uint32_t ts_query_cursor_match_limit(const TSQueryCursor *);
+void ts_query_cursor_set_match_limit(TSQueryCursor *, uint32_t);
 
 /**
  * Set the range of bytes or (row, column) positions in which the query
