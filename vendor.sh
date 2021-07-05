@@ -6,7 +6,6 @@ set -e
 
 sitter_version="v0.19.5"
 grammars=(
-    "css;v0.16.0;parser.c;scanner.c"
     "html;v0.16.0;parser.c;scanner.cc;tag.h"
     "scala;v0.13.0;parser.c;scanner.c"
     "yaml;v0.1.0;parser.c;scanner.cc"
@@ -27,6 +26,7 @@ grammars=(
     "elm;v5.3.5;parser.c;scanner.cc"
     "lua;master;parser.c;scanner.cc"
     "ocaml;v0.19.0"
+    "css;v0.19.0;parser.c;scanner.c"
 )
 
 declare -A repositories
