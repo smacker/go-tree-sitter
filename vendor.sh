@@ -4,7 +4,7 @@
 
 set -e
 
-sitter_version=0.17.3
+sitter_version="v0.19.5"
 grammars=(
     "bash;v0.16.1;parser.c;scanner.cc"
     "c-sharp;v0.16.1;parser.c;scanner.c"
