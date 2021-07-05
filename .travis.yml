@@ -11,10 +11,13 @@ go:
   - '1.11'
   - '1.12'
   - '1.13'
+  - '1.14'
+  - '1.15'
+  - '1.16'
 
 install:
   - make
   - go get -t ./...
 
 script:
-  - go test -v ./...
+  - env CGO_CXXFLAGS="-g -O2 -include stdint.h" go test -v ./...
