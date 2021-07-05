@@ -6,7 +6,6 @@ set -e
 
 sitter_version="v0.19.5"
 grammars=(
-    "ocaml;v0.15.0;parser.c;scanner.cc"
     "css;v0.16.0;parser.c;scanner.c"
     "html;v0.16.0;parser.c;scanner.cc;tag.h"
     "scala;v0.13.0;parser.c;scanner.c"
@@ -27,6 +26,7 @@ grammars=(
     "typescript;v0.19.0"
     "elm;v5.3.5;parser.c;scanner.cc"
     "lua;master;parser.c;scanner.cc"
+    "ocaml;v0.19.0"
 )
 
 declare -A repositories
@@ -85,6 +85,33 @@ function download_grammar() {
     done
 }
 
+# ocaml is special since its folder structure is different from the other ones
+function download_ocaml() {
+    version=$1; shift
+    target="ocaml"
+
+    declare -A files
+    files=(
+        ["parser.c"]="ocaml/src/parser.c"
+        ["scanner.cc"]="ocaml/src/scanner.cc"
+        ["scanner.h"]="common/scanner.h"
+    )
+
+    url="https://raw.githubusercontent.com/tree-sitter/tree-sitter-ocaml"
+
+    mkdir -p "$target"
+
+    echo "download ocaml $version"
+    curl -s -f -S "$url/$version/ocaml/src/tree_sitter/parser.h" -o "$target/parser.h"
+    for file in "${!files[@]}"; do
+        file_path=${files[$file]}
+        curl -s -f -S "$url/$version/$file_path" -o "$target/$file"
+        sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
+        sed -i.bak 's/"\.\.\/\.\.\/common\/scanner\.h"/"scanner\.h"/g' "$target/$file"
+    done
+    rm $target/*.bak
+}
+
 # typescript is special as it contains 2 different grammars
 function download_typescript() {
     version=$1; shift
@@ -111,6 +138,8 @@ function download() {
     for grammar in ${grammars[@]}; do
         if [[ "$grammar" == typescript* ]]; then
             download_typescript `echo $grammar | cut -d';' -f2`
+        elif [[ "$grammar" == ocaml* ]]; then
+            download_ocaml `echo $grammar | cut -d';' -f2`
         else
             download_grammar `echo $grammar | tr ';' ' '`
         fi
