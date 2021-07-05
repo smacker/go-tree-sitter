@@ -81,6 +81,7 @@ function download_grammar() {
     for file in $files; do
         curl -s -f -S "$url/$version/src/$file" -o "$target/$file"
         sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
+        sed -i.bak 's/"tree_sitter\/parser\.h"/"parser\.h"/g' "$target/$file"
         rm "$target/$file.bak"
     done
 }
