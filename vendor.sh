@@ -6,7 +6,6 @@ set -e
 
 sitter_version=v0.20.0
 grammars=(
-    "cpp;v0.16.0;parser.c;scanner.cc"
     "go;v0.16.0;parser.c"
     "java;v0.16.0;parser.c"
     "javascript;v0.16.0;parser.c;scanner.c"
@@ -27,6 +26,7 @@ grammars=(
     "bash;v0.19.0;parser.c;scanner.cc"
     "c-sharp;v0.19.0;parser.c;scanner.c"
     "c;v0.19.0;parser.c"
+    "cpp;v0.19.0;parser.c;scanner.cc"
 )
 
 declare -A repositories
