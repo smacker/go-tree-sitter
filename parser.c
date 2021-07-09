@@ -25,6 +25,36 @@
     ts_parser__log(self);                                                                   \
   }
 
+#define LOG_LOOKAHEAD(symbol_name, size)                      \
+  if (self->lexer.logger.log || self->dot_graph_file) {       \
+    char *buf = self->lexer.debug_buffer;                     \
+    const char *symbol = symbol_name;                         \
+    int off = sprintf(buf, "lexed_lookahead sym:");           \
+    for (                                                     \
+      int i = 0;                                              \
+      symbol[i] != '\0'                                       \
+      && off < TREE_SITTER_SERIALIZATION_BUFFER_SIZE;         \
+      i++                                                     \
+    ) {                                                       \
+      switch (symbol[i]) {                                    \
+      case '\t': buf[off++] = '\\'; buf[off++] = 't'; break;  \
+      case '\n': buf[off++] = '\\'; buf[off++] = 'n'; break;  \
+      case '\v': buf[off++] = '\\'; buf[off++] = 'v'; break;  \
+      case '\f': buf[off++] = '\\'; buf[off++] = 'f'; break;  \
+      case '\r': buf[off++] = '\\'; buf[off++] = 'r'; break;  \
+      case '\\': buf[off++] = '\\'; buf[off++] = '\\'; break; \
+      default:   buf[off++] = symbol[i]; break;               \
+      }                                                       \
+    }                                                         \
+    snprintf(                                                 \
+      buf + off,                                              \
+      TREE_SITTER_SERIALIZATION_BUFFER_SIZE - off,            \
+      ", size:%u",                                            \
+      size                                                    \
+    );                                                        \
+    ts_parser__log(self);                                     \
+  }
+
 #define LOG_STACK()                                                              \
   if (self->dot_graph_file) {                                                    \
     ts_stack_print_dot_graph(self->stack, self->language, self->dot_graph_file); \
@@ -373,6 +403,7 @@ static Subtree ts_parser__lex(
   bool found_external_token = false;
   bool error_mode = parse_state == ERROR_STATE;
   bool skipped_error = false;
+  bool called_get_column = false;
   int32_t first_error_character = 0;
   Length error_start_position = length_zero();
   Length error_end_position = length_zero();
@@ -415,6 +446,7 @@ static Subtree ts_parser__lex(
         (!error_mode && ts_stack_has_advanced_since_error(self->stack, version))
       )) {
         found_external_token = true;
+        called_get_column = self->lexer.did_get_column;
         break;
       }
 
@@ -477,11 +509,9 @@ static Subtree ts_parser__lex(
       self->language
     );
 
-    LOG(
-      "lexed_lookahead sym:%s, size:%u, character:'%c'",
+    LOG_LOOKAHEAD(
       SYM_NAME(ts_subtree_symbol(result)),
-      ts_subtree_total_size(result).bytes,
-      first_error_character
+      ts_subtree_total_size(result).bytes
     );
   } else {
     if (self->lexer.token_end_position.bytes < self->lexer.token_start_position.bytes) {
@@ -518,6 +548,7 @@ static Subtree ts_parser__lex(
       lookahead_bytes,
       parse_state,
       found_external_token,
+      called_get_column,
       is_keyword,
       self->language
     );
@@ -534,8 +565,7 @@ static Subtree ts_parser__lex(
       );
     }
 
-    LOG(
-      "lexed_lookahead sym:%s, size:%u",
+    LOG_LOOKAHEAD(
       SYM_NAME(ts_subtree_symbol(result)),
       ts_subtree_total_size(result).bytes
     );
@@ -985,15 +1015,15 @@ static bool ts_parser__do_all_potential_reductions(
         switch (action.type) {
           case TSParseActionTypeShift:
           case TSParseActionTypeRecover:
-            if (!action.params.shift.extra && !action.params.shift.repetition) has_shift_action = true;
+            if (!action.shift.extra && !action.shift.repetition) has_shift_action = true;
             break;
           case TSParseActionTypeReduce:
-            if (action.params.reduce.child_count > 0)
+            if (action.reduce.child_count > 0)
               ts_reduce_action_set_add(&self->reduce_actions, (ReduceAction){
-                .symbol = action.params.reduce.symbol,
-                .count = action.params.reduce.child_count,
-                .dynamic_precedence = action.params.reduce.dynamic_precedence,
-                .production_id = action.params.reduce.production_id,
+                .symbol = action.reduce.symbol,
+                .count = action.reduce.child_count,
+                .dynamic_precedence = action.reduce.dynamic_precedence,
+                .production_id = action.reduce.production_id,
               });
             break;
           default:
@@ -1284,7 +1314,7 @@ static void ts_parser__recover(
   // be counted in error cost calculations.
   unsigned n;
   const TSParseAction *actions = ts_language_actions(self->language, 1, ts_subtree_symbol(lookahead), &n);
-  if (n > 0 && actions[n - 1].type == TSParseActionTypeShift && actions[n - 1].params.shift.extra) {
+  if (n > 0 && actions[n - 1].type == TSParseActionTypeShift && actions[n - 1].shift.extra) {
     MutableSubtree mutable_lookahead = ts_subtree_make_mut(&self->tree_pool, lookahead);
     ts_subtree_set_extra(&mutable_lookahead);
     lookahead = ts_subtree_from_mut(mutable_lookahead);
@@ -1414,17 +1444,13 @@ static bool ts_parser__advance(
 
       switch (action.type) {
         case TSParseActionTypeShift: {
-          if (action.params.shift.repetition) break;
+          if (action.shift.repetition) break;
           TSStateId next_state;
-          if (action.params.shift.extra) {
-
-            // TODO: remove when TREE_SITTER_LANGUAGE_VERSION 9 is out.
-            if (state == ERROR_STATE) continue;
-
+          if (action.shift.extra) {
             next_state = state;
             LOG("shift_extra");
           } else {
-            next_state = action.params.shift.state;
+            next_state = action.shift.state;
             LOG("shift state:%u", next_state);
           }
 
@@ -1433,7 +1459,7 @@ static bool ts_parser__advance(
             next_state = ts_language_next_state(self->language, state, ts_subtree_symbol(lookahead));
           }
 
-          ts_parser__shift(self, version, next_state, lookahead, action.params.shift.extra);
+          ts_parser__shift(self, version, next_state, lookahead, action.shift.extra);
           if (did_reuse) reusable_node_advance(&self->reusable_node);
           return true;
         }
@@ -1441,10 +1467,10 @@ static bool ts_parser__advance(
         case TSParseActionTypeReduce: {
           bool is_fragile = table_entry.action_count > 1;
           bool end_of_non_terminal_extra = lookahead.ptr == NULL;
-          LOG("reduce sym:%s, child_count:%u", SYM_NAME(action.params.reduce.symbol), action.params.reduce.child_count);
+          LOG("reduce sym:%s, child_count:%u", SYM_NAME(action.reduce.symbol), action.reduce.child_count);
           StackVersion reduction_version = ts_parser__reduce(
-            self, version, action.params.reduce.symbol, action.params.reduce.child_count,
-            action.params.reduce.dynamic_precedence, action.params.reduce.production_id,
+            self, version, action.reduce.symbol, action.reduce.child_count,
+            action.reduce.dynamic_precedence, action.reduce.production_id,
             is_fragile, end_of_non_terminal_extra
           );
           if (reduction_version != STACK_VERSION_NONE) {
