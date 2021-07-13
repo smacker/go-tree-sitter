@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte("import java.io.*;"), java.GetLanguage())
 	assert.Equal(
-		"(program (import_declaration (identifier) (identifier) (asterisk)))",
+		"(program (import_declaration (scoped_identifier scope: (identifier) name: (identifier)) (asterisk)))",
 		n.String(),
 	)
 }

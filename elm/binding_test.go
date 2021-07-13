@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte("import Html exposing (text)"), elm.GetLanguage())
 	assert.Equal(
-		"(file (import_clause (import) (upper_case_qid (upper_case_identifier)) (exposing_list (exposing) (left_parenthesis) (exposed_value (lower_case_identifier)) (right_parenthesis))))",
+		"(file (import_clause (import) moduleName: (upper_case_qid (upper_case_identifier)) exposing: (exposing_list (exposing) (exposed_value (lower_case_identifier)))))",
 		n.String(),
 	)
 }

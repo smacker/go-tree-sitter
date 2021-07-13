@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte("a: 42"), yaml.GetLanguage())
 	assert.Equal(
-		"(stream (document (block_node (block_mapping (block_mapping_pair key: (flow_node (plain_scalar)) value: (flow_node (plain_scalar)))))))",
+		"(stream (document (block_node (block_mapping (block_mapping_pair key: (flow_node (plain_scalar (string_scalar))) value: (flow_node (plain_scalar (integer_scalar))))))))",
 		n.String(),
 	)
 }

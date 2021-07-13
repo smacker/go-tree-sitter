@@ -1,13 +1,17 @@
-#include "parser.h"
+// https://github.com/Azganoth/tree-sitter-lua/blob/master/src/scanner.cc
+// Modified version from here.
+// Thanks to Azganoth for the parser
+
 #include <cwctype>
+#include "parser.h"
 
 namespace {
 
   using std::iswspace;
 
   enum TokenType {
-    COMMENT,
-    STRING
+    MULTI_COMMENT,
+    MULTI_STRING,
   };
 
   struct Scanner {
@@ -91,14 +95,14 @@ namespace {
     }
 
     bool scan(TSLexer *lexer, const bool *valid_symbols) {
-      if (valid_symbols[COMMENT] || valid_symbols[STRING]) {
+      if (valid_symbols[MULTI_COMMENT] || valid_symbols[MULTI_STRING]) {
         while (iswspace(lexer->lookahead)) {
           skip(lexer);
         }
 
         // Try to make a short literal string with single quote
         if (lexer->lookahead == '\'') {
-          lexer->result_symbol = STRING;
+          lexer->result_symbol = MULTI_STRING;
 
           // Consume first appearance of '\''
           advance(lexer);
@@ -135,7 +139,7 @@ namespace {
 
         // Try to make a short literal string with double quote
         else if (lexer->lookahead == '"') {
-          lexer->result_symbol = STRING;
+          lexer->result_symbol = MULTI_STRING;
 
           // Consume first appearance of '"'
           advance(lexer);
@@ -171,12 +175,19 @@ namespace {
         }
 
         // Try to make a comment
+        // --[[
+        // stuff
+        // --]]
         else if (scan_sequence(lexer, "--")) {
+          if (lexer->lookahead != '[') {
+            return false;
+          }
+
           while (iswspace(lexer->lookahead) && lexer->lookahead != '\n' && lexer->lookahead != 0) {
             advance(lexer);
           }
 
-          lexer->result_symbol = COMMENT;
+          lexer->result_symbol = MULTI_COMMENT;
 
           if (!scan_multiline_content(lexer)) {
             while (lexer->lookahead != '\n' && lexer->lookahead != 0) {
@@ -190,7 +201,7 @@ namespace {
 
         // Try to make a long literal string with double bracket
         else if (scan_multiline_content(lexer)) {
-          lexer->result_symbol = STRING;
+          lexer->result_symbol = MULTI_STRING;
 
           return true;
         }

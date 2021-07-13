@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte("puts 1"), ruby.GetLanguage())
 	assert.Equal(
-		"(program (method_call method: (identifier) arguments: (argument_list (integer))))",
+		"(program (call method: (identifier) arguments: (argument_list (integer))))",
 		n.String(),
 	)
 }
