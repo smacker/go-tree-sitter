@@ -21,7 +21,9 @@ func getTestGrammar() *Language {
 
 # cleanup
 rm binding.gyp
-rm index.js
 rm -rf node_modules/
 rm -rf src/
 rm package-lock.json
+rm Cargo.toml
+rm -rf bindings/
+rm package.json
