@@ -27,6 +27,7 @@ grammars=(
     "yaml;v0.1.0;parser.c;scanner.cc"
     "toml;v0.2.0;parser.c;scanner.c"
     "svelte;v0.6.0;parser.c;scanner.cc;tag.hh"
+    "hcl;main;parser.c;scanner.cc"
 )
 
 declare -A repositories
@@ -36,6 +37,7 @@ repositories=(
     ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
     ["svelte"]="Himujjal/tree-sitter-svelte"
+    ["hcl"]="mitchellh/tree-sitter-hcl"
 )
 
 
