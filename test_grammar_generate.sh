@@ -2,7 +2,7 @@
 # cgo can't be used in tests
 out=test_grammar.go
 
-npm install tree-sitter-cli@0.16.1
+npm install tree-sitter-cli@0.20.0
 export PATH=$PATH:./node_modules/.bin
 
 tree-sitter generate $(pwd)/test_grammar.js
