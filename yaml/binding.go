@@ -1,5 +1,6 @@
 package yaml
 
+//#cgo LDFLAGS: -Wl,--allow-multiple-definition
 //#include "parser.h"
 //TSLanguage *tree_sitter_yaml();
 import "C"

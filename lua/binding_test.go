@@ -13,7 +13,7 @@ func TestGrammar(t *testing.T) {
 
 	n := sitter.Parse([]byte(`print("Hello World!")`), lua.GetLanguage())
 	assert.Equal(
-		"(program (function_call (identifier) (arguments (string))))",
+		"(program (function_call prefix: (identifier) (function_call_paren) args: (function_arguments (string)) (function_call_paren)))",
 		n.String(),
 	)
 }

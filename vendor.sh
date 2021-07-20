@@ -6,33 +6,33 @@ set -e
 
 sitter_version=v0.20.0
 grammars=(
-    "bash;v0.16.1;parser.c;scanner.cc"
-    "c-sharp;v0.16.1;parser.c;scanner.c"
-    "c;v0.16.0;parser.c"
-    "cpp;v0.16.0;parser.c;scanner.cc"
-    "go;v0.16.0;parser.c"
-    "java;v0.16.0;parser.c"
-    "javascript;v0.16.0;parser.c;scanner.c"
-    "php;v0.16.1;parser.c;scanner.cc"
-    "python;v0.16.1;parser.c;scanner.cc"
-    "ruby;v0.16.1;parser.c;scanner.cc"
-    "rust;v0.16.0;parser.c;scanner.c"
-    "typescript;v0.16.1"
-    "elm;v2.7.7;parser.c;scanner.cc"
-    "lua;v1.6.0;parser.c;scanner.cc"
-    "ocaml;v0.15.0;parser.c;scanner.cc"
-    "css;v0.16.0;parser.c;scanner.c"
-    "html;v0.16.0;parser.c;scanner.cc;tag.h"
-    "scala;v0.13.0;parser.c;scanner.c"
-    "yaml;v0.1.0;parser.c;scanner.cc"
-    "toml;v0.2.0;parser.c;scanner.c"
-    "svelte;v0.6.0;parser.c;scanner.cc;tag.hh"
+    "bash;v0.19.0;parser.c;scanner.cc"
+    "c-sharp;v0.19.0;parser.c;scanner.c"
+    "c;v0.19.0;parser.c"
+    "cpp;v0.19.0;parser.c;scanner.cc"
+    "go;v0.19.1;parser.c"
+    "java;v0.19.1;parser.c"
+    "javascript;v0.19.0;parser.c;scanner.c"
+    "php;v0.19.0;parser.c;scanner.cc"
+    "python;v0.19.0;parser.c;scanner.cc"
+    "ruby;v0.19.0;parser.c;scanner.cc"
+    "rust;v0.19.1;parser.c;scanner.c"
+    "typescript;v0.19.0"
+    "elm;v5.3.5;parser.c;scanner.cc"
+    "lua;master;parser.c;scanner.cc"
+    "ocaml;v0.19.0"
+    "css;v0.19.0;parser.c;scanner.c"
+    "html;v0.19.0;parser.c;scanner.cc;tag.h"
+    "scala;v0.19.0;parser.c;scanner.c"
+    "yaml;v0.5.0;parser.c;scanner.cc;schema.generated.cc"
+    "toml;v0.5.1;parser.c;scanner.c"
+    "svelte;v0.8.1;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
 )
 
 declare -A repositories
 repositories=(
     ["elm"]="Razzeee/tree-sitter-elm"
-    ["lua"]="Azganoth/tree-sitter-lua"
+    ["lua"]="tjdevries/tree-sitter-lua"
     ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
     ["svelte"]="Himujjal/tree-sitter-svelte"
@@ -81,8 +81,36 @@ function download_grammar() {
     for file in $files; do
         curl -s -f -S "$url/$version/src/$file" -o "$target/$file"
         sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
+        sed -i.bak 's/"tree_sitter\/parser\.h"/"parser\.h"/g' "$target/$file"
         rm "$target/$file.bak"
     done
+}
+
+# ocaml is special since its folder structure is different from the other ones
+function download_ocaml() {
+    version=$1; shift
+    target="ocaml"
+
+    declare -A files
+    files=(
+        ["parser.c"]="ocaml/src/parser.c"
+        ["scanner.cc"]="ocaml/src/scanner.cc"
+        ["scanner.h"]="common/scanner.h"
+    )
+
+    url="https://raw.githubusercontent.com/tree-sitter/tree-sitter-ocaml"
+
+    mkdir -p "$target"
+
+    echo "download ocaml $version"
+    curl -s -f -S "$url/$version/ocaml/src/tree_sitter/parser.h" -o "$target/parser.h"
+    for file in "${!files[@]}"; do
+        file_path=${files[$file]}
+        curl -s -f -S "$url/$version/$file_path" -o "$target/$file"
+        sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
+        sed -i.bak 's/"\.\.\/\.\.\/common\/scanner\.h"/"scanner\.h"/g' "$target/$file"
+    done
+    rm $target/*.bak
 }
 
 # typescript is special as it contains 2 different grammars
@@ -111,6 +139,8 @@ function download() {
     for grammar in ${grammars[@]}; do
         if [[ "$grammar" == typescript* ]]; then
             download_typescript `echo $grammar | cut -d';' -f2`
+        elif [[ "$grammar" == ocaml* ]]; then
+            download_ocaml `echo $grammar | cut -d';' -f2`
         else
             download_grammar `echo $grammar | tr ';' ' '`
         fi
