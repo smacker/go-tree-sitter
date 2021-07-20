@@ -15,6 +15,8 @@ package sitter
 //#define ts_builtin_sym_end 0
 //#define TREE_SITTER_SERIALIZATION_BUFFER_SIZE 1024
 //
+//typedef uint16_t TSStateId;
+//
 //#ifndef TREE_SITTER_API_H_
 //typedef uint16_t TSSymbol;
 //typedef uint16_t TSFieldId;
@@ -32,11 +34,10 @@ package sitter
 //  uint16_t length;
 //} TSFieldMapSlice;
 //
-//typedef uint16_t TSStateId;
-//
 //typedef struct {
-//  bool visible : 1;
-//  bool named : 1;
+//  bool visible;
+//  bool named;
+//  bool supertype;
 //} TSSymbolMetadata;
 //
 //typedef struct TSLexer TSLexer;
@@ -58,21 +59,21 @@ package sitter
 //  TSParseActionTypeRecover,
 //} TSParseActionType;
 //
-//typedef struct {
-//  union {
-//    struct {
-//      TSStateId state;
-//      bool extra : 1;
-//      bool repetition : 1;
-//    };
-//    struct {
-//      TSSymbol symbol;
-//      int16_t dynamic_precedence;
-//      uint8_t child_count;
-//      uint8_t production_id;
-//    };
-//  } params;
-//  TSParseActionType type : 4;
+//typedef union {
+//  struct {
+//    uint8_t type;
+//    TSStateId state;
+//    bool extra;
+//    bool repetition;
+//  } shift;
+//  struct {
+//    uint8_t type;
+//    uint8_t child_count;
+//    TSSymbol symbol;
+//    int16_t dynamic_precedence;
+//    uint16_t production_id;
+//  } reduce;
+//  uint8_t type;
 //} TSParseAction;
 //
 //typedef struct {
@@ -84,8 +85,8 @@ package sitter
 //  TSParseAction action;
 //  struct {
 //    uint8_t count;
-//    bool reusable : 1;
-//  };
+//    bool reusable;
+//  } entry;
 //} TSParseActionEntry;
 //
 //struct TSLanguage {
@@ -94,13 +95,24 @@ package sitter
 //  uint32_t alias_count;
 //  uint32_t token_count;
 //  uint32_t external_token_count;
-//  const char **symbol_names;
-//  const TSSymbolMetadata *symbol_metadata;
-//  const uint16_t *parse_table;
-//  const TSParseActionEntry *parse_actions;
-//  const TSLexMode *lex_modes;
-//  const TSSymbol *alias_sequences;
+//  uint32_t state_count;
+//  uint32_t large_state_count;
+//  uint32_t production_id_count;
+//  uint32_t field_count;
 //  uint16_t max_alias_sequence_length;
+//  const uint16_t *parse_table;
+//  const uint16_t *small_parse_table;
+//  const uint32_t *small_parse_table_map;
+//  const TSParseActionEntry *parse_actions;
+//  const char * const *symbol_names;
+//  const char * const *field_names;
+//  const TSFieldMapSlice *field_map_slices;
+//  const TSFieldMapEntry *field_map_entries;
+//  const TSSymbolMetadata *symbol_metadata;
+//  const TSSymbol *public_symbol_map;
+//  const uint16_t *alias_map;
+//  const TSSymbol *alias_sequences;
+//  const TSLexMode *lex_modes;
 //  bool (*lex_fn)(TSLexer *, TSStateId);
 //  bool (*keyword_lex_fn)(TSLexer *, TSStateId);
 //  TSSymbol keyword_capture_token;
@@ -113,14 +125,6 @@ package sitter
 //    unsigned (*serialize)(void *, char *);
 //    void (*deserialize)(void *, const char *, unsigned);
 //  } external_scanner;
-//  uint32_t field_count;
-//  const TSFieldMapSlice *field_map_slices;
-//  const TSFieldMapEntry *field_map_entries;
-//  const char **field_names;
-//  uint32_t large_state_count;
-//  const uint16_t *small_parse_table;
-//  const uint32_t *small_parse_table_map;
-//  const TSSymbol *public_symbol_map;
 //};
 //
 ///*
@@ -169,54 +173,50 @@ package sitter
 //
 //#define ACTIONS(id) id
 //
-//#define SHIFT(state_value)              \
-//  {                                     \
-//    {                                   \
-//      .type = TSParseActionTypeShift,   \
-//      .params = {.state = state_value}, \
-//    }                                   \
-//  }
+//#define SHIFT(state_value)            \
+//  {{                                  \
+//    .shift = {                        \
+//      .type = TSParseActionTypeShift, \
+//      .state = state_value            \
+//    }                                 \
+//  }}
 //
 //#define SHIFT_REPEAT(state_value)     \
-//  {                                   \
-//    {                                 \
+//  {{                                  \
+//    .shift = {                        \
 //      .type = TSParseActionTypeShift, \
-//      .params = {                     \
-//        .state = state_value,         \
-//        .repetition = true            \
-//      },                              \
+//      .state = state_value,           \
+//      .repetition = true              \
 //    }                                 \
-//  }
-//
-//#define RECOVER()                        \
-//  {                                      \
-//    { .type = TSParseActionTypeRecover } \
-//  }
+//  }}
 //
 //#define SHIFT_EXTRA()                 \
-//  {                                   \
-//    {                                 \
+//  {{                                  \
+//    .shift = {                        \
 //      .type = TSParseActionTypeShift, \
-//      .params = {.extra = true}       \
+//      .extra = true                   \
 //    }                                 \
-//  }
+//  }}
 //
 //#define REDUCE(symbol_val, child_count_val, ...) \
-//  {                                              \
-//    {                                            \
+//  {{                                             \
+//    .reduce = {                                  \
 //      .type = TSParseActionTypeReduce,           \
-//      .params = {                                \
-//        .symbol = symbol_val,                    \
-//        .child_count = child_count_val,          \
-//        __VA_ARGS__                              \
-//      }                                          \
-//    }                                            \
-//  }
+//      .symbol = symbol_val,                      \
+//      .child_count = child_count_val,            \
+//      __VA_ARGS__                                \
+//    },                                           \
+//  }}
 //
-//#define ACCEPT_INPUT()                  \
-//  {                                     \
-//    { .type = TSParseActionTypeAccept } \
-//  }
+//#define RECOVER()                    \
+//  {{                                 \
+//    .type = TSParseActionTypeRecover \
+//  }}
+//
+//#define ACCEPT_INPUT()              \
+//  {{                                \
+//    .type = TSParseActionTypeAccept \
+//  }}
 //
 //#ifdef __cplusplus
 //}
@@ -229,7 +229,7 @@ package sitter
 //#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 //#endif
 //
-//#define LANGUAGE_VERSION 11
+//#define LANGUAGE_VERSION 13
 //#define STATE_COUNT 9
 //#define LARGE_STATE_COUNT 4
 //#define SYMBOL_COUNT 9
@@ -238,6 +238,7 @@ package sitter
 //#define EXTERNAL_TOKEN_COUNT 0
 //#define FIELD_COUNT 2
 //#define MAX_ALIAS_SEQUENCE_LENGTH 3
+//#define PRODUCTION_ID_COUNT 2
 //
 //enum {
 //  anon_sym_LPAREN = 1,
@@ -250,7 +251,7 @@ package sitter
 //  sym_sum = 8,
 //};
 //
-//static const char *ts_symbol_names[] = {
+//static const char * const ts_symbol_names[] = {
 //  [ts_builtin_sym_end] = "end",
 //  [anon_sym_LPAREN] = "(",
 //  [anon_sym_RPAREN] = ")",
@@ -262,7 +263,7 @@ package sitter
 //  [sym_sum] = "sum",
 //};
 //
-//static TSSymbol ts_symbol_map[] = {
+//static const TSSymbol ts_symbol_map[] = {
 //  [ts_builtin_sym_end] = ts_builtin_sym_end,
 //  [anon_sym_LPAREN] = anon_sym_LPAREN,
 //  [anon_sym_RPAREN] = anon_sym_RPAREN,
@@ -318,13 +319,13 @@ package sitter
 //  field_right = 2,
 //};
 //
-//static const char *ts_field_names[] = {
+//static const char * const ts_field_names[] = {
 //  [0] = NULL,
 //  [field_left] = "left",
 //  [field_right] = "right",
 //};
 //
-//static const TSFieldMapSlice ts_field_map_slices[2] = {
+//static const TSFieldMapSlice ts_field_map_slices[PRODUCTION_ID_COUNT] = {
 //  [1] = {.index = 0, .length = 2},
 //};
 //
@@ -334,8 +335,12 @@ package sitter
 //    {field_right, 2},
 //};
 //
-//static TSSymbol ts_alias_sequences[2][MAX_ALIAS_SEQUENCE_LENGTH] = {
+//static const TSSymbol ts_alias_sequences[PRODUCTION_ID_COUNT][MAX_ALIAS_SEQUENCE_LENGTH] = {
 //  [0] = {0},
+//};
+//
+//static const uint16_t ts_non_terminal_alias_map[] = {
+//  0,
 //};
 //
 //static bool ts_lex(TSLexer *lexer, TSStateId state) {
@@ -392,7 +397,7 @@ package sitter
 //  }
 //}
 //
-//static TSLexMode ts_lex_modes[STATE_COUNT] = {
+//static const TSLexMode ts_lex_modes[STATE_COUNT] = {
 //  [0] = {.lex_state = 0},
 //  [1] = {.lex_state = 0},
 //  [2] = {.lex_state = 0},
@@ -404,7 +409,7 @@ package sitter
 //  [8] = {.lex_state = 0},
 //};
 //
-//static uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
+//static const uint16_t ts_parse_table[LARGE_STATE_COUNT][SYMBOL_COUNT] = {
 //  [0] = {
 //    [ts_builtin_sym_end] = ACTIONS(1),
 //    [anon_sym_LPAREN] = ACTIONS(1),
@@ -440,7 +445,7 @@ package sitter
 //  },
 //};
 //
-//static uint16_t ts_small_parse_table[] = {
+//static const uint16_t ts_small_parse_table[] = {
 //  [0] = 2,
 //    ACTIONS(3), 1,
 //      sym_comment,
@@ -478,7 +483,7 @@ package sitter
 //      anon_sym_RPAREN,
 //};
 //
-//static uint32_t ts_small_parse_table_map[] = {
+//static const uint32_t ts_small_parse_table_map[] = {
 //  [SMALL_STATE(4)] = 0,
 //  [SMALL_STATE(5)] = 9,
 //  [SMALL_STATE(6)] = 18,
@@ -486,50 +491,59 @@ package sitter
 //  [SMALL_STATE(8)] = 37,
 //};
 //
-//static TSParseActionEntry ts_parse_actions[] = {
-//  [0] = {.count = 0, .reusable = false},
-//  [1] = {.count = 1, .reusable = false}, RECOVER(),
-//  [3] = {.count = 1, .reusable = true}, SHIFT_EXTRA(),
-//  [5] = {.count = 1, .reusable = true}, SHIFT(2),
-//  [7] = {.count = 1, .reusable = true}, SHIFT(4),
-//  [9] = {.count = 1, .reusable = true}, REDUCE(sym_expression, 1),
-//  [11] = {.count = 1, .reusable = true}, REDUCE(sym_expression, 3),
-//  [13] = {.count = 1, .reusable = true}, REDUCE(sym_sum, 3, .production_id = 1),
-//  [15] = {.count = 1, .reusable = true},  ACCEPT_INPUT(),
-//  [17] = {.count = 1, .reusable = true}, SHIFT(3),
-//  [19] = {.count = 1, .reusable = true}, SHIFT(5),
+//static const TSParseActionEntry ts_parse_actions[] = {
+//  [0] = {.entry = {.count = 0, .reusable = false}},
+//  [1] = {.entry = {.count = 1, .reusable = false}}, RECOVER(),
+//  [3] = {.entry = {.count = 1, .reusable = true}}, SHIFT_EXTRA(),
+//  [5] = {.entry = {.count = 1, .reusable = true}}, SHIFT(2),
+//  [7] = {.entry = {.count = 1, .reusable = true}}, SHIFT(4),
+//  [9] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_expression, 1),
+//  [11] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_expression, 3),
+//  [13] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_sum, 3, .production_id = 1),
+//  [15] = {.entry = {.count = 1, .reusable = true}},  ACCEPT_INPUT(),
+//  [17] = {.entry = {.count = 1, .reusable = true}}, SHIFT(3),
+//  [19] = {.entry = {.count = 1, .reusable = true}}, SHIFT(5),
 //};
 //
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
 //#ifdef _WIN32
 //#define extern __declspec(dllexport)
 //#endif
 //
 //extern const TSLanguage *tree_sitter_test_grammar(void) {
-//  static TSLanguage language = {
+//  static const TSLanguage language = {
 //    .version = LANGUAGE_VERSION,
 //    .symbol_count = SYMBOL_COUNT,
 //    .alias_count = ALIAS_COUNT,
 //    .token_count = TOKEN_COUNT,
-//    .large_state_count = LARGE_STATE_COUNT,
-//    .symbol_metadata = ts_symbol_metadata,
-//    .parse_table = (const unsigned short *)ts_parse_table,
-//    .small_parse_table = (const uint16_t *)ts_small_parse_table,
-//    .small_parse_table_map = (const uint32_t *)ts_small_parse_table_map,
-//    .parse_actions = ts_parse_actions,
-//    .lex_modes = ts_lex_modes,
-//    .symbol_names = ts_symbol_names,
-//    .public_symbol_map = ts_symbol_map,
-//    .alias_sequences = (const TSSymbol *)ts_alias_sequences,
-//    .field_count = FIELD_COUNT,
-//    .field_names = ts_field_names,
-//    .field_map_slices = (const TSFieldMapSlice *)ts_field_map_slices,
-//    .field_map_entries = (const TSFieldMapEntry *)ts_field_map_entries,
-//    .max_alias_sequence_length = MAX_ALIAS_SEQUENCE_LENGTH,
-//    .lex_fn = ts_lex,
 //    .external_token_count = EXTERNAL_TOKEN_COUNT,
+//    .state_count = STATE_COUNT,
+//    .large_state_count = LARGE_STATE_COUNT,
+//    .production_id_count = PRODUCTION_ID_COUNT,
+//    .field_count = FIELD_COUNT,
+//    .max_alias_sequence_length = MAX_ALIAS_SEQUENCE_LENGTH,
+//    .parse_table = &ts_parse_table[0][0],
+//    .small_parse_table = ts_small_parse_table,
+//    .small_parse_table_map = ts_small_parse_table_map,
+//    .parse_actions = ts_parse_actions,
+//    .symbol_names = ts_symbol_names,
+//    .field_names = ts_field_names,
+//    .field_map_slices = ts_field_map_slices,
+//    .field_map_entries = ts_field_map_entries,
+//    .symbol_metadata = ts_symbol_metadata,
+//    .public_symbol_map = ts_symbol_map,
+//    .alias_map = ts_non_terminal_alias_map,
+//    .alias_sequences = &ts_alias_sequences[0][0],
+//    .lex_modes = ts_lex_modes,
+//    .lex_fn = ts_lex,
 //  };
 //  return &language;
 //}
+//#ifdef __cplusplus
+//}
+//#endif
 import "C"
 import "unsafe"
 
