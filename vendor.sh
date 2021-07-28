@@ -27,6 +27,7 @@ grammars=(
     "yaml;v0.5.0;parser.c;scanner.cc;schema.generated.cc"
     "toml;v0.5.1;parser.c;scanner.c"
     "svelte;v0.8.1;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
+    "hcl;main;parser.c;scanner.cc"
     "dockerfile;v0.1.0;parser.c"
 )
 
@@ -37,6 +38,7 @@ repositories=(
     ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
     ["svelte"]="Himujjal/tree-sitter-svelte"
+    ["hcl"]="mitchellh/tree-sitter-hcl"
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
 )
 
