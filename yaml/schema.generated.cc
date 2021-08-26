@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdint>
 
 namespace tree_sitter_yaml {
 
