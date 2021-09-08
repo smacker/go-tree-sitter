@@ -1,7 +1,7 @@
 package protobuf
 
 //#include "parser.h"
-//TSLanguage *tree_sitter_go();
+//TSLanguage *tree_sitter_proto();
 import "C"
 import (
 	"unsafe"
