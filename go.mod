@@ -1,4 +1,4 @@
-module github.com/smacker/go-tree-sitter
+module github.com/colinwm/go-tree-sitter
 
 go 1.13
 
