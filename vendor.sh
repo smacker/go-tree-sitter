@@ -24,7 +24,7 @@ grammars=(
     "css;v0.19.0;parser.c;scanner.c"
     "html;v0.19.0;parser.c;scanner.cc;tag.h"
     "scala;v0.19.0;parser.c;scanner.c"
-    "yaml;v0.5.0;parser.c;scanner.cc;schema.generated.cc"
+    "yaml;v0.5.0"
     "toml;v0.5.1;parser.c;scanner.c"
     "svelte;v0.8.1;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
     "hcl;main;parser.c;scanner.cc"
@@ -35,7 +35,6 @@ declare -A repositories
 repositories=(
     ["elm"]="Razzeee/tree-sitter-elm"
     ["lua"]="tjdevries/tree-sitter-lua"
-    ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
     ["svelte"]="Himujjal/tree-sitter-svelte"
     ["hcl"]="mitchellh/tree-sitter-hcl"
@@ -137,6 +136,30 @@ function download_typescript() {
     done
 }
 
+function download_yaml() {
+    version=$1; shift
+    target="yaml"
+    url="https://raw.githubusercontent.com/ikatyang/tree-sitter-yaml/$version"
+
+    mkdir -p "$target"
+    mkdir -p "$target/schema"
+
+    echo "downloading yaml $version"
+    curl -s -f -S "$url/src/tree_sitter/parser.h" -o "$target/parser.h"
+    curl -s -f -S "$url/src/parser.c" -o "$target/parser.c"
+    curl -s -f -S "$url/src/scanner.cc" -o "$target/scanner.cc"
+    curl -s -f -S "$url/src/schema.generated.cc" -o "$target/schema/schema.generated.cc"
+
+    parser_h_files="parser.c scanner.cc"
+    for file in $parser_h_files; do
+        sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
+    done
+
+    sed -i.bak 's/\.\/schema\.generated\.cc/.\/schema\/schema.generated.cc/g' "$target/scanner.cc"
+
+    rm $target/*.bak
+}
+
 function download() {
     download_sitter $sitter_version
 
@@ -145,6 +168,8 @@ function download() {
             download_typescript `echo $grammar | cut -d';' -f2`
         elif [[ "$grammar" == ocaml* ]]; then
             download_ocaml `echo $grammar | cut -d';' -f2`
+        elif [[ "$grammar" == yaml* ]]; then
+            download_yaml `echo $grammar | cut -d';' -f2`
         else
             download_grammar `echo $grammar | tr ';' ' '`
         fi
