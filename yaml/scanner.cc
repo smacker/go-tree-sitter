@@ -2,7 +2,7 @@
 #include <vector>
 
 // tree-sitter does not support multiple files for external scanner
-#include "./schema.generated.cc"
+#include "./schema/schema.generated.cc"
 
 namespace {
 
