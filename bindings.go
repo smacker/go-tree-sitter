@@ -193,6 +193,9 @@ func (t *Tree) Copy() *Tree {
 
 // RootNode returns root node of a tree
 func (t *Tree) RootNode() *Node {
+	if t.c == nil {
+		return nil
+	}
 	ptr := C.ts_tree_root_node(t.c)
 	return t.cachedNode(ptr)
 }
