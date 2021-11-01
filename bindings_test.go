@@ -3,6 +3,8 @@ package sitter
 import (
 	"bytes"
 	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -137,6 +139,23 @@ func TestSetOperationLimit(t *testing.T) {
 
 	parser.SetOperationLimit(10)
 	assert.Equal(10, parser.OperationLimit())
+}
+
+func TestOperationLimitParsing(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := NewParser()
+	parser.SetOperationLimit(10)
+	parser.SetLanguage(getTestGrammar())
+	items := []string{}
+	for i := 0; i < 100; i++ {
+		items = append(items, strconv.Itoa(i))
+	}
+	code := strings.Join(items, " + ")
+	tree := parser.Parse(nil, []byte(code))
+	root := tree.RootNode()
+
+	assert.Nil(root)
 }
 
 func TestIncludedRanges(t *testing.T) {
