@@ -80,8 +80,7 @@ func (p *Parser) Parse(ctx context.Context, oldTree *Tree, content []byte) (*Tre
 		BaseTree = oldTree.c
 	}
 
-	parseComplete := make(chan struct{}, 1)
-	defer close(parseComplete)
+	parseComplete := make(chan struct{})
 
 	go func() {
 		select {
@@ -94,7 +93,7 @@ func (p *Parser) Parse(ctx context.Context, oldTree *Tree, content []byte) (*Tre
 
 	input := C.CBytes(content)
 	BaseTree = C.ts_parser_parse_string(p.c, BaseTree, (*C.char)(input), C.uint32_t(len(content)))
-	parseComplete <- struct{}{}
+	close(parseComplete)
 	C.free(input)
 
 	return p.convertTSTree(ctx, BaseTree)
