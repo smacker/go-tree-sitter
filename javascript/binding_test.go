@@ -1,6 +1,7 @@
 package javascript_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("let a = 1"), javascript.GetLanguage())
+	n, err := sitter.Parse(context.Background(), []byte("let a = 1"), javascript.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))",
 		n.String(),

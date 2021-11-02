@@ -1,6 +1,7 @@
 package svelte_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,12 +12,13 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte(`<script context="module">
+	n, err := sitter.Parse(context.Background(), []byte(`<script context="module">
     let name = 'world';
 	</script>
 	<h1>Hello {name'<>{}"\''""{}}!</h1>
 	`), svelte.GetLanguage())
 
+	assert.NoError(err)
 	assert.Equal(
 		"(document (script_element (start_tag (tag_name) (attribute (attribute_name) (quoted_attribute_value (attribute_value)))) (raw_text) (end_tag (tag_name))) (element (start_tag (tag_name)) (text) (expression (raw_text_expr)) (text) (end_tag (tag_name))))",
 		n.String(),

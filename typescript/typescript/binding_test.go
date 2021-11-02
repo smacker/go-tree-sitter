@@ -1,6 +1,7 @@
 package typescript_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("let a : number = 1;"), typescript.GetLanguage())
+	n, err := sitter.Parse(context.Background(), []byte("let a : number = 1;"), typescript.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(program (lexical_declaration (variable_declarator name: (identifier) type: (type_annotation (predefined_type)) value: (number))))",
 		n.String(),
