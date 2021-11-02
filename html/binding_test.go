@@ -1,6 +1,7 @@
 package html_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte(`<HTML><BODY><P>Hello World</P></BODY></HTML>`), html.GetLanguage())
+	n, err := sitter.Parse(context.Background(), []byte(`<HTML><BODY><P>Hello World</P></BODY></HTML>`), html.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(fragment (element (start_tag (tag_name)) (element (start_tag (tag_name)) (element (start_tag (tag_name)) (text) (end_tag (tag_name))) (end_tag (tag_name))) (end_tag (tag_name))))",
 		n.String(),

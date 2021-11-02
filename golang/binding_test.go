@@ -1,6 +1,7 @@
 package golang_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("package main"), golang.GetLanguage())
+	n, err := sitter.Parse(context.Background(), []byte("package main"), golang.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(source_file (package_clause (package_identifier)))",
 		n.String(),
