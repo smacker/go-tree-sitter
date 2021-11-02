@@ -1,6 +1,7 @@
 package toml_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte(`key = "value"`), toml.GetLanguage())
+	n, err := sitter.Parse(context.Background(), []byte(`key = "value"`), toml.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(document (pair (bare_key) (string)))",
 		n.String(),
