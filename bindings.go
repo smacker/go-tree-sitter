@@ -90,8 +90,6 @@ func (p *Parser) Parse(ctx context.Context, oldTree *Tree, content []byte) (*Tre
 		case <-parseComplete:
 			return
 		}
-
-		fmt.Println("goroutine exiting")
 	}()
 
 	input := C.CBytes(content)
