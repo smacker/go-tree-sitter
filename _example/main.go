@@ -70,7 +70,7 @@ func main() {
 		fmt.Println("-", funcName(input, f), ">", textChange)
 	}
 
-	newTree := parser.Parse(input, tree)
+	newTree := parser.Parse(tree, input)
 	n = newTree.RootNode()
 	fmt.Println("\nNew AST:", n)
 }
