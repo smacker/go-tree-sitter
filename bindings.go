@@ -157,6 +157,8 @@ func (p *Parser) ParseInputCtx(ctx context.Context, oldTree *Tree, input Input) 
 func (p *Parser) convertTSTree(ctx context.Context, tsTree *C.TSTree) (*Tree, error) {
 	if tsTree == nil {
 		if ctx.Err() != nil {
+			// reset cancellation flag so the parse can be re-used
+			atomic.StoreUintptr(p.cancel, 0)
 			// context cancellation caused a timeout, return that error
 			return nil, ctx.Err()
 		}

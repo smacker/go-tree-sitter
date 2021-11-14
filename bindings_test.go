@@ -196,6 +196,12 @@ func TestContextCancellationParsing(t *testing.T) {
 
 	assert.EqualError(err, context.Canceled.Error())
 	assert.Nil(tree)
+
+	// make sure we can re-use parse after cancellation
+	ctx = context.Background()
+	tree, err = parser.ParseCtx(ctx, nil, []byte(code))
+	assert.NotNil(tree)
+	assert.NoError(err)
 }
 
 func TestIncludedRanges(t *testing.T) {
