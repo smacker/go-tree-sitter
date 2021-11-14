@@ -8,7 +8,7 @@ sitter_version=v0.20.0
 grammars=(
     "bash;v0.19.0;parser.c;scanner.cc"
     "c-sharp;v0.19.0;parser.c;scanner.c"
-    "c;v0.19.0;parser.c"
+    "c;v0.20.1;parser.c"
     "cpp;v0.19.0;parser.c;scanner.cc"
     "go;v0.19.1;parser.c"
     "java;v0.19.1;parser.c"
