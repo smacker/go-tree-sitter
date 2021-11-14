@@ -5,31 +5,32 @@
 set -e
 
 sitter_version=v0.20.0
+declare -A grammars
 grammars=(
-    "bash;v0.19.0;parser.c;scanner.cc"
-    "c-sharp;v0.19.0;parser.c;scanner.c"
-    "c;v0.20.1;parser.c"
-    "cpp;v0.19.0;parser.c;scanner.cc"
-    "go;v0.19.1;parser.c"
-    "java;v0.19.1;parser.c"
-    "javascript;v0.19.0;parser.c;scanner.c"
-    "php;v0.19.0;parser.c;scanner.cc"
-    "python;v0.19.0;parser.c;scanner.cc"
-    "ruby;v0.19.0;parser.c;scanner.cc"
-    "rust;v0.19.1;parser.c;scanner.c"
-    "typescript;v0.19.0"
-    "elm;v5.3.5;parser.c;scanner.cc"
-    "lua;master;parser.c;scanner.cc"
-    "ocaml;v0.19.0"
-    "css;v0.19.0;parser.c;scanner.c"
-    "html;v0.19.0;parser.c;scanner.cc;tag.h"
-    "scala;v0.19.0;parser.c;scanner.c"
-    "yaml;v0.5.0"
-    "toml;v0.5.1;parser.c;scanner.c"
-    "svelte;v0.8.1;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
-    "hcl;main;parser.c;scanner.cc"
-    "dockerfile;v0.1.0;parser.c"
-    "protobuf;main;parser.c"
+    ["bash"]="v0.19.0;parser.c;scanner.cc"
+    ["c-sharp"]="v0.19.0;parser.c;scanner.c"
+    ["c"]="v0.20.1;parser.c"
+    ["cpp"]="v0.19.0;parser.c;scanner.cc"
+    ["css"]="v0.19.0;parser.c;scanner.c"
+    ["dockerfile"]="v0.1.0;parser.c"
+    ["elm"]="v5.3.5;parser.c;scanner.cc"
+    ["go"]="v0.19.1;parser.c"
+    ["hcl"]="main;parser.c;scanner.cc"
+    ["html"]="v0.19.0;parser.c;scanner.cc;tag.h"
+    ["java"]="v0.19.1;parser.c"
+    ["javascript"]="v0.19.0;parser.c;scanner.c"
+    ["lua"]="master;parser.c;scanner.cc"
+    ["ocaml"]="v0.19.0"
+    ["php"]="v0.19.0;parser.c;scanner.cc"
+    ["protobuf"]="main;parser.c"
+    ["python"]="v0.19.0;parser.c;scanner.cc"
+    ["ruby"]="v0.19.0;parser.c;scanner.cc"
+    ["rust"]="v0.19.1;parser.c;scanner.c"
+    ["scala"]="v0.19.0;parser.c;scanner.c"
+    ["svelte"]="v0.8.1;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
+    ["toml"]="v0.5.1;parser.c;scanner.c"
+    ["typescript"]="v0.19.0"
+    ["yaml"]="v0.5.0"
 )
 
 declare -A repositories
@@ -164,17 +165,26 @@ function download_yaml() {
 }
 
 function download() {
-    download_sitter $sitter_version
+    to_download=$1
+    if [ -z "$1" ]; then
+        download_sitter $sitter_version
+        to_download=${!grammars[@]}
+    fi
 
-    for grammar in ${grammars[@]}; do
-        if [[ "$grammar" == typescript* ]]; then
-            download_typescript `echo $grammar | cut -d';' -f2`
-        elif [[ "$grammar" == ocaml* ]]; then
-            download_ocaml `echo $grammar | cut -d';' -f2`
-        elif [[ "$grammar" == yaml* ]]; then
-            download_yaml `echo $grammar | cut -d';' -f2`
+    for grammar in $to_download; do
+        version=${grammars[$grammar]}
+        if [ -z "$version" ]; then
+            echo "version for $grammar is not defined"
+            exit 1;
+        fi
+        if [[ "$grammar" == typescript ]]; then
+            download_typescript $version
+        elif [[ "$grammar" == ocaml ]]; then
+            download_ocaml $version
+        elif [[ "$grammar" == yaml ]]; then
+            download_yaml $version
         else
-            download_grammar `echo $grammar | tr ';' ' '`
+            download_grammar $grammar `echo $version | tr ';' ' '`
         fi
     done
 }
@@ -217,7 +227,7 @@ function help() {
 case $1 in
 check-updates) check-updates
 ;;
-download) download
+download) download $2
 ;;
 *) help
 ;;
