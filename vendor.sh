@@ -34,7 +34,7 @@ grammars=(
 
 declare -A repositories
 repositories=(
-    ["elm"]="Razzeee/tree-sitter-elm"
+    ["elm"]="elm-tooling/tree-sitter-elm"
     ["lua"]="tjdevries/tree-sitter-lua"
     ["toml"]="ikatyang/tree-sitter-toml"
     ["svelte"]="Himujjal/tree-sitter-svelte"
