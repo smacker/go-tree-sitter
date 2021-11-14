@@ -36,6 +36,7 @@ declare -A repositories
 repositories=(
     ["elm"]="elm-tooling/tree-sitter-elm"
     ["lua"]="tjdevries/tree-sitter-lua"
+    ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
     ["svelte"]="Himujjal/tree-sitter-svelte"
     ["hcl"]="mitchellh/tree-sitter-hcl"
