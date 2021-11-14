@@ -170,7 +170,8 @@ func TestContextCancellationParsing(t *testing.T) {
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
 	items := []string{}
-	for i := 0; i < 100; i++ {
+	// the content needs to be big so that we have enough time to cancel
+	for i := 0; i < 10000; i++ {
 		items = append(items, strconv.Itoa(i))
 	}
 	code := strings.Join(items, " + ")
@@ -199,7 +200,7 @@ func TestContextCancellationParsing(t *testing.T) {
 
 	// make sure we can re-use parse after cancellation
 	ctx = context.Background()
-	tree, err = parser.ParseCtx(ctx, nil, []byte(code))
+	tree, err = parser.ParseCtx(ctx, nil, []byte("1 + 1"))
 	assert.NotNil(tree)
 	assert.NoError(err)
 }
