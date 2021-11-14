@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte(`image_id = "abc123"`), hcl.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte(`image_id = "abc123"`), hcl.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(source_file (body (attribute (identifier) (expression (expr_term (template_expr (quoted_template)))) (MISSING \"\n\"))))",

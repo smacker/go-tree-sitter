@@ -20,7 +20,7 @@ message Thing {
   repeated uint32 scores = 2;
 }
 `
-	n, err := sitter.Parse(context.Background(), []byte(code), protobuf.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte(code), protobuf.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(source_file (syntax) (message (message_name (identifier)) (message_body (field (type) (identifier) (field_number (int_lit (decimal_lit)))) (field (type) (identifier) (field_number (int_lit (decimal_lit)))))))",

@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("using static System.Math;"), csharp.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("using static System.Math;"), csharp.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(compilation_unit (using_directive (qualified_name (identifier) (identifier))))",

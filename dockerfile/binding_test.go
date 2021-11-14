@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("FROM microsoft/nanoserver"), dockerfile.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("FROM microsoft/nanoserver"), dockerfile.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(source_file (from_instruction (image_spec name: (image_name))) (MISSING \"\n\"))",

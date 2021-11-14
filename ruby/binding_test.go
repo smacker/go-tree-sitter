@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("puts 1"), ruby.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("puts 1"), ruby.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(program (call method: (identifier) arguments: (argument_list (integer))))",

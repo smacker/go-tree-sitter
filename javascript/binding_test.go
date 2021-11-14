@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("let a = 1"), javascript.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("let a = 1"), javascript.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(program (lexical_declaration (variable_declarator name: (identifier) value: (number))))",

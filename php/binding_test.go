@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("<?php print(1);"), php.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("<?php print(1);"), php.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(program (php_tag) (expression_statement (print_intrinsic (parenthesized_expression (integer)))))",

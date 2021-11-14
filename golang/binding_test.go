@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("package main"), golang.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("package main"), golang.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(source_file (package_clause (package_identifier)))",

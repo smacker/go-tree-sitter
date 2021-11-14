@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("int a = 2;"), cpp.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("int a = 2;"), cpp.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(translation_unit (declaration type: (primitive_type) declarator: (init_declarator declarator: (identifier) value: (number_literal))))",

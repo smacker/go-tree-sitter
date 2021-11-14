@@ -17,7 +17,7 @@ import (
 func TestRootNode(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := Parse(context.Background(), []byte("1 + 2"), getTestGrammar())
+	n, err := ParseCtx(context.Background(), []byte("1 + 2"), getTestGrammar())
 	assert.NoError(err)
 
 	assert.Equal(uint32(0), n.StartByte())
@@ -63,7 +63,7 @@ func TestTree(t *testing.T) {
 
 	parser.Debug()
 	parser.SetLanguage(getTestGrammar())
-	tree, err := parser.Parse(context.Background(), nil, []byte("1 + 2"))
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte("1 + 2"))
 	assert.NoError(err)
 	n := tree.RootNode()
 
@@ -97,7 +97,7 @@ func TestTree(t *testing.T) {
 	assert.False(n.Child(0).Child(0).HasChanges()) // left side of the sum didn't change
 	assert.True(n.Child(0).Child(2).HasChanges())
 
-	tree2, err := parser.Parse(context.Background(), tree, newText)
+	tree2, err := parser.ParseCtx(context.Background(), tree, newText)
 	assert.NoError(err)
 	n = tree2.RootNode()
 	assert.Equal("(expression (sum left: (expression (number)) right: (expression (expression (sum left: (expression (number)) right: (expression (number)))))))", n.String())
@@ -122,7 +122,7 @@ func TestGC(t *testing.T) {
 	parser := NewParser()
 
 	parser.SetLanguage(getTestGrammar())
-	tree, err := parser.Parse(context.Background(), nil, []byte("1 + 2"))
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte("1 + 2"))
 	assert.NoError(err)
 	n := tree.RootNode()
 
@@ -157,7 +157,7 @@ func TestOperationLimitParsing(t *testing.T) {
 		items = append(items, strconv.Itoa(i))
 	}
 	code := strings.Join(items, " + ")
-	tree, err := parser.Parse(context.Background(), nil, []byte(code))
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte(code))
 	assert.EqualError(err, ErrOperationLimit.Error())
 	assert.Nil(tree)
 }
@@ -185,7 +185,7 @@ func TestContextCancellationParsing(t *testing.T) {
 		defer close(done)
 		start := time.Now()
 		started <- true
-		tree, err = parser.Parse(ctx, nil, []byte(code))
+		tree, err = parser.ParseCtx(ctx, nil, []byte(code))
 		t.Logf("parsing complete after %s, error: %+v\n", time.Since(start), err)
 		done <- true
 	}()
@@ -206,7 +206,7 @@ func TestIncludedRanges(t *testing.T) {
 
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	mainTree, err := parser.Parse(context.Background(), nil, []byte(code))
+	mainTree, err := parser.ParseCtx(context.Background(), nil, []byte(code))
 	assert.NoError(err)
 	assert.Equal(
 		"(expression (sum left: (expression (number)) right: (expression (number))) (comment))",
@@ -226,7 +226,7 @@ func TestIncludedRanges(t *testing.T) {
 	}
 
 	parser.SetIncludedRanges([]Range{commentRange})
-	commentTree, err := parser.Parse(context.Background(), nil, []byte(code))
+	commentTree, err := parser.ParseCtx(context.Background(), nil, []byte(code))
 
 	assert.NoError(err)
 	assert.Equal(
@@ -240,7 +240,7 @@ func TestSameNode(t *testing.T) {
 
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	tree, err := parser.Parse(context.Background(), nil, []byte("1 + 2"))
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte("1 + 2"))
 	assert.NoError(err)
 
 	n1 := tree.RootNode()
@@ -271,7 +271,7 @@ func TestQuery(t *testing.T) {
 	// test match only
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	tree, err := parser.Parse(context.Background(), nil, []byte(js))
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte(js))
 	assert.NoError(t, err)
 	root := tree.RootNode()
 
@@ -299,7 +299,7 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
-	tree, err := parser.Parse(context.Background(), nil, []byte(body))
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte(body))
 	assert.NoError(err)
 	root := tree.RootNode()
 
@@ -355,7 +355,7 @@ func TestParserLifetime(t *testing.T) {
 				// create some memory/CPU pressure
 				data = append(data, bytes.Repeat([]byte(" "), 1024*1024)...)
 
-				tree, err := p.Parse(context.Background(), nil, data)
+				tree, err := p.ParseCtx(context.Background(), nil, data)
 				assert.NoError(t, err)
 				root := tree.RootNode()
 				// make sure we have no references to the Parser
@@ -373,7 +373,7 @@ func TestTreeCursor(t *testing.T) {
 
 	input := []byte(`1 + 2`)
 
-	root, err := Parse(context.Background(), input, getTestGrammar())
+	root, err := ParseCtx(context.Background(), input, getTestGrammar())
 	assert.NoError(err)
 	c := NewTreeCursor(root)
 
@@ -416,7 +416,7 @@ func TestLeakParse(t *testing.T) {
 	parser.SetLanguage(getTestGrammar())
 
 	for i := 0; i < 100000; i++ {
-		_, _ = parser.Parse(ctx, nil, []byte("1 + 2"))
+		_, _ = parser.ParseCtx(ctx, nil, []byte("1 + 2"))
 	}
 
 	runtime.GC()
@@ -434,7 +434,7 @@ func TestLeakRootNode(t *testing.T) {
 	parser.SetLanguage(getTestGrammar())
 
 	for i := 0; i < 100000; i++ {
-		tree, err := parser.Parse(ctx, nil, []byte("1 + 2"))
+		tree, err := parser.ParseCtx(ctx, nil, []byte("1 + 2"))
 		assert.NoError(t, err)
 		_ = tree.RootNode()
 	}
@@ -461,7 +461,7 @@ func TestParseInput(t *testing.T) {
 			return nil
 		},
 	}
-	tree, err := parser.ParseInput(context.Background(), nil, input)
+	tree, err := parser.ParseInputCtx(context.Background(), nil, input)
 	assert.NoError(err)
 	n := tree.RootNode()
 	assert.Equal("(ERROR)", n.String())
@@ -478,7 +478,7 @@ func TestParseInput(t *testing.T) {
 
 		return inputData
 	}
-	tree, err = parser.ParseInput(context.Background(), nil, input)
+	tree, err = parser.ParseInputCtx(context.Background(), nil, input)
 	assert.NoError(err)
 	n = tree.RootNode()
 	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
@@ -497,7 +497,8 @@ func TestParseInput(t *testing.T) {
 
 		return inputData[offset:end]
 	}
-	tree, err = parser.ParseInput(context.Background(), nil, input)
+	tree, err = parser.ParseInputCtx(context.Background(), nil, input)
+	assert.NoError(err)
 	n = tree.RootNode()
 	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
 	assert.Equal(readTimes, 4)
@@ -521,7 +522,7 @@ func TestLeakParseInput(t *testing.T) {
 	}
 
 	for i := 0; i < 100000; i++ {
-		_, _ = parser.ParseInput(ctx, nil, input)
+		_, _ = parser.ParseInputCtx(ctx, nil, input)
 	}
 
 	runtime.GC()
@@ -542,7 +543,7 @@ func BenchmarkParse(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = parser.Parse(ctx, nil, inputData)
+		_, _ = parser.ParseCtx(ctx, nil, inputData)
 	}
 }
 
@@ -566,6 +567,6 @@ func BenchmarkParseInput(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_, _ = parser.ParseInput(ctx, nil, input)
+		_, _ = parser.ParseInputCtx(ctx, nil, input)
 	}
 }

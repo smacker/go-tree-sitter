@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte("mod one;"), rust.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("mod one;"), rust.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
 		"(source_file (mod_item name: (identifier)))",

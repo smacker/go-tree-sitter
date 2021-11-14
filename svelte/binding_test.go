@@ -12,7 +12,7 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n, err := sitter.Parse(context.Background(), []byte(`<script context="module">
+	n, err := sitter.ParseCtx(context.Background(), []byte(`<script context="module">
     let name = 'world';
 	</script>
 	<h1>Hello {name'<>{}"\''""{}}!</h1>
