@@ -1,6 +1,6 @@
 # go tree-sitter
 
-[![Build Status](https://travis-ci.org/smacker/go-tree-sitter.svg?branch=master)](https://travis-ci.org/smacker/go-tree-sitter)
+[![Build Status](https://github.com/smacker/go-tree-sitter/workflows/Test/badge.svg?branch=master)](https://github.com/smacker/go-tree-sitter/actions/workflows/test.yml?query=branch%3Amaster)
 [![GoDoc](https://godoc.org/github.com/smacker/go-tree-sitter?status.svg)](https://godoc.org/github.com/smacker/go-tree-sitter)
 
 Golang bindings for [tree-sitter](https://github.com/tree-sitter/tree-sitter)
