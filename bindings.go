@@ -99,14 +99,17 @@ func (p *Parser) ParseCtx(ctx context.Context, oldTree *Tree, content []byte) (*
 
 	parseComplete := make(chan struct{})
 
-	go func() {
-		select {
-		case <-ctx.Done():
-			atomic.StoreUintptr(p.cancel, 1)
-		case <-parseComplete:
-			return
-		}
-	}()
+	// run goroutine only if context is cancelable to avoid performance impact
+	if ctx.Done() != nil {
+		go func() {
+			select {
+			case <-ctx.Done():
+				atomic.StoreUintptr(p.cancel, 1)
+			case <-parseComplete:
+				return
+			}
+		}()
+	}
 
 	input := C.CBytes(content)
 	BaseTree = C.ts_parser_parse_string(p.c, BaseTree, (*C.char)(input), C.uint32_t(len(content)))

@@ -547,6 +547,22 @@ func BenchmarkParse(b *testing.B) {
 	}
 }
 
+func BenchmarkParseCancellable(b *testing.B) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+	inputData := []byte("1 + 2")
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = parser.ParseCtx(ctx, nil, inputData)
+	}
+}
+
 func BenchmarkParseInput(b *testing.B) {
 	ctx := context.Background()
 	parser := NewParser()
