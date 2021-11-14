@@ -91,7 +91,7 @@ ekstring scan_tag_name(Scanner *scanner, TSLexer *lexer) {
   ekstring tag_name = NaS(scanner->A);
   while (iswalnum(lexer->lookahead) || lexer->lookahead == '-' ||
          lexer->lookahead == ':') {
-    tag_name = concat_string_char(tag_name, towupper(lexer->lookahead));
+    tag_name = concat_string_char(tag_name, (lexer->lookahead));
     lexer->advance(lexer, false);
   }
   return tag_name;
@@ -134,13 +134,13 @@ bool scan_raw_text(Scanner *scanner, TSLexer *lexer) {
 
   Tag *lastTag = (Tag *)vc_vector_back(scanner->tags);
   const ekstring end_delimiter =
-      lastTag->type == SCRIPT ? init_string_str(scanner->A, "</SCRIPT", 8)
-                              : init_string_str(scanner->A, "</STYLE", 7);
+      lastTag->type == SCRIPT ? init_string_str(scanner->A, "</script", 8)
+                              : init_string_str(scanner->A, "</style", 7);
 
   unsigned delimiter_index = 0;
 
   while (lexer->lookahead) {
-    if ((char)towupper(lexer->lookahead) ==
+    if ((char)(lexer->lookahead) ==
         end_delimiter.buf[delimiter_index]) {
       delimiter_index++;
       if (delimiter_index == end_delimiter.length)
@@ -280,7 +280,7 @@ bool scan_raw_text_expr(Scanner *scanner, TSLexer *lexer,
     }
     case '\n':
     case '\t':
-    case ')':
+    // case ')':
     case ' ': {
       if (extraToken == RAW_TEXT_AWAIT || extraToken == RAW_TEXT_EACH) {
         lexer->mark_end(lexer);
