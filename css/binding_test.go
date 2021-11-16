@@ -1,6 +1,7 @@
 package css_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte(`p { color: red; }`), css.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte(`p { color: red; }`), css.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(stylesheet (rule_set (selectors (tag_name)) (block (declaration (property_name) (plain_value)))))",
 		n.String(),

@@ -1,6 +1,7 @@
 package ruby_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("puts 1"), ruby.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("puts 1"), ruby.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(program (call method: (identifier) arguments: (argument_list (integer))))",
 		n.String(),

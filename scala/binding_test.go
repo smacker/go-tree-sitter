@@ -1,6 +1,7 @@
 package scala_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -15,7 +16,8 @@ const expected = `(compilation_unit (package_clause name: (package_identifier (i
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte(code), scala.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte(code), scala.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		expected,
 		n.String(),

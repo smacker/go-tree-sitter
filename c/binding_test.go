@@ -1,6 +1,7 @@
 package c_test
 
 import (
+	"context"
 	"testing"
 
 	sitter "github.com/smacker/go-tree-sitter"
@@ -11,7 +12,8 @@ import (
 func TestGrammar(t *testing.T) {
 	assert := assert.New(t)
 
-	n := sitter.Parse([]byte("int a = 2;"), c.GetLanguage())
+	n, err := sitter.ParseCtx(context.Background(), []byte("int a = 2;"), c.GetLanguage())
+	assert.NoError(err)
 	assert.Equal(
 		"(translation_unit (declaration type: (primitive_type) declarator: (init_declarator declarator: (identifier) value: (number_literal))))",
 		n.String(),

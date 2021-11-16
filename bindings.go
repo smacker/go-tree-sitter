@@ -4,10 +4,13 @@ package sitter
 import "C"
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 )
 
@@ -16,21 +19,38 @@ var readFuncs = &readFuncsMap{funcs: make(map[int]ReadFunc)}
 
 // Parse is a shortcut for parsing bytes of source code,
 // returns root node
+//
+// Deprecated: use ParseCtx instead
 func Parse(content []byte, lang *Language) *Node {
+	n, _ := ParseCtx(context.Background(), content, lang)
+	return n
+}
+
+// ParseCtx is a shortcut for parsing bytes of source code,
+// returns root node
+func ParseCtx(ctx context.Context, content []byte, lang *Language) (*Node, error) {
 	p := NewParser()
 	p.SetLanguage(lang)
-	return p.Parse(nil, content).RootNode()
+	tree, err := p.ParseCtx(ctx, nil, content)
+	if err != nil {
+		return nil, err
+	}
+
+	return tree.RootNode(), nil
 }
 
 // Parser produces concrete syntax tree based on source code using Language
 type Parser struct {
 	isClosed bool
 	c        *C.TSParser
+	cancel   *uintptr
 }
 
 // NewParser creates new Parser
 func NewParser() *Parser {
-	p := &Parser{c: C.ts_parser_new()}
+	cancel := uintptr(0)
+	p := &Parser{c: C.ts_parser_new(), cancel: &cancel}
+	C.ts_parser_set_cancellation_flag(p.c, (*C.size_t)(unsafe.Pointer(p.cancel)))
 	runtime.SetFinalizer(p, (*Parser).Close)
 	return p
 }
@@ -59,18 +79,44 @@ type Input struct {
 	Encoding InputEncoding
 }
 
+var ErrOperationLimit = errors.New("operation limit was hit")
+var ErrNoLanguage = errors.New("cannot parse without language")
+
 // Parse produces new Tree from content using old tree
+//
+// Deprecated: use ParseCtx instead
 func (p *Parser) Parse(oldTree *Tree, content []byte) *Tree {
+	t, _ := p.ParseCtx(context.Background(), oldTree, content)
+	return t
+}
+
+// ParseCtx produces new Tree from content using old tree
+func (p *Parser) ParseCtx(ctx context.Context, oldTree *Tree, content []byte) (*Tree, error) {
 	var BaseTree *C.TSTree
 	if oldTree != nil {
 		BaseTree = oldTree.c
 	}
 
+	parseComplete := make(chan struct{})
+
+	// run goroutine only if context is cancelable to avoid performance impact
+	if ctx.Done() != nil {
+		go func() {
+			select {
+			case <-ctx.Done():
+				atomic.StoreUintptr(p.cancel, 1)
+			case <-parseComplete:
+				return
+			}
+		}()
+	}
+
 	input := C.CBytes(content)
 	BaseTree = C.ts_parser_parse_string(p.c, BaseTree, (*C.char)(input), C.uint32_t(len(content)))
+	close(parseComplete)
 	C.free(input)
 
-	return p.newTree(BaseTree)
+	return p.convertTSTree(ctx, BaseTree)
 }
 
 // ParseInput produces new Tree by reading from a callback defined in input
@@ -78,6 +124,15 @@ func (p *Parser) Parse(oldTree *Tree, content []byte) *Tree {
 // as it will avoid copying the data into []bytes
 // and faster access to edited part of the data
 func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
+	t, _ := p.ParseInputCtx(context.Background(), oldTree, input)
+	return t
+}
+
+// ParseInputCtx produces new Tree by reading from a callback defined in input
+// it is useful if your data is stored in specialized data structure
+// as it will avoid copying the data into []bytes
+// and faster access to edited part of the data
+func (p *Parser) ParseInputCtx(ctx context.Context, oldTree *Tree, input Input) (*Tree, error) {
 	var BaseTree *C.TSTree
 	if oldTree != nil {
 		BaseTree = oldTree.c
@@ -87,7 +142,35 @@ func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
 	BaseTree = C.call_ts_parser_parse(p.c, BaseTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
 	readFuncs.unregister(funcID)
 
-	return p.newTree(BaseTree)
+	return p.convertTSTree(ctx, BaseTree)
+}
+
+// convertTSTree converts the tree-sitter response into a *Tree or an error.
+//
+// tree-sitter can fail for 3 reasons:
+// - cancelation
+// - operation limit hit
+// - no language set
+//
+// We check for all those conditions if ther return value is nil.
+// see: https://github.com/tree-sitter/tree-sitter/blob/7890a29db0b186b7b21a0a95d99fa6c562b8316b/lib/include/tree_sitter/api.h#L209-L246
+func (p *Parser) convertTSTree(ctx context.Context, tsTree *C.TSTree) (*Tree, error) {
+	if tsTree == nil {
+		if ctx.Err() != nil {
+			// reset cancellation flag so the parse can be re-used
+			atomic.StoreUintptr(p.cancel, 0)
+			// context cancellation caused a timeout, return that error
+			return nil, ctx.Err()
+		}
+
+		if C.ts_parser_language(p.c) == nil {
+			return nil, ErrNoLanguage
+		}
+
+		return nil, ErrOperationLimit
+	}
+
+	return p.newTree(tsTree), nil
 }
 
 // OperationLimit returns the duration in microseconds that parsing is allowed to take
@@ -193,9 +276,6 @@ func (t *Tree) Copy() *Tree {
 
 // RootNode returns root node of a tree
 func (t *Tree) RootNode() *Node {
-	if t.c == nil {
-		return nil
-	}
 	ptr := C.ts_tree_root_node(t.c)
 	return t.cachedNode(ptr)
 }
