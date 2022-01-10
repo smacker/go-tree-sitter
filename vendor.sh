@@ -27,6 +27,7 @@ grammars=(
     ["ruby"]="v0.19.0;parser.c;scanner.cc"
     ["rust"]="v0.19.1;parser.c;scanner.c"
     ["scala"]="v0.19.0;parser.c;scanner.c"
+    ["sqlite"]="main;parser.c"
     ["svelte"]="v0.9.0;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
     ["toml"]="v0.5.1;parser.c;scanner.c"
     ["typescript"]="v0.19.0"
@@ -43,6 +44,7 @@ repositories=(
     ["hcl"]="mitchellh/tree-sitter-hcl"
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
     ["protobuf"]="mitchellh/tree-sitter-proto"
+    ["sqlite"]="dhcmrlchtdj/tree-sitter-sqlite"
 )
 
 
