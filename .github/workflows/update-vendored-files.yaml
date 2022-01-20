@@ -7,18 +7,18 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
-  jobs:
-    update-files:
-      name: "Update Files"
-      runs-on: ubuntu-latest
-      steps:
-        - name: Update Files
-          uses: actions/checkout@v2
-        - name: Run Download Script
-          run: |
-            ./vendor.sh download
-        - name: Upload Updated Files
-          run: |
-            git add .
-            git commit -m "Updated vendor files"
-            git push --force
+jobs:
+  update-files:
+    name: "Update Files"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Files
+        uses: actions/checkout@v2
+      - name: Run Download Script
+        run: |
+          ./vendor.sh download
+      - name: Upload Updated Files
+        run: |
+          git add .
+          git commit -m "Updated vendor files"
+          git push --force
