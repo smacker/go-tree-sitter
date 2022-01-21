@@ -20,6 +20,6 @@ jobs:
       - name: Upload Updated Files
         run: |
           git config --global user.name "Go Tree Sitter Bot"
-          gir config --global user.email "smacker@users.noreply.github.com"
+          git config --global user.email "smacker@users.noreply.github.com"
           git commit -am "Updated vendor files"
           git push
