@@ -19,6 +19,7 @@ jobs:
           ./vendor.sh download
       - name: Upload Updated Files
         run: |
-          git add .
-          git commit -m "Updated vendor files"
-          git push --force
+          git config --global user.name "Go Tree Sitter Bot"
+          gir config --global user.email "smacker@users.noreply.github.com"
+          git commit -am "Updated vendor files"
+          git push
