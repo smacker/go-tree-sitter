@@ -1,9 +1,6 @@
 name: Update Vendored Files
 
 on:
-  repository_dispatch:
-    types: rescrape
-  workflow_dispatch:
   schedule:
     - cron: "0 0 * * *"
 
