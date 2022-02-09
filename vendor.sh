@@ -213,8 +213,9 @@ function check-updates() {
     fi
     echo -e "tree-sitter\tvendored: $sitter_version\tremote: $remote_version\t$outdated"
 
-    for grammar in ${grammars[@]}; do
-        print_grammar_version `echo $grammar | tr ';' ' '`
+    for grammar in ${!grammars[@]}; do
+        version=`echo ${grammars[$grammar]} | tr ';' ' '`
+        print_grammar_version $grammar $version
     done
 }
 
