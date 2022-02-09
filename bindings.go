@@ -542,6 +542,19 @@ func (n Node) Content(input []byte) string {
 	return string(input[n.StartByte():n.EndByte()])
 }
 
+func (n Node) NamedDescendantForPointRange(start Point, end Point) *Node {
+	cStartPoint := C.TSPoint{
+		row:    C.uint32_t(start.Row),
+		column: C.uint32_t(start.Column),
+	}
+	cEndPoint := C.TSPoint{
+		row:    C.uint32_t(end.Row),
+		column: C.uint32_t(end.Column),
+	}
+	nn := C.ts_node_named_descendant_for_point_range(n.c, cStartPoint, cEndPoint)
+	return n.t.cachedNode(nn)
+}
+
 // TreeCursor allows you to walk a syntax tree more efficiently than is
 // possible using the `Node` functions. It is a mutable object that is always
 // on a certain syntax node, and can be moved imperatively to different nodes.

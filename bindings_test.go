@@ -100,7 +100,12 @@ func TestTree(t *testing.T) {
 	tree2, err := parser.ParseCtx(context.Background(), tree, newText)
 	assert.NoError(err)
 	n = tree2.RootNode()
-	assert.Equal("(expression (sum left: (expression (number)) right: (expression (expression (sum left: (expression (number)) right: (expression (number)))))))", n.String())
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (expression (sum left: (expression (number)) right: (expression (number)))))))",
+		n.String())
+
+	descendantNode := n.NamedDescendantForPointRange(Point{Row: 0, Column: 5}, Point{Row: 0, Column: 11})
+	assert.NotNil(descendantNode, "Descendant node was nil")
+	assert.Equal("(3 + 3)", descendantNode.Content(newText))
 }
 
 func TestLanguage(t *testing.T) {
