@@ -1,6 +1,9 @@
 name: Update Vendored Files
 
 on:
+  pull_request:
+    branches:
+      - master
   schedule:
     - cron: '0 0 * * *'
 
@@ -26,4 +29,3 @@ jobs:
           git config --global user.name "Go Tree Sitter Bot"
           git config --global user.email "smacker@users.noreply.github.com"
           git commit -am "Updated vendor files"
-          git push
