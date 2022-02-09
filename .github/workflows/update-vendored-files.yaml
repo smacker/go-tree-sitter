@@ -2,18 +2,25 @@ name: Update Vendored Files
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 0 * * *'
 
 jobs:
   update-files:
-    name: "Update Files"
+    name: 'Update Files'
     runs-on: ubuntu-latest
     steps:
       - name: Update Files
         uses: actions/checkout@v2
       - name: Run Download Script
+        run: ./vendor.sh download
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - name: Run tests
         run: |
-          ./vendor.sh download
+          go get -t ./...
+          go test -v ./...
       - name: Upload Updated Files
         run: |
           git config --global user.name "Go Tree Sitter Bot"
