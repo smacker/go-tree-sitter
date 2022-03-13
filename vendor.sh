@@ -30,7 +30,7 @@ grammars=(
     ["svelte"]="v0.9.0;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
     ["toml"]="v0.5.1;parser.c;scanner.c"
     ["typescript"]="v0.19.0"
-    ["yaml"]="v0.5.0"
+    ["yaml"]="v0.5.0;parser.c;scanner.cc;schema.generated.cc"
 )
 
 declare -A repositories
@@ -140,28 +140,23 @@ function download_typescript() {
     done
 }
 
+# for yaml grammar scanner.cc includes schema.generated.cc file
+# it causes cgo to compile schema.generated.cc twice and throw duplicate symbols error
 function download_yaml() {
-    version=$1; shift
     target="yaml"
-    url="https://raw.githubusercontent.com/ikatyang/tree-sitter-yaml/$version"
+    # download files
+    download_grammar $target `echo $1 | tr ';' ' '`
 
-    mkdir -p "$target"
-    mkdir -p "$target/schema"
-
-    echo "downloading yaml $version"
-    curl -s -f -S "$url/src/tree_sitter/parser.h" -o "$target/parser.h"
-    curl -s -f -S "$url/src/parser.c" -o "$target/parser.c"
-    curl -s -f -S "$url/src/scanner.cc" -o "$target/scanner.cc"
-    curl -s -f -S "$url/src/schema.generated.cc" -o "$target/schema/schema.generated.cc"
-
-    parser_h_files="parser.c scanner.cc"
-    for file in $parser_h_files; do
-        sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$file"
-    done
-
-    sed -i.bak 's/\.\/schema\.generated\.cc/.\/schema\/schema.generated.cc/g' "$target/scanner.cc"
-
-    rm $target/*.bak
+    # combine both files into one
+    echo "#include \"parser.h\"" > "$target/combined.cc"
+    cat "$target/schema.generated.cc" >> "$target/combined.cc"
+    echo "" >> "$target/combined.cc"
+    cat "$target/scanner.cc" >> "$target/combined.cc"
+    rm "$target/schema.generated.cc" "$target/scanner.cc"
+    # remove include expression
+    sed -i.bak 's/#include "\.\/schema.generated.cc"//g' "$target/combined.cc"
+    mv "$target/combined.cc" "$target/scanner.cc"
+    rm "$target/combined.cc.bak"
 }
 
 function download() {
