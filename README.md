@@ -22,7 +22,7 @@ parser.SetLanguage(javascript.GetLanguage())
 Parse some code:
 
 ```go
-sourceCode = []byte("let a = 1")
+sourceCode := []byte("let a = 1")
 tree := parser.Parse(nil, sourceCode)
 ```
 
