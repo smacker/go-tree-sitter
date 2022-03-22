@@ -508,6 +508,11 @@ func (n Node) ChildByFieldName(name string) *Node {
 	return n.t.cachedNode(nn)
 }
 
+// FieldNameForChild returns the field name of the child at the given index, or "" if not named.
+func (n Node) FieldNameForChild(idx int) string {
+       return C.GoString(C.ts_node_field_name_for_child(n.c, C.uint32_t(idx)))
+}
+
 // NextSibling returns the node's next sibling.
 func (n Node) NextSibling() *Node {
 	nn := C.ts_node_next_sibling(n.c)

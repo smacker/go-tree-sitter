@@ -72,6 +72,13 @@ func TestTree(t *testing.T) {
 	assert.Equal("expression", n.Type())
 	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
 
+	sum := n.Child(0)
+	assert.Equal("(expression (number))", sum.Child(0).String())
+	assert.Equal("left", sum.FieldNameForChild(0))
+	assert.Equal("(expression (number))", sum.Child(2).String())
+	assert.Equal("right", sum.FieldNameForChild(2))
+	assert.Equal("", sum.FieldNameForChild(100)) // out of range
+
 	// change 2 -> (3 + 3)
 	newText := []byte("1 + (3 + 3)")
 	tree.Edit(EditInput{
