@@ -101,7 +101,7 @@ namespace {
         }
 
         // Try to make a short literal string with single quote
-        if (lexer->lookahead == '\'') {
+        if (valid_symbols[MULTI_STRING] && lexer->lookahead == '\'') {
           lexer->result_symbol = MULTI_STRING;
 
           // Consume first appearance of '\''
@@ -138,7 +138,7 @@ namespace {
         }
 
         // Try to make a short literal string with double quote
-        else if (lexer->lookahead == '"') {
+        else if (valid_symbols[MULTI_STRING] && lexer->lookahead == '"') {
           lexer->result_symbol = MULTI_STRING;
 
           // Consume first appearance of '"'
