@@ -83,4 +83,4 @@ Check if any updates for vendored files are available:
 Update vendor files:
 
 - modify `grammars` array in `vendor.sh`
-- run `./vendor.sh download`.  (This scripts seems to require Bash v5, not the v3 of recent Mac OS.)
+- run `./vendor.sh download`.  (This script requires Bash v5, not the v3 of recent Mac OS.)
