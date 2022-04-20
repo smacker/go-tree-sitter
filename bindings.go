@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"runtime"
 	"sync"
@@ -466,6 +467,12 @@ func (n Node) IsMissing() bool {
 // Extra nodes represent things like comments, which are not required the grammar, but can appear anywhere.
 func (n Node) IsExtra() bool {
 	return bool(C.ts_node_is_extra(n.c))
+}
+
+// IsError checks if the node is a syntax error.
+// Syntax errors represent parts of the code that could not be incorporated into a valid syntax tree.
+func (n Node) IsError() bool {
+	return n.Symbol() == math.MaxUint16
 }
 
 // HasChanges checks if a syntax node has been edited.

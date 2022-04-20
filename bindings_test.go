@@ -38,6 +38,7 @@ func TestRootNode(t *testing.T) {
 	assert.Equal(true, n.IsNamed())
 	assert.Equal(false, n.IsMissing())
 	assert.Equal(false, n.IsExtra())
+	assert.Equal(false, n.IsError())
 	assert.Equal(false, n.HasChanges())
 	assert.Equal(false, n.HasError())
 
