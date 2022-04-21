@@ -117,6 +117,47 @@ func TestTree(t *testing.T) {
 	assert.Equal("(3 + 3)", descendantNode.Content(newText))
 }
 
+func TestErrorNodes(t *testing.T) {
+	assert := assert.New(t)
+
+	parser := NewParser()
+
+	parser.Debug()
+	parser.SetLanguage(getTestGrammar())
+	tree, err := parser.ParseCtx(context.Background(), nil, []byte("1 + a"))
+	assert.NoError(err)
+	n := tree.RootNode()
+
+	assert.True(n.HasError())
+	assert.Equal("(expression (number) (ERROR (UNEXPECTED '\\0')))", n.String())
+
+	number := n.Child(0)
+	assert.False(number.HasError())
+	assert.False(number.IsError())
+	error_node := n.Child(1)
+	assert.True(error_node.HasError())
+	assert.True(error_node.IsError())
+
+	tree, err = parser.ParseCtx(context.Background(), nil, []byte("1 +"))
+	assert.NoError(err)
+	n = tree.RootNode()
+
+	assert.True(n.HasError())
+	assert.Equal("(expression (sum left: (expression (number)) right: (expression (MISSING number))))", n.String())
+
+	sum := n.Child(0)
+	assert.True(sum.HasError())
+	left := sum.Child(0)
+	assert.False(left.HasError())
+	right := sum.Child(2)
+	assert.True(right.HasError())
+	assert.False(right.IsError())
+	missing := right.Child(0)
+	assert.True(missing.HasError())
+	assert.False(missing.IsError())
+	assert.True(missing.IsMissing())
+}
+
 func TestLanguage(t *testing.T) {
 	assert := assert.New(t)
 	js := getTestGrammar()
