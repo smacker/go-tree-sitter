@@ -462,6 +462,12 @@ func (n Node) IsMissing() bool {
 	return bool(C.ts_node_is_missing(n.c))
 }
 
+// IsExtra checks if the node is *extra*.
+// Extra nodes represent things like comments, which are not required the grammar, but can appear anywhere.
+func (n Node) IsExtra() bool {
+	return bool(C.ts_node_is_extra(n.c))
+}
+
 // HasChanges checks if a syntax node has been edited.
 func (n Node) HasChanges() bool {
 	return bool(C.ts_node_has_changes(n.c))
