@@ -29,7 +29,7 @@ grammars=(
     ["scala"]="v0.19.0;parser.c;scanner.c"
     ["svelte"]="v0.9.0;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
     ["toml"]="v0.5.1;parser.c;scanner.c"
-    ["typescript"]="v0.19.0"
+    ["typescript"]="v0.20.1"
     ["yaml"]="v0.5.0;parser.c;scanner.cc;schema.generated.cc"
 )
 
