@@ -80,8 +80,10 @@ type Input struct {
 	Encoding InputEncoding
 }
 
-var ErrOperationLimit = errors.New("operation limit was hit")
-var ErrNoLanguage = errors.New("cannot parse without language")
+var (
+	ErrOperationLimit = errors.New("operation limit was hit")
+	ErrNoLanguage     = errors.New("cannot parse without language")
+)
 
 // Parse produces new Tree from content using old tree
 //
@@ -529,7 +531,7 @@ func (n Node) ChildByFieldName(name string) *Node {
 
 // FieldNameForChild returns the field name of the child at the given index, or "" if not named.
 func (n Node) FieldNameForChild(idx int) string {
-       return C.GoString(C.ts_node_field_name_for_child(n.c, C.uint32_t(idx)))
+	return C.GoString(C.ts_node_field_name_for_child(n.c, C.uint32_t(idx)))
 }
 
 // NextSibling returns the node's next sibling.
