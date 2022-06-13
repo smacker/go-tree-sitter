@@ -80,8 +80,10 @@ type Input struct {
 	Encoding InputEncoding
 }
 
-var ErrOperationLimit = errors.New("operation limit was hit")
-var ErrNoLanguage = errors.New("cannot parse without language")
+var (
+	ErrOperationLimit = errors.New("operation limit was hit")
+	ErrNoLanguage     = errors.New("cannot parse without language")
+)
 
 // Parse produces new Tree from content using old tree
 //
@@ -217,6 +219,9 @@ func (p *Parser) Debug() {
 }
 
 // Close should be called to ensure that all the memory used by the parse is freed.
+//
+// As the constructor in go-tree-sitter would set this func call through runtime.SetFinalizer,
+// parser.Close() will be called by Go's garbage collector and users would not have to call this manually.
 func (p *Parser) Close() {
 	if !p.isClosed {
 		C.ts_parser_delete(p.c)
@@ -296,6 +301,9 @@ func (t *Tree) cachedNode(ptr C.TSNode) *Node {
 }
 
 // Close should be called to ensure that all the memory used by the tree is freed.
+//
+// As the constructor in go-tree-sitter would set this func call through runtime.SetFinalizer,
+// parser.Close() will be called by Go's garbage collector and users would not have to call this manually.
 func (t *BaseTree) Close() {
 	if !t.isClosed {
 		C.ts_tree_delete(t.c)
@@ -523,7 +531,7 @@ func (n Node) ChildByFieldName(name string) *Node {
 
 // FieldNameForChild returns the field name of the child at the given index, or "" if not named.
 func (n Node) FieldNameForChild(idx int) string {
-       return C.GoString(C.ts_node_field_name_for_child(n.c, C.uint32_t(idx)))
+	return C.GoString(C.ts_node_field_name_for_child(n.c, C.uint32_t(idx)))
 }
 
 // NextSibling returns the node's next sibling.
@@ -597,6 +605,9 @@ func NewTreeCursor(n *Node) *TreeCursor {
 
 // Close should be called to ensure that all the memory used by the tree cursor
 // is freed.
+//
+// As the constructor in go-tree-sitter would set this func call through runtime.SetFinalizer,
+// parser.Close() will be called by Go's garbage collector and users would not have to call this manually.
 func (c *TreeCursor) Close() {
 	if !c.isClosed {
 		C.ts_tree_cursor_delete(c.c)
@@ -732,6 +743,9 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 }
 
 // Close should be called to ensure that all the memory used by the query is freed.
+//
+// As the constructor in go-tree-sitter would set this func call through runtime.SetFinalizer,
+// parser.Close() will be called by Go's garbage collector and users would not have to call this manually.
 func (q *Query) Close() {
 	if !q.isClosed {
 		C.ts_query_delete(q.c)
@@ -834,8 +848,10 @@ func (qc *QueryCursor) SetPointRange(startPoint Point, endPoint Point) {
 	C.ts_query_cursor_set_point_range(qc.c, cStartPoint, cEndPoint)
 }
 
-// Close should be called to ensure that all the memory used by the query
-// cursor is freed.
+// Close should be called to ensure that all the memory used by the query cursor is freed.
+//
+// As the constructor in go-tree-sitter would set this func call through runtime.SetFinalizer,
+// parser.Close() will be called by Go's garbage collector and users would not have to call this manually.
 func (qc *QueryCursor) Close() {
 	if !qc.isClosed {
 		C.ts_query_cursor_delete(qc.c)
