@@ -3,9 +3,11 @@ package svelte
 //#include "parser.h"
 //TSLanguage *tree_sitter_svelte();
 import "C"
+
 import (
-	sitter "github.com/smacker/go-tree-sitter"
 	"unsafe"
+
+	sitter "github.com/codepen/go-tree-sitter"
 )
 
 func GetLanguage() *sitter.Language {

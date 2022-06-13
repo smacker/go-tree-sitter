@@ -4,10 +4,11 @@ package csharp
 //#include "parser.h"
 //TSLanguage *tree_sitter_c_sharp();
 import "C"
+
 import (
 	"unsafe"
 
-	sitter "github.com/smacker/go-tree-sitter"
+	sitter "github.com/codepen/go-tree-sitter"
 )
 
 // GetLanguage returns a grammar for C# language.

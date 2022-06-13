@@ -8,8 +8,8 @@ import (
 	"log"
 	"strings"
 
-	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/golang"
+	sitter "github.com/codepen/go-tree-sitter"
+	"github.com/codepen/go-tree-sitter/golang"
 )
 
 // ExampleCursorTraversal recursively prints the tree using TreeCursor.
@@ -58,7 +58,6 @@ func ExampleChildTraversal() {
 		for i := 0; i < int(n.ChildCount()); i++ {
 			visit(n.Child(i), n.FieldNameForChild(i), depth+1)
 		}
-
 	}
 	visit(root, "root", 0)
 }
