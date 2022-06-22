@@ -12,6 +12,7 @@ grammars=(
     ["c"]="v0.20.1;parser.c"
     ["cpp"]="v0.20.0;parser.c;scanner.cc"
     ["css"]="v0.19.0;parser.c;scanner.c"
+    ["cue"]="main;parser.c;scanner.c"
     ["dockerfile"]="v0.1.2;parser.c"
     ["elm"]="v5.3.7;parser.c;scanner.cc"
     ["go"]="master;parser.c"
@@ -36,6 +37,7 @@ grammars=(
 declare -A repositories
 repositories=(
     ["elm"]="elm-tooling/tree-sitter-elm"
+    ["cue"]="eonpatapon/tree-sitter-cue"
     ["lua"]="tjdevries/tree-sitter-lua"
     ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
