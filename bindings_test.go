@@ -596,6 +596,36 @@ func TestLeakParseInput(t *testing.T) {
 	assert.Less(t, m.Alloc, uint64(1024*1024))
 }
 
+// see https://github.com/smacker/go-tree-sitter/issues/75
+func TestCursorKeepsQuery(t *testing.T) {
+	source := bytes.Repeat([]byte("1 + 1"), 10000)
+
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	tree := parser.Parse(nil, source)
+	root := tree.RootNode()
+
+	for i := 0; i < 100; i++ {
+		query, _ := NewQuery(
+			[]byte("(number) @match"),
+			getTestGrammar(),
+		)
+
+		qc := NewQueryCursor()
+
+		qc.Exec(query, root)
+
+		for {
+			// ensure qc.NextMatch() doesn't  cause a segfault
+			match, exists := qc.NextMatch()
+			if !exists || match == nil {
+				break
+			}
+		}
+	}
+}
+
 func BenchmarkParse(b *testing.B) {
 	ctx := context.Background()
 	parser := NewParser()
