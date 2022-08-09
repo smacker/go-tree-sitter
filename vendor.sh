@@ -32,6 +32,7 @@ grammars=(
     ["toml"]="v0.5.1;parser.c;scanner.c"
     ["typescript"]="v0.20.1"
     ["yaml"]="v0.5.0;parser.c;scanner.cc;schema.generated.cc"
+    ["markdown"]="master"
 )
 
 declare -A repositories
@@ -45,7 +46,7 @@ repositories=(
     ["hcl"]="mitchellh/tree-sitter-hcl"
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
     ["protobuf"]="mitchellh/tree-sitter-proto"
-)
+    ["markdown"]="MDeiml/tree-sitter-markdown")
 
 
 function download_sitter() {
@@ -161,6 +162,33 @@ function download_yaml() {
     rm "$target/combined.cc.bak"
 }
 
+# For markdown grammar, all files within src/tree_sitter_markdown
+# has to be installed in addition to parser.c and scanner.cc
+function download_markdown() {
+    version=$1; shift
+    target="markdown"
+
+    files="parser.c scanner.cc"
+    dirs="tree-sitter-markdown tree-sitter-markdown-inline"
+
+    repository=${repositories[$target]}
+    url="https://raw.githubusercontent.com/$repository"
+
+    echo "downloading $target $version"
+
+    for dir in $dirs; do
+        mkdir -p "$target/$dir"
+        curl -s -f -S "$url/$version/$dir/src/tree_sitter/parser.h" -o "$target/$dir/parser.h"
+
+        for file in $files; do
+            curl -s -f -S "$url/$version/$dir/src/$file" -o "$target/$dir/$file"
+            sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$dir/$file"
+            sed -i.bak 's/"tree_sitter\/parser\.h"/"parser\.h"/g' "$target/$dir/$file"
+            rm "$target/$dir/$file.bak"
+        done
+    done
+}
+
 function download() {
     to_download=$1
     if [ -z "$1" ]; then
@@ -180,6 +208,8 @@ function download() {
             download_ocaml $version
         elif [[ "$grammar" == yaml ]]; then
             download_yaml $version
+        elif [[ "$grammar" == markdown ]]; then
+            download_markdown `echo $version | tr ';' ' '`
         else
             download_grammar $grammar `echo $version | tr ';' ' '`
         fi
