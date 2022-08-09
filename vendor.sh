@@ -32,6 +32,8 @@ grammars=(
     ["toml"]="v0.5.1;parser.c;scanner.c"
     ["typescript"]="v0.20.1"
     ["yaml"]="v0.5.0;parser.c;scanner.cc;schema.generated.cc"
+    ["markdown"]="v0.7.1;parser.c;scanner.cc"
+
 )
 
 declare -A repositories
@@ -45,7 +47,7 @@ repositories=(
     ["hcl"]="mitchellh/tree-sitter-hcl"
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
     ["protobuf"]="mitchellh/tree-sitter-proto"
-)
+    ["markdown"]="ikatyang/tree-sitter-markdown")
 
 
 function download_sitter() {
@@ -161,6 +163,27 @@ function download_yaml() {
     rm "$target/combined.cc.bak"
 }
 
+# For markdown grammar, all files within src/tree_sitter_markdown
+# has to be installed in addition to parser.c and scanner.cc
+function download_markdown() {
+    version=$1; shift
+    target="markdown"
+
+    download_grammar $target `echo $version | tr ';' ' '`
+
+    url="https://raw.githubusercontent.com/$repository"
+    mkdir -p "$target/tree_sitter_markdown"
+    subfolder="tree_sitter_markdown"
+    files="token_type.h block_context.cc block_delimiter.cc block_scan.cc block_scan_util.generated.cc inline_delimiter.cc inline_context.cc inline_scan.cc inline_scan_util.generated.cc lexer.cc parse_table.cc predicate.cc predicate_util.generated.cc shared_type.cc util.cc block_context.h block_delimiter.h block_scan.h block_scan_util.generated.h inline_delimiter.h inline_context.h inline_scan.h inline_scan_util.generated.h lexer.h parse_table.h predicate.h predicate_util.generated.h shared_type.h util.h "
+
+    for file in $files; do
+        curl -s -f -S "$url/$version/src/$subfolder/$file" -o "$target/$subfolder/$file"
+        sed -i.bak 's/<tree_sitter\/parser\.h>/"parser\.h"/g' "$target/$subfolder/$file"
+        sed -i.bak 's/"tree_sitter\/parser\.h"/"parser\.h"/g' "$target/$subfolder/$file"
+        rm "$target/$subfolder/$file.bak"
+    done
+}
+
 function download() {
     to_download=$1
     if [ -z "$1" ]; then
@@ -180,6 +203,8 @@ function download() {
             download_ocaml $version
         elif [[ "$grammar" == yaml ]]; then
             download_yaml $version
+        elif [[ "$grammar" == markdown ]]; then
+            download_markdown $version
         else
             download_grammar $grammar `echo $version | tr ';' ' '`
         fi

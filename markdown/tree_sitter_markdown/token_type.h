@@ -1,0 +1,100 @@
+#ifndef TREE_SITTER_MARKDOWN_TOKEN_TYPE_H_
+#define TREE_SITTER_MARKDOWN_TOKEN_TYPE_H_
+
+namespace tree_sitter_markdown {
+
+enum TokenType {
+  TKN_EOF,
+  TKN_LKA,
+
+  TKN_THM_BRK_BGN,                                          TKN_THM_BRK_END_MKR,
+  TKN_PGH_BGN_MKR,                                          TKN_PGH_END_MKR,
+                                                            TKN_LNK_REF_DEF_END_MKR,
+  TKN_STX_BGN_1,
+  TKN_STX_BGN_2,                                            TKN_STX_END_MKR,
+  TKN_ATX_BGN_1,
+  TKN_ATX_BGN_2,
+  TKN_ATX_BGN_3,
+  TKN_ATX_BGN_4,
+  TKN_ATX_BGN_5,
+  TKN_ATX_BGN_6,                                            TKN_ATX_END_MKR,
+  TKN_IND_COD_BGN_PFX,
+  TKN_IND_COD_BGN_MKR,                                      TKN_IND_COD_END_MKR,
+  TKN_FEN_COD_CTN_BGN_MKR,
+  TKN_FEN_COD_BGN,             TKN_FEN_COD_END,             TKN_FEN_COD_END_MKR,
+  TKN_HTM_BLK_SCR_BGN_MKR,     TKN_HTM_BLK_SCR_END,         TKN_HTM_BLK_SCR_END_MKR,
+  TKN_HTM_BLK_CMT_BGN_MKR,     TKN_HTM_BLK_CMT_END,         TKN_HTM_BLK_CMT_END_MKR,
+  TKN_HTM_BLK_PRC_BGN_MKR,     TKN_HTM_BLK_PRC_END,         TKN_HTM_BLK_PRC_END_MKR,
+  TKN_HTM_BLK_DCL_BGN_MKR,     TKN_HTM_BLK_DCL_END,         TKN_HTM_BLK_DCL_END_MKR,
+  TKN_HTM_BLK_CDA_BGN_MKR,     TKN_HTM_BLK_CDA_END,         TKN_HTM_BLK_CDA_END_MKR,
+  TKN_HTM_BLK_DIV_BGN_MKR,                                  TKN_HTM_BLK_DIV_END_MKR,
+  TKN_HTM_BLK_CMP_BGN_MKR,                                  TKN_HTM_BLK_CMP_END_MKR,
+  TKN_BQT_BGN,                                              TKN_BQT_END_MKR,
+  TKN_LST_BGN_MKR,                                          TKN_LST_END_MKR,
+  TKN_LST_ITM_BGN,                                          TKN_LST_ITM_END_MKR,
+  TKN_LST_ITM_CNT_BGN_MKR,                                  TKN_LST_ITM_CNT_END_MKR,
+  TKN_TBL_HED_ROW_BGN_MKR,
+  TKN_TBL_DLM_ROW_BGN_MKR,
+  TKN_TBL_DAT_ROW_BGN_MKR,                                  TKN_TBL_ROW_END_MKR,
+
+  TKN_BSL_ESC,
+  TKN_CHR_REF,
+  TKN_EMP_BGN,                 TKN_EMP_END,
+  TKN_STG_BGN,                 TKN_STG_END,
+  TKN_DEL_BGN,                 TKN_DEL_END,
+  TKN_IMG_BGN,
+  TKN_LNK_BGN,                 TKN_LNK_END,
+  TKN_LNK_REF_DEF_BGN,
+  TKN_LNK_REF_DEF_CLN,
+  TKN_LNK_INL_BGN,             TKN_LNK_INL_END,
+  TKN_LNK_DST_BGN,             TKN_LNK_DST_END,
+  TKN_LNK_DST_BGN_MKR,         TKN_LNK_DST_END_MKR,
+  TKN_LNK_TIT_BGN,             TKN_LNK_TIT_END,
+  TKN_LNK_REF_BGN,             TKN_LNK_REF_END,
+  TKN_EXT_WWW_AUT_LNK_BGN_MKR,
+  TKN_EXT_URL_AUT_LNK_BGN_MKR,
+  TKN_EXT_EML_AUT_LNK_BGN_MKR, TKN_EXT_AUT_LNK_END_MKR,
+  TKN_URI_AUT_LNK_BGN,
+  TKN_EML_AUT_LNK_BGN,         TKN_AUT_LNK_END,
+  TKN_COD_SPN_BGN,             TKN_COD_SPN_END,
+  TKN_HTM_OPN_TAG_BGN,         TKN_HTM_TAG_END,
+  TKN_HTM_CLS_TAG_BGN,         TKN_HTM_SLF_TAG_END,
+  TKN_HTM_DCL_BGN,
+  TKN_HTM_ATR_EQL,
+  TKN_HTM_ATR_VAL_BGN,         TKN_HTM_ATR_VAL_END,
+  TKN_HTM_ATR_VAL_BGN_MKR,     TKN_HTM_ATR_VAL_END_MKR,
+  TKN_HTM_CMT_BGN,             TKN_HTM_CMT_END,
+  TKN_HTM_PRC_BGN,             TKN_HTM_PRC_END,
+  TKN_HTM_CDA_BGN,             TKN_HTM_CDA_END,
+  TKN_ATX_END,
+  TKN_LST_CHK_BOX,
+  TKN_TBL_COL_SEP,
+  TKN_TBL_COL_ALN,
+  TKN_FEN_COD_INF_BGN_MKR,     TKN_FEN_COD_INF_END_MKR,
+  TKN_HRD_LBK,
+  TKN_SFT_LBK,
+
+  TKN_BLK_LBK,
+  TKN_BNK_LBK,
+  TKN_LIT_LBK,
+  TKN_WSP,
+  TKN_TXT,
+  TKN_WRD,
+
+  TKN_VRT_SPC,
+
+  TKN_NOT_FOUND,
+};
+
+TokenType TKN_ATX_BGN_ARR[] = {
+  TKN_ATX_BGN_1,
+  TKN_ATX_BGN_2,
+  TKN_ATX_BGN_3,
+  TKN_ATX_BGN_4,
+  TKN_ATX_BGN_5,
+  TKN_ATX_BGN_6,
+};
+
+}
+
+#endif // TREE_SITTER_MARKDOWN_TOKEN_TYPE_H_
