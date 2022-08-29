@@ -14,6 +14,7 @@ grammars=(
     ["css"]="v0.19.0;parser.c;scanner.c"
     ["cue"]="main;parser.c;scanner.c"
     ["dockerfile"]="v0.1.2;parser.c"
+    ["elixir"]="main;parser.c;scanner.cc"
     ["elm"]="v5.3.7;parser.c;scanner.cc"
     ["go"]="master;parser.c"
     ["hcl"]="main;parser.c;scanner.cc"
@@ -45,6 +46,7 @@ repositories=(
     ["hcl"]="mitchellh/tree-sitter-hcl"
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
     ["protobuf"]="mitchellh/tree-sitter-proto"
+    ["elixir"]="elixir-lang/tree-sitter-elixir"
 )
 
 
