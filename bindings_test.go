@@ -464,7 +464,7 @@ func TestTreeCursor(t *testing.T) {
 	assert.Equal("sum", c.CurrentNode().Type())
 	nodeForReset := c.CurrentNode()
 
-	assert.Equal(int64(2), c.GoToFirstChildForByte(3))
+	assert.Equal(int64(2), c.GoToFirstChildForByte(4))
 	assert.Equal("expression", c.CurrentNode().Type())
 
 	c.Reset(nodeForReset)
