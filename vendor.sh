@@ -4,7 +4,7 @@
 
 set -e
 
-sitter_version=v0.20.4
+sitter_version=v0.20.6
 declare -A grammars
 grammars=(
     ["bash"]="v0.19.0;parser.c;scanner.cc"
