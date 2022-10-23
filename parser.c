@@ -417,7 +417,7 @@ static Subtree ts_parser__lex(
       LOG(
         "lex_external state:%d, row:%u, column:%u",
         lex_mode.external_lex_state,
-        current_position.extent.row + 1,
+        current_position.extent.row,
         current_position.extent.column
       );
       ts_lexer_start(&self->lexer);
@@ -456,7 +456,7 @@ static Subtree ts_parser__lex(
     LOG(
       "lex_internal state:%d, row:%u, column:%u",
       lex_mode.lex_state,
-      current_position.extent.row + 1,
+      current_position.extent.row,
       current_position.extent.column
     );
     ts_lexer_start(&self->lexer);
@@ -786,17 +786,15 @@ static void ts_parser__shift(
   Subtree lookahead,
   bool extra
 ) {
-  Subtree subtree_to_push;
-  if (extra != ts_subtree_extra(lookahead)) {
+  bool is_leaf = ts_subtree_child_count(lookahead) == 0;
+  Subtree subtree_to_push = lookahead;
+  if (extra != ts_subtree_extra(lookahead) && is_leaf) {
     MutableSubtree result = ts_subtree_make_mut(&self->tree_pool, lookahead);
-    ts_subtree_set_extra(&result);
+    ts_subtree_set_extra(&result, extra);
     subtree_to_push = ts_subtree_from_mut(result);
-  } else {
-    subtree_to_push = lookahead;
   }
 
-  bool is_pending = ts_subtree_child_count(subtree_to_push) > 0;
-  ts_stack_push(self->stack, version, subtree_to_push, is_pending, state);
+  ts_stack_push(self->stack, version, subtree_to_push, !is_leaf, state);
   if (ts_subtree_has_external_tokens(subtree_to_push)) {
     ts_stack_set_last_external_token(
       self->stack, version, ts_subtree_last_external_token(subtree_to_push)
@@ -1316,7 +1314,7 @@ static void ts_parser__recover(
   const TSParseAction *actions = ts_language_actions(self->language, 1, ts_subtree_symbol(lookahead), &n);
   if (n > 0 && actions[n - 1].type == TSParseActionTypeShift && actions[n - 1].shift.extra) {
     MutableSubtree mutable_lookahead = ts_subtree_make_mut(&self->tree_pool, lookahead);
-    ts_subtree_set_extra(&mutable_lookahead);
+    ts_subtree_set_extra(&mutable_lookahead, true);
     lookahead = ts_subtree_from_mut(mutable_lookahead);
   }
 
@@ -1884,7 +1882,7 @@ TSTree *ts_parser_parse(
         LOG("process version:%d, version_count:%u, state:%d, row:%u, col:%u",
             version, ts_stack_version_count(self->stack),
             ts_stack_state(self->stack, version),
-            ts_stack_position(self->stack, version).extent.row + 1,
+            ts_stack_position(self->stack, version).extent.row,
             ts_stack_position(self->stack, version).extent.column);
 
         if (!ts_parser__advance(self, version, allow_node_reuse)) return NULL;
