@@ -325,7 +325,7 @@ func TestQuery(t *testing.T) {
 	})
 
 	// test multiple captures
-	testCaptures(t, js, "(sum left: * @left right: * @right)", []string{
+	testCaptures(t, js, "(sum left: _* @left right: _* @right)", []string{
 		"1",
 		"2",
 	})
