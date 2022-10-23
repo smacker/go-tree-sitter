@@ -8,7 +8,7 @@ sitter_version=v0.20.7
 declare -A grammars
 grammars=(
     ["bash"]="v0.19.0;parser.c;scanner.cc"
-    ["c-sharp"]="v0.19.1;parser.c;scanner.c"
+    ["c-sharp"]="v0.20.0;parser.c;scanner.c"
     ["c"]="v0.20.2;parser.c"
     ["cpp"]="v0.20.0;parser.c;scanner.cc"
     ["css"]="v0.19.0;parser.c;scanner.c"
