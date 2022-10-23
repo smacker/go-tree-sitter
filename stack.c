@@ -777,7 +777,8 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f) 
     );
 
     if (head->summary) {
-      fprintf(f, "\nsummary_size: %u", head->summary->size);
+      fprintf(f, "\nsummary:");
+      for (uint32_t j = 0; j < head->summary->size; j++) fprintf(f, " %u", head->summary->contents[j].state);
     }
 
     if (head->last_external_token.ptr) {
@@ -846,11 +847,7 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f) 
           fprintf(f, "label=\"");
           bool quoted = ts_subtree_visible(link.subtree) && !ts_subtree_named(link.subtree);
           if (quoted) fprintf(f, "'");
-          const char *name = ts_language_symbol_name(language, ts_subtree_symbol(link.subtree));
-          for (const char *c = name; *c; c++) {
-            if (*c == '\"' || *c == '\\') fprintf(f, "\\");
-            fprintf(f, "%c", *c);
-          }
+          ts_language_write_symbol_as_dot_string(language, f, ts_subtree_symbol(link.subtree));
           if (quoted) fprintf(f, "'");
           fprintf(f, "\"");
           fprintf(
