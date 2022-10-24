@@ -3,6 +3,7 @@ package sitter
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"runtime"
 	"strconv"
 	"strings"
@@ -854,6 +855,127 @@ func TestCursorKeepsQuery(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+func TestFilterPredicates(t *testing.T) {
+	testCases := []struct {
+		input          string
+		query          string
+		expectedBefore int
+		expectedAfter  int
+	}{
+		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#match? @capture "^// [a-z]+$"))`,
+			expectedBefore: 1,
+			expectedAfter:  1,
+		},
+		{
+			input: `// foo123`,
+			query: `((comment) @capture
+  (#match? @capture "^// [a-z]+$"))`,
+			expectedBefore: 1,
+			expectedAfter:  0,
+		},
+		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#not-match? @capture "^// [a-z]+$"))`,
+			expectedBefore: 1,
+			expectedAfter:  0,
+		},
+		{
+			input: `// foo123`,
+			query: `((comment) @capture
+  (#not-match? @capture "^// [a-z]+$"))`,
+			expectedBefore: 1,
+			expectedAfter:  1,
+		},
+		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#eq? @capture "// foo"))`,
+			expectedBefore: 1,
+			expectedAfter:  1,
+		},
+		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#eq? @capture "// bar"))`,
+			expectedBefore: 1,
+			expectedAfter:  0,
+		},
+		{
+			input: `1234 + 1234`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#eq? @left @right))`,
+			expectedBefore: 2,
+			expectedAfter:  1,
+		},
+		{
+			input: `1234 + 4321`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#eq? @left @right))`,
+			expectedBefore: 2,
+			expectedAfter:  0,
+		},
+		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#not-eq? @capture "// foo"))`,
+			expectedBefore: 1,
+			expectedAfter:  0,
+		},
+		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#not-eq? @capture "// bar"))`,
+			expectedBefore: 1,
+			expectedAfter:  1,
+		},
+		{
+			input: `1234 + 1234`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#not-eq? @left @right))`,
+			expectedBefore: 2,
+			expectedAfter:  0,
+		},
+		{
+			input: `1234 + 4321`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#not-eq? @left @right))`,
+			expectedBefore: 2,
+			expectedAfter:  1,
+		},
+	}
+
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	for testNum, testCase := range testCases {
+		tree := parser.Parse(nil, []byte(testCase.input))
+		root := tree.RootNode()
+
+		q, _ := NewQuery([]byte(testCase.query), getTestGrammar())
+		qc := NewQueryCursor()
+		qc.Exec(q, root)
+
+		before, ok := qc.NextMatch()
+		assert.True(t, ok)
+		assert.Len(t, before.Captures, testCase.expectedBefore, fmt.Sprintf("test num %d failed", testNum))
+
+		after := qc.FilterPredicates(before, []byte(testCase.input))
+		assert.Len(t, after.Captures, testCase.expectedAfter, fmt.Sprintf("test num %d failed", testNum))
 	}
 }
 
