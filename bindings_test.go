@@ -396,6 +396,237 @@ func TestQueryError(t *testing.T) {
 	assert.EqualValues(&QueryError{Offset: 0x02, Type: QueryErrorNodeType}, err)
 }
 
+func TestQueryWithPredicates(t *testing.T) {
+	testCases := []struct {
+		success bool
+		msg     string
+		pattern string
+	}{
+		{
+			success: false,
+			msg:     "#match?: too few arguments",
+			pattern: `((expression) @capture
+ (#match? "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#match?: too many arguments",
+			pattern: `((expression) @capture
+ (#match? a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#match?: need a capture as first argument",
+			pattern: `((expression) @capture
+ (#match? "a" "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#match?: need a string as second argument",
+			pattern: `((expression) @capture
+ (#match? @capture @capture))`,
+		},
+		{
+			success: true,
+			msg:     "#match?: success test",
+			pattern: `((expression) @capture
+ (#match? @capture "^[A-Z]"))`,
+		},
+		{
+			success: false,
+			msg:     "#not-match?: too few arguments",
+			pattern: `((expression) @capture
+ (#not-match? "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#not-match?: too many arguments",
+			pattern: `((expression) @capture
+ (#not-match? a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#not-match?: need a capture as first argument",
+			pattern: `((expression) @capture
+ (#not-match? "a" "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#not-match?: need a string as second argument",
+			pattern: `((expression) @capture
+ (#not-match? @capture @capture))`,
+		},
+		{
+			success: true,
+			msg:     "#not-match?: success test",
+			pattern: `((expression) @capture
+ (#not-match? @capture "^[A-Z]"))`,
+		},
+		{
+			success: false,
+			msg:     "#eq?: too few arguments",
+			pattern: `((expression) @capture
+ (#eq? "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#eq?: too many arguments",
+			pattern: `((expression) @capture
+ (#eq? a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#eq?: need a capture as first argument",
+			pattern: `((expression) @capture
+ (#eq? "a" "this"))`,
+		},
+		{
+			success: true,
+			msg:     "#eq?: success test",
+			pattern: `((expression) @capture
+ (#eq? @capture "this"))`,
+		},
+		{
+			success: true,
+			msg:     "#eq?: success test",
+			pattern: `((expression) @capture
+ (#eq? @capture @capture))`,
+		},
+		{
+			success: false,
+			msg:     "#not-eq?: too few arguments",
+			pattern: `((expression) @capture
+ (#not-eq? "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#not-eq?: too many arguments",
+			pattern: `((expression) @capture
+ (#not-eq? a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#not-eq?: need a capture as first argument",
+			pattern: `((expression) @capture
+ (#not-eq? "a" "this"))`,
+		},
+		{
+			success: true,
+			msg:     "#not-eq?: success test",
+			pattern: `((expression) @capture
+ (#not-eq? @capture "this"))`,
+		},
+		{
+			success: true,
+			msg:     "#not-eq?: success test",
+			pattern: `((expression) @capture
+ (#not-eq? @capture @capture))`,
+		},
+		{
+			success: false,
+			msg:     "#is?: too few arguments",
+			pattern: `((expression) @capture
+ (#is?))`,
+		},
+		{
+			success: false,
+			msg:     "#is?: too many arguments",
+			pattern: `((expression) @capture
+ (#is? a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#is?: need a string as first argument",
+			pattern: `((expression) @capture
+ (#is? @capture "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#is?: need a string as second argument",
+			pattern: `((expression) @capture
+ (#is? "this" @capture))`,
+		},
+		{
+			success: true,
+			msg:     "#is?: success test",
+			pattern: `((expression) @capture
+ (#is? "foo" "bar"))`,
+		},
+		{
+			success: false,
+			msg:     "#is-not?: too few arguments",
+			pattern: `((expression) @capture
+ (#is-not?))`,
+		},
+		{
+			success: false,
+			msg:     "#is-not?: too many arguments",
+			pattern: `((expression) @capture
+ (#is-not? a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#is-not?: need a string as first argument",
+			pattern: `((expression) @capture
+ (#is-not? @capture "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#is-not?: need a string as second argument",
+			pattern: `((expression) @capture
+ (#is-not? "this" @capture))`,
+		},
+		{
+			success: true,
+			msg:     "#is-not?: success test",
+			pattern: `((expression) @capture
+ (#is-not? "foo" "bar"))`,
+		},
+		{
+			success: false,
+			msg:     "#set!: too few arguments",
+			pattern: `((expression) @capture
+ (#set!))`,
+		},
+		{
+			success: false,
+			msg:     "#set!: too many arguments",
+			pattern: `((expression) @capture
+ (#set! a b "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#set!: need a string as first argument",
+			pattern: `((expression) @capture
+ (#set! @capture "this"))`,
+		},
+		{
+			success: false,
+			msg:     "#set!: need a string as second argument",
+			pattern: `((expression) @capture
+ (#set! "this" @capture))`,
+		},
+		{
+			success: true,
+			msg:     "#set!: success test",
+			pattern: `((expression) @capture
+ (#set! "foo" "bar"))`,
+		},
+	}
+
+	for _, testCase := range testCases {
+		q, err := NewQuery([]byte(testCase.pattern), getTestGrammar())
+
+		if testCase.success {
+			assert.Nil(t, err, testCase.msg)
+			assert.NotNil(t, q, testCase.msg)
+		} else {
+			assert.Error(t, err, testCase.msg)
+			assert.Nil(t, q, testCase.msg)
+		}
+	}
+}
+
 func doWorkLifetime(t testing.TB, n *Node) {
 	for i := 0; i < 100; i++ {
 		// this will trigger an actual bug (if it still there)

@@ -746,37 +746,37 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 		}
 
 		if steps[0].Type != QueryPredicateStepTypeString {
-			panic("preidcates must begin with a literal value")
+			return nil, errors.New("predicate must begin with a literal value")
 		}
 
 		operator := q.StringValueForId(steps[0].ValueId)
 		switch operator {
 		case "eq?", "not-eq?":
 			if len(steps) != 4 {
-				panic(fmt.Sprintf("Wrong number of arguments to `#%s` predicate. Expected 2, got %d", operator, len(steps)-1))
+				return nil, fmt.Errorf("wrong number of arguments to `#%s` predicate. Expected 2, got %d", operator, len(steps)-2)
 			}
 			if steps[1].Type != QueryPredicateStepTypeCapture {
-				panic(fmt.Sprintf("First argument of `#%s` predicate must be a capture. Got %s", operator, q.StringValueForId(steps[1].ValueId)))
+				return nil, fmt.Errorf("first argument of `#%s` predicate must be a capture. Got %s", operator, q.StringValueForId(steps[1].ValueId))
 			}
 		case "match?", "not-match?":
 			if len(steps) != 4 {
-				panic(fmt.Sprintf("Wrong number of arguments to `#%s` predicate. Expected 2, got %d", operator, len(steps)-1))
+				return nil, fmt.Errorf("wrong number of arguments to `#%s` predicate. Expected 2, got %d", operator, len(steps)-2)
 			}
 			if steps[1].Type != QueryPredicateStepTypeCapture {
-				panic(fmt.Sprintf("First argument of `#%s` predicate must be a capture. Got %s", operator, q.StringValueForId(steps[1].ValueId)))
+				return nil, fmt.Errorf("first argument of `#%s` predicate must be a capture. Got %s", operator, q.StringValueForId(steps[1].ValueId))
 			}
 			if steps[2].Type != QueryPredicateStepTypeString {
-				panic(fmt.Sprintf("Second argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[2].ValueId)))
+				return nil, fmt.Errorf("second argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[2].ValueId))
 			}
 		case "set!", "is?", "is-not?":
 			if len(steps) < 3 || len(steps) > 4 {
-				panic(fmt.Sprintf("Wrong number of arguments to `#%s` predicate. Expected 1 or 2, got %d", operator, len(steps)-1))
+				return nil, fmt.Errorf("wrong number of arguments to `#%s` predicate. Expected 1 or 2, got %d", operator, len(steps)-2)
 			}
 			if steps[1].Type != QueryPredicateStepTypeString {
-				panic(fmt.Sprintf("First argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[1].ValueId)))
+				return nil, fmt.Errorf("first argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[1].ValueId))
 			}
 			if len(steps) > 2 && steps[2].Type != QueryPredicateStepTypeString {
-				panic(fmt.Sprintf("Second argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[2].ValueId)))
+				return nil, fmt.Errorf("second argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[2].ValueId))
 			}
 		}
 	}
