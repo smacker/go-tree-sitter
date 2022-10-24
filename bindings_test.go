@@ -325,7 +325,7 @@ func TestQuery(t *testing.T) {
 	})
 
 	// test multiple captures
-	testCaptures(t, js, "(sum left: * @left right: * @right)", []string{
+	testCaptures(t, js, "(sum left: _* @left right: _* @right)", []string{
 		"1",
 		"2",
 	})
@@ -464,7 +464,7 @@ func TestTreeCursor(t *testing.T) {
 	assert.Equal("sum", c.CurrentNode().Type())
 	nodeForReset := c.CurrentNode()
 
-	assert.Equal(int64(2), c.GoToFirstChildForByte(3))
+	assert.Equal(int64(2), c.GoToFirstChildForByte(4))
 	assert.Equal("expression", c.CurrentNode().Type())
 
 	c.Reset(nodeForReset)

@@ -200,6 +200,19 @@ static inline TSStateId ts_language_next_state(
   }
 }
 
+// Whether the state is a "primary state". If this returns false, it indicates that there exists
+// another state that behaves identically to this one with respect to query analysis.
+static inline bool ts_language_state_is_primary(
+  const TSLanguage *self,
+  TSStateId state
+) {
+  if (self->version >= 14) {
+    return state == self->primary_state_ids[state];
+  } else {
+    return true;
+  }
+}
+
 static inline const bool *ts_language_enabled_external_tokens(
   const TSLanguage *self,
   unsigned external_scanner_state
@@ -270,6 +283,31 @@ static inline void ts_language_aliases_for_symbol(
   }
 }
 
+static inline void ts_language_write_symbol_as_dot_string(
+  const TSLanguage *self,
+  FILE *f,
+  TSSymbol symbol
+) {
+  const char *name = ts_language_symbol_name(self, symbol);
+  for (const char *c = name; *c; c++) {
+    switch (*c) {
+      case '"':
+      case '\\':
+        fputc('\\', f);
+        fputc(*c, f);
+        break;
+      case '\n':
+        fputs("\\n", f);
+        break;
+      case '\t':
+        fputs("\\n", f);
+        break;
+      default:
+        fputc(*c, f);
+        break;
+    }
+  }
+}
 
 #ifdef __cplusplus
 }

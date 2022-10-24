@@ -4,12 +4,12 @@
 
 set -e
 
-sitter_version=v0.20.0
+sitter_version=v0.20.7
 declare -A grammars
 grammars=(
     ["bash"]="v0.19.0;parser.c;scanner.cc"
-    ["c-sharp"]="v0.19.1;parser.c;scanner.c"
-    ["c"]="v0.20.1;parser.c"
+    ["c-sharp"]="v0.20.0;parser.c;scanner.c"
+    ["c"]="v0.20.2;parser.c"
     ["cpp"]="v0.20.0;parser.c;scanner.cc"
     ["css"]="v0.19.0;parser.c;scanner.c"
     ["cue"]="main;parser.c;scanner.c"
@@ -25,7 +25,7 @@ grammars=(
     ["ocaml"]="v0.19.0"
     ["php"]="v0.19.0;parser.c;scanner.cc"
     ["protobuf"]="main;parser.c"
-    ["python"]="v0.19.0;parser.c;scanner.cc"
+    ["python"]="v0.20.0;parser.c;scanner.cc"
     ["ruby"]="v0.19.0;parser.c;scanner.cc"
     ["rust"]="v0.20.1;parser.c;scanner.c"
     ["scala"]="v0.19.0;parser.c;scanner.c"
