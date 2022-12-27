@@ -325,7 +325,7 @@ func TestQuery(t *testing.T) {
 	})
 
 	// test multiple captures
-	testCaptures(t, js, "(sum left: * @left right: * @right)", []string{
+	testCaptures(t, js, "(sum left: _* @left right: _* @right)", []string{
 		"1",
 		"2",
 	})
@@ -464,7 +464,7 @@ func TestTreeCursor(t *testing.T) {
 	assert.Equal("sum", c.CurrentNode().Type())
 	nodeForReset := c.CurrentNode()
 
-	assert.Equal(int64(2), c.GoToFirstChildForByte(3))
+	assert.Equal(int64(2), c.GoToFirstChildForByte(4))
 	assert.Equal("expression", c.CurrentNode().Type())
 
 	c.Reset(nodeForReset)
@@ -594,6 +594,36 @@ func TestLeakParseInput(t *testing.T) {
 
 	// shouldn't exceed 1mb that go runtime takes
 	assert.Less(t, m.Alloc, uint64(1024*1024))
+}
+
+// see https://github.com/codepen/go-tree-sitter/issues/75
+func TestCursorKeepsQuery(t *testing.T) {
+	source := bytes.Repeat([]byte("1 + 1"), 10000)
+
+	parser := NewParser()
+	parser.SetLanguage(getTestGrammar())
+
+	tree := parser.Parse(nil, source)
+	root := tree.RootNode()
+
+	for i := 0; i < 100; i++ {
+		query, _ := NewQuery(
+			[]byte("(number) @match"),
+			getTestGrammar(),
+		)
+
+		qc := NewQueryCursor()
+
+		qc.Exec(query, root)
+
+		for {
+			// ensure qc.NextMatch() doesn't  cause a segfault
+			match, exists := qc.NextMatch()
+			if !exists || match == nil {
+				break
+			}
+		}
+	}
 }
 
 func BenchmarkParse(b *testing.B) {
