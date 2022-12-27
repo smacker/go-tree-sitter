@@ -99,12 +99,14 @@ struct Scanner {
   unsigned serialize(char *buffer) {
     size_t i = 0;
 
-    size_t stack_size = delimiter_stack.size();
-    if (stack_size > UINT8_MAX) stack_size = UINT8_MAX;
-    buffer[i++] = stack_size;
+    size_t delimiter_count = delimiter_stack.size();
+    if (delimiter_count > UINT8_MAX) delimiter_count = UINT8_MAX;
+    buffer[i++] = delimiter_count;
 
-    memcpy(&buffer[i], delimiter_stack.data(), stack_size);
-    i += stack_size;
+    if (delimiter_count > 0) {
+      memcpy(&buffer[i], delimiter_stack.data(), delimiter_count);
+    }
+    i += delimiter_count;
 
     vector<uint16_t>::iterator
       iter = indent_length_stack.begin() + 1,
@@ -127,7 +129,9 @@ struct Scanner {
 
       size_t delimiter_count = (uint8_t)buffer[i++];
       delimiter_stack.resize(delimiter_count);
-      memcpy(delimiter_stack.data(), &buffer[i], delimiter_count);
+      if (delimiter_count > 0) {
+        memcpy(delimiter_stack.data(), &buffer[i], delimiter_count);
+      }
       i += delimiter_count;
 
       for (; i < length; i++) {
@@ -150,15 +154,10 @@ struct Scanner {
       int32_t end_character = delimiter.end_character();
       bool has_content = false;
       while (lexer->lookahead) {
-        if (lexer->lookahead == '{' && delimiter.is_format()) {
+        if ((lexer->lookahead == '{' || lexer->lookahead == '}') && delimiter.is_format()) {
           lexer->mark_end(lexer);
-          lexer->advance(lexer, false);
-          if (lexer->lookahead == '{') {
-            lexer->advance(lexer, false);
-          } else {
-            lexer->result_symbol = STRING_CONTENT;
-            return has_content;
-          }
+          lexer->result_symbol = STRING_CONTENT;
+          return has_content;
         } else if (lexer->lookahead == '\\') {
           if (delimiter.is_raw()) {
             lexer->advance(lexer, false);
@@ -194,7 +193,15 @@ struct Scanner {
                   lexer->result_symbol = STRING_END;
                 }
                 return true;
+              } else {
+                lexer->mark_end(lexer);
+                lexer->result_symbol = STRING_CONTENT;
+                return true;
               }
+            } else {
+              lexer->mark_end(lexer);
+              lexer->result_symbol = STRING_CONTENT;
+              return true;
             }
           } else {
             if (has_content) {
@@ -245,7 +252,10 @@ struct Scanner {
         indent_length = 0;
       } else if (lexer->lookahead == '\\') {
         skip(lexer);
-        if (iswspace(lexer->lookahead)) {
+        if (lexer->lookahead == '\r') {
+          skip(lexer);
+        }
+        if (lexer->lookahead == '\n') {
           skip(lexer);
         } else {
           return false;

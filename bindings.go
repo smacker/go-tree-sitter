@@ -818,6 +818,8 @@ func (q *Query) StringValueForId(id uint32) string {
 type QueryCursor struct {
 	c *C.TSQueryCursor
 	t *Tree
+	// keep a pointer to the query to avoid garbage collection
+	q *Query
 
 	isClosed bool
 }
@@ -832,6 +834,7 @@ func NewQueryCursor() *QueryCursor {
 
 // Exec executes the query on a given syntax node.
 func (qc *QueryCursor) Exec(q *Query, n *Node) {
+	qc.q = q
 	qc.t = n.t
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
 }

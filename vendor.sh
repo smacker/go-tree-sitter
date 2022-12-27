@@ -5,15 +5,17 @@ echo $BASH_VERSION
 
 set -e
 
-sitter_version=v0.20.0
+sitter_version=v0.20.7
 declare -A grammars
 grammars=(
     ["bash"]="v0.19.0;parser.c;scanner.cc"
-    ["c-sharp"]="v0.19.1;parser.c;scanner.c"
-    ["c"]="v0.20.1;parser.c"
+    ["c-sharp"]="v0.20.0;parser.c;scanner.c"
+    ["c"]="v0.20.2;parser.c"
     ["cpp"]="v0.20.0;parser.c;scanner.cc"
     ["css"]="v0.19.0;parser.c;scanner.c"
+    ["cue"]="main;parser.c;scanner.c"
     ["dockerfile"]="v0.1.2;parser.c"
+    ["elixir"]="main;parser.c;scanner.cc"
     ["elm"]="v5.3.7;parser.c;scanner.cc"
     ["go"]="master;parser.c"
     ["hcl"]="main;parser.c;scanner.cc"
@@ -24,7 +26,7 @@ grammars=(
     ["ocaml"]="v0.19.0"
     ["php"]="v0.19.0;parser.c;scanner.cc"
     ["protobuf"]="main;parser.c"
-    ["python"]="v0.19.0;parser.c;scanner.cc"
+    ["python"]="v0.20.0;parser.c;scanner.cc"
     ["ruby"]="v0.19.0;parser.c;scanner.cc"
     ["rust"]="v0.20.1;parser.c;scanner.c"
     ["scala"]="v0.19.0;parser.c;scanner.c"
@@ -38,6 +40,7 @@ grammars=(
 declare -A repositories
 repositories=(
     ["elm"]="elm-tooling/tree-sitter-elm"
+    ["cue"]="eonpatapon/tree-sitter-cue"
     ["lua"]="tjdevries/tree-sitter-lua"
     ["yaml"]="ikatyang/tree-sitter-yaml"
     ["toml"]="ikatyang/tree-sitter-toml"
@@ -46,6 +49,7 @@ repositories=(
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
     ["protobuf"]="mitchellh/tree-sitter-proto"
     ["scss"]="serenadeai/tree-sitter-scss"
+    ["elixir"]="elixir-lang/tree-sitter-elixir"
 )
 
 
