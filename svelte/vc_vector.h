@@ -106,7 +106,7 @@ bool vc_vector_resize(vc_vector *vector, size_t new_count, void *defaultValue) {
     vc_vector_realloc(vector, new_count);
   }
 
-  for (int i = old_count; i < new_count; i++)
+  for (size_t i = old_count; i < new_count; i++)
     memcpy(vector->data + i, defaultValue, vector->element_size);
 
   vector->count = new_count;

@@ -102,8 +102,8 @@ struct TSLanguage {
   const uint16_t *small_parse_table;
   const uint32_t *small_parse_table_map;
   const TSParseActionEntry *parse_actions;
-  const char *const *symbol_names;
-  const char *const *field_names;
+  const char * const *symbol_names;
+  const char * const *field_names;
   const TSFieldMapSlice *field_map_slices;
   const TSFieldMapEntry *field_map_entries;
   const TSSymbolMetadata *symbol_metadata;
@@ -129,34 +129,34 @@ struct TSLanguage {
  *  Lexer Macros
  */
 
-#define START_LEXER()                                                          \
-  bool result = false;                                                         \
-  bool skip = false;                                                           \
-  bool eof = false;                                                            \
-  int32_t lookahead;                                                           \
-  goto start;                                                                  \
-  next_state:                                                                  \
-  lexer->advance(lexer, skip);                                                 \
-  start:                                                                       \
-  skip = false;                                                                \
+#define START_LEXER()           \
+  bool result = false;          \
+  bool skip = false;            \
+  bool eof = false;             \
+  int32_t lookahead;            \
+  goto start;                   \
+  next_state:                   \
+  lexer->advance(lexer, skip);  \
+  start:                        \
+  skip = false;                 \
   lookahead = lexer->lookahead;
 
-#define ADVANCE(state_value)                                                   \
-  {                                                                            \
-    state = state_value;                                                       \
-    goto next_state;                                                           \
+#define ADVANCE(state_value) \
+  {                          \
+    state = state_value;     \
+    goto next_state;         \
   }
 
-#define SKIP(state_value)                                                      \
-  {                                                                            \
-    skip = true;                                                               \
-    state = state_value;                                                       \
-    goto next_state;                                                           \
+#define SKIP(state_value) \
+  {                       \
+    skip = true;          \
+    state = state_value;  \
+    goto next_state;      \
   }
 
-#define ACCEPT_TOKEN(symbol_value)                                             \
-  result = true;                                                               \
-  lexer->result_symbol = symbol_value;                                         \
+#define ACCEPT_TOKEN(symbol_value)     \
+  result = true;                       \
+  lexer->result_symbol = symbol_value; \
   lexer->mark_end(lexer);
 
 #define END_STATE() return result;
@@ -171,53 +171,53 @@ struct TSLanguage {
 
 #define ACTIONS(id) id
 
-#define SHIFT(state_value)                                                     \
-  {                                                                            \
-    {                                                                          \
-      .shift = {.type = TSParseActionTypeShift, .state = state_value }         \
-    }                                                                          \
-  }
+#define SHIFT(state_value)            \
+  {{                                  \
+    .shift = {                        \
+      .type = TSParseActionTypeShift, \
+      .state = state_value            \
+    }                                 \
+  }}
 
-#define SHIFT_REPEAT(state_value)                                              \
-  {                                                                            \
-    {                                                                          \
-      .shift = {                                                               \
-        .type = TSParseActionTypeShift,                                        \
-        .state = state_value,                                                  \
-        .repetition = true                                                     \
-      }                                                                        \
-    }                                                                          \
-  }
+#define SHIFT_REPEAT(state_value)     \
+  {{                                  \
+    .shift = {                        \
+      .type = TSParseActionTypeShift, \
+      .state = state_value,           \
+      .repetition = true              \
+    }                                 \
+  }}
 
-#define SHIFT_EXTRA()                                                          \
-  {                                                                            \
-    {                                                                          \
-      .shift = {.type = TSParseActionTypeShift, .extra = true }                \
-    }                                                                          \
-  }
+#define SHIFT_EXTRA()                 \
+  {{                                  \
+    .shift = {                        \
+      .type = TSParseActionTypeShift, \
+      .extra = true                   \
+    }                                 \
+  }}
 
-#define REDUCE(symbol_val, child_count_val, ...)                               \
-  {                                                                            \
-    {                                                                          \
-      .reduce = {.type = TSParseActionTypeReduce,                              \
-                 .symbol = symbol_val,                                         \
-                 .child_count = child_count_val,                               \
-                 __VA_ARGS__},                                                 \
-    }                                                                          \
-  }
+#define REDUCE(symbol_val, child_count_val, ...) \
+  {{                                             \
+    .reduce = {                                  \
+      .type = TSParseActionTypeReduce,           \
+      .symbol = symbol_val,                      \
+      .child_count = child_count_val,            \
+      __VA_ARGS__                                \
+    },                                           \
+  }}
 
-#define RECOVER()                                                              \
-  {                                                                            \
-    { .type = TSParseActionTypeRecover }                                       \
-  }
+#define RECOVER()                    \
+  {{                                 \
+    .type = TSParseActionTypeRecover \
+  }}
 
-#define ACCEPT_INPUT()                                                         \
-  {                                                                            \
-    { .type = TSParseActionTypeAccept }                                        \
-  }
+#define ACCEPT_INPUT()              \
+  {{                                \
+    .type = TSParseActionTypeAccept \
+  }}
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // TREE_SITTER_PARSER_H_
+#endif  // TREE_SITTER_PARSER_H_
