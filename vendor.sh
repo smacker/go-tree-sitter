@@ -25,7 +25,7 @@ grammars=(
     ["javascript"]="master;parser.c;scanner.c"
     ["json"]="master;parser.c"
     ["lua"]="master;parser.c;scanner.c"
-    ["markdown"]="master;parser.c;scanner.cc"
+    ["markdown"]="master;parser.c;scanner.cc;tree_sitter_markdown/block_context.cc;tree_sitter_markdown/block_context.h;tree_sitter_markdown/block_delimiter.cc;tree_sitter_markdown/block_delimiter.h;tree_sitter_markdown/block_scan.cc;tree_sitter_markdown/block_scan.h;tree_sitter_markdown/block_scan_util.generated.cc;tree_sitter_markdown/block_scan_util.generated.h;tree_sitter_markdown/inline_context.cc;tree_sitter_markdown/inline_context.h;tree_sitter_markdown/inline_delimiter.cc;tree_sitter_markdown/inline_delimiter.h;tree_sitter_markdown/inline_scan.cc;tree_sitter_markdown/inline_scan.h;tree_sitter_markdown/inline_scan_util.generated.cc;tree_sitter_markdown/inline_scan_util.generated.h;tree_sitter_markdown/lexer.cc;tree_sitter_markdown/lexer.h;tree_sitter_markdown/parse_table.cc;tree_sitter_markdown/parse_table.h;tree_sitter_markdown/predicate.cc;tree_sitter_markdown/predicate.h;tree_sitter_markdown/predicate_util.generated.cc;tree_sitter_markdown/predicate_util.generated.h;tree_sitter_markdown/shared_type.cc;tree_sitter_markdown/shared_type.h;tree_sitter_markdown/token_type.h;tree_sitter_markdown/util.cc;tree_sitter_markdown/util.h"
     ["ocaml"]="v0.19.0"
     ["php"]="v0.19.0;parser.c;scanner.cc"
     ["protobuf"]="main;parser.c"
@@ -37,7 +37,7 @@ grammars=(
     ["svelte"]="v0.10.1;parser.c;scanner.c;tag.h;allocator.h;ekstring.h;uthash.h;vc_vector.h"
     ["toml"]="v0.5.1;parser.c;scanner.c"
     ["typescript"]="v0.20.1"
-    ["vue"]="master;parser.c;scanner.cc"
+    ["vue"]="master;parser.c;scanner.cc;tree_sitter_html/scanner.cc;tree_sitter_html/tag.h"
     ["yaml"]="v0.5.0;parser.c;scanner.cc;schema.generated.cc"
 )
 
