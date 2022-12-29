@@ -90,7 +90,7 @@ void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
 ekstring scan_tag_name(Scanner *scanner, TSLexer *lexer) {
   ekstring tag_name = NaS(scanner->A);
   while (iswalnum(lexer->lookahead) || lexer->lookahead == '-' ||
-         lexer->lookahead == ':') {
+         lexer->lookahead == ':' || lexer->lookahead == '.') {
     tag_name = concat_string_char(tag_name, (lexer->lookahead));
     lexer->advance(lexer, false);
   }
