@@ -341,8 +341,8 @@ func TestQuery(t *testing.T) {
 	q, err := NewQuery([]byte("(sum) (number)"), getTestGrammar())
 	assert.Nil(t, err)
 
-	qc := NewQueryCursor([]byte(js))
-	qc.Exec(q, root)
+	qc := NewQueryCursor()
+	qc.Exec(q, root, []byte(js))
 
 	var matched int
 	for {
@@ -369,8 +369,8 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 	q, err := NewQuery([]byte(sq), getTestGrammar())
 	assert.Nil(err)
 
-	qc := NewQueryCursor([]byte(body))
-	qc.Exec(q, root)
+	qc := NewQueryCursor()
+	qc.Exec(q, root, []byte(body))
 
 	actual := []string{}
 	for {
@@ -844,9 +844,9 @@ func TestCursorKeepsQuery(t *testing.T) {
 			getTestGrammar(),
 		)
 
-		qc := NewQueryCursor(source)
+		qc := NewQueryCursor()
 
-		qc.Exec(query, root)
+		qc.Exec(query, root, source)
 
 		for {
 			// ensure qc.NextMatch() doesn't  cause a segfault
@@ -967,8 +967,8 @@ func TestFilterPredicates(t *testing.T) {
 		root := tree.RootNode()
 
 		q, _ := NewQuery([]byte(testCase.query), getTestGrammar())
-		qc := NewQueryCursor([]byte(testCase.input))
-		qc.Exec(q, root)
+		qc := NewQueryCursor()
+		qc.Exec(q, root, []byte(testCase.input))
 
 		before, ok := qc.nextMatch(false)
 		assert.True(t, ok)

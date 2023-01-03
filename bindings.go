@@ -865,22 +865,23 @@ type QueryCursor struct {
 	// keep a pointer to the query to avoid garbage collection
 	q *Query
 
-	source   []byte
+	text     []byte
 	isClosed bool
 }
 
 // NewQueryCursor creates a query cursor.
-func NewQueryCursor(source []byte) *QueryCursor {
-	qc := &QueryCursor{c: C.ts_query_cursor_new(), t: nil, source: source}
+func NewQueryCursor() *QueryCursor {
+	qc := &QueryCursor{c: C.ts_query_cursor_new(), t: nil}
 	runtime.SetFinalizer(qc, (*QueryCursor).Close)
 
 	return qc
 }
 
 // Exec executes the query on a given syntax node.
-func (qc *QueryCursor) Exec(q *Query, n *Node) {
+func (qc *QueryCursor) Exec(q *Query, n *Node, text []byte) {
 	qc.q = q
 	qc.t = n.t
+	qc.text = text
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
 }
 
@@ -1027,7 +1028,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch) *QueryMatch {
 				}
 
 				if nodeLeft != nil && nodeRight != nil {
-					if (nodeLeft.Content(qc.source) == nodeRight.Content(qc.source)) == isPositive {
+					if (nodeLeft.Content(qc.text) == nodeRight.Content(qc.text)) == isPositive {
 						qm.Captures = append(qm.Captures, c)
 					}
 					break
@@ -1042,7 +1043,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch) *QueryMatch {
 					continue
 				}
 
-				if (c.Node.Content(qc.source) == expectedValueRight) == isPositive {
+				if (c.Node.Content(qc.text) == expectedValueRight) == isPositive {
 					qm.Captures = append(qm.Captures, c)
 				}
 			}
@@ -1059,7 +1060,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch) *QueryMatch {
 				continue
 			}
 
-			if regex.Match([]byte(c.Node.Content(qc.source))) == isPositive {
+			if regex.Match([]byte(c.Node.Content(qc.text))) == isPositive {
 				qm.Captures = append(qm.Captures, c)
 			}
 		}
