@@ -957,7 +957,7 @@ func (qc *QueryCursor) nextMatch(filterPredicates bool) (*QueryMatch, bool) {
 	}
 
 	if filterPredicates {
-		qm = qc.FilterPredicates(qm)
+		qm = qc.filterPredicates(qm)
 	}
 	return qm, true
 }
@@ -992,7 +992,7 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	return qm, uint32(captureIndex), true
 }
 
-func (qc *QueryCursor) FilterPredicates(m *QueryMatch) *QueryMatch {
+func (qc *QueryCursor) filterPredicates(m *QueryMatch) *QueryMatch {
 	qm := &QueryMatch{
 		ID:           m.ID,
 		PatternIndex: m.PatternIndex,

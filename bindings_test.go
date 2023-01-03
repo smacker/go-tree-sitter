@@ -974,7 +974,7 @@ func TestFilterPredicates(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, before.Captures, testCase.expectedBefore, fmt.Sprintf("test num %d failed", testNum))
 
-		after := qc.FilterPredicates(before)
+		after := qc.filterPredicates(before)
 		assert.Len(t, after.Captures, testCase.expectedAfter, fmt.Sprintf("test num %d failed", testNum))
 	}
 }
