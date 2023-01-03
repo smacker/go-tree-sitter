@@ -865,12 +865,13 @@ type QueryCursor struct {
 	// keep a pointer to the query to avoid garbage collection
 	q *Query
 
+	source   []byte
 	isClosed bool
 }
 
 // NewQueryCursor creates a query cursor.
-func NewQueryCursor() *QueryCursor {
-	qc := &QueryCursor{c: C.ts_query_cursor_new(), t: nil}
+func NewQueryCursor(source []byte) *QueryCursor {
+	qc := &QueryCursor{c: C.ts_query_cursor_new(), t: nil, source: source}
 	runtime.SetFinalizer(qc, (*QueryCursor).Close)
 
 	return qc
@@ -925,6 +926,10 @@ type QueryMatch struct {
 // Otherwise, it will populate the QueryMatch with data
 // about which pattern matched and which nodes were captured.
 func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
+	return qc.nextMatch(true)
+}
+
+func (qc *QueryCursor) nextMatch(filterPredicates bool) (*QueryMatch, bool) {
 	var (
 		cqm C.TSQueryMatch
 		cqc []C.TSQueryCapture
@@ -950,6 +955,9 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
 	}
 
+	if filterPredicates {
+		qm = qc.FilterPredicates(qm)
+	}
 	return qm, true
 }
 
@@ -983,7 +991,7 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	return qm, uint32(captureIndex), true
 }
 
-func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch {
+func (qc *QueryCursor) FilterPredicates(m *QueryMatch) *QueryMatch {
 	qm := &QueryMatch{
 		ID:           m.ID,
 		PatternIndex: m.PatternIndex,
@@ -1019,7 +1027,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 				}
 
 				if nodeLeft != nil && nodeRight != nil {
-					if (nodeLeft.Content(input) == nodeRight.Content(input)) == isPositive {
+					if (nodeLeft.Content(qc.source) == nodeRight.Content(qc.source)) == isPositive {
 						qm.Captures = append(qm.Captures, c)
 					}
 					break
@@ -1034,7 +1042,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 					continue
 				}
 
-				if (c.Node.Content(input) == expectedValueRight) == isPositive {
+				if (c.Node.Content(qc.source) == expectedValueRight) == isPositive {
 					qm.Captures = append(qm.Captures, c)
 				}
 			}
@@ -1051,7 +1059,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 				continue
 			}
 
-			if regex.Match([]byte(c.Node.Content(input))) == isPositive {
+			if regex.Match([]byte(c.Node.Content(qc.source))) == isPositive {
 				qm.Captures = append(qm.Captures, c)
 			}
 		}
