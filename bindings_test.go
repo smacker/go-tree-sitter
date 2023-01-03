@@ -331,6 +331,14 @@ func TestQuery(t *testing.T) {
 		"2",
 	})
 
+	// test predicate match
+	testCaptures(t, js, `((sum left: _ @left) (#match? @left "^[0-9]+$"))`, []string{
+		"1",
+	})
+
+	// test predicate not match
+	testCaptures(t, js, `((sum left: _ @left) (#not-match? @left "^[0-9]+$"))`, []string{})
+
 	// test match only
 	parser := NewParser()
 	parser.SetLanguage(getTestGrammar())
@@ -858,104 +866,51 @@ func TestCursorKeepsQuery(t *testing.T) {
 	}
 }
 
-func TestFilterPredicates(t *testing.T) {
+func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 	testCases := []struct {
-		input          string
-		query          string
-		expectedBefore int
-		expectedAfter  int
+		input    string
+		query    string
+		expected bool
 	}{
 		{
 			input: `// foo`,
 			query: `((comment) @capture
-  (#match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
+		(#match? @capture "^// [a-z]+$"))`,
+			expected: true,
 		},
 		{
 			input: `// foo123`,
 			query: `((comment) @capture
-  (#match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo`,
-			query: `((comment) @capture
-  (#not-match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo123`,
-			query: `((comment) @capture
-  (#not-match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
+		(#match? @capture "^// [a-z]+$"))`,
+			expected: false,
 		},
 		{
 			input: `// foo`,
 			query: `((comment) @capture
   (#eq? @capture "// foo"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
+			expected: true,
 		},
 		{
 			input: `// foo`,
 			query: `((comment) @capture
-  (#eq? @capture "// bar"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
+		(#eq? @capture "// bar"))`,
+			expected: false,
 		},
 		{
 			input: `1234 + 1234`,
 			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  1,
+		left: (expression (number) @left)
+		right: (expression (number) @right))
+		(#eq? @left @right))`,
+			expected: true,
 		},
 		{
 			input: `1234 + 4321`,
 			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo`,
-			query: `((comment) @capture
-  (#not-eq? @capture "// foo"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo`,
-			query: `((comment) @capture
-  (#not-eq? @capture "// bar"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
-		},
-		{
-			input: `1234 + 1234`,
-			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#not-eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  0,
-		},
-		{
-			input: `1234 + 4321`,
-			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#not-eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  1,
+		left: (expression (number) @left)
+		right: (expression (number) @right))
+		(#eq? @left @right))`,
+			expected: false,
 		},
 	}
 
@@ -970,12 +925,25 @@ func TestFilterPredicates(t *testing.T) {
 		qc := NewQueryCursor()
 		qc.Exec(q, root, []byte(testCase.input))
 
-		before, ok := qc.nextMatch(false)
+		qm, ok := qc.nextMatch(false)
 		assert.True(t, ok)
-		assert.Len(t, before.Captures, testCase.expectedBefore, fmt.Sprintf("test num %d failed", testNum))
 
-		after := qc.filterPredicates(before)
-		assert.Len(t, after.Captures, testCase.expectedAfter, fmt.Sprintf("test num %d failed", testNum))
+		actual := qm.satisfiesTextPredicates(qc.q, qc.text)
+		assert.Equal(t, testCase.expected, actual, fmt.Sprintf("test num %d failed", testNum))
+
+		// Repeat query by inverting the predicate and expectation
+		inverseQuery := strings.ReplaceAll(testCase.query, "#match?", "#not-match?")
+		inverseQuery = strings.ReplaceAll(inverseQuery, "#eq?", "#not-eq?")
+		expected := !testCase.expected
+
+		q, _ = NewQuery([]byte(inverseQuery), getTestGrammar())
+		qc = NewQueryCursor()
+		qc.Exec(q, root, []byte(testCase.input))
+
+		qm, ok = qc.nextMatch(false)
+		assert.True(t, ok)
+		actual = qm.satisfiesTextPredicates(qc.q, qc.text)
+		assert.Equal(t, expected, actual, fmt.Sprintf("test num %d (inverse) failed", testNum))
 	}
 }
 

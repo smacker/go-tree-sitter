@@ -936,30 +936,32 @@ func (qc *QueryCursor) nextMatch(filterPredicates bool) (*QueryMatch, bool) {
 		cqc []C.TSQueryCapture
 	)
 
-	if ok := C.ts_query_cursor_next_match(qc.c, &cqm); !bool(ok) {
-		return nil, false
-	}
+	for {
+		if ok := C.ts_query_cursor_next_match(qc.c, &cqm); !bool(ok) {
+			return nil, false
+		}
 
-	qm := &QueryMatch{
-		ID:           uint32(cqm.id),
-		PatternIndex: uint16(cqm.pattern_index),
-	}
+		qm := &QueryMatch{
+			ID:           uint32(cqm.id),
+			PatternIndex: uint16(cqm.pattern_index),
+		}
 
-	count := int(cqm.capture_count)
-	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
-	slice.Cap = count
-	slice.Len = count
-	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
-	for _, c := range cqc {
-		idx := uint32(c.index)
-		node := qc.t.cachedNode(c.node)
-		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
-	}
+		count := int(cqm.capture_count)
+		slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
+		slice.Cap = count
+		slice.Len = count
+		slice.Data = uintptr(unsafe.Pointer(cqm.captures))
+		for _, c := range cqc {
+			idx := uint32(c.index)
+			node := qc.t.cachedNode(c.node)
+			qm.Captures = append(qm.Captures, QueryCapture{idx, node})
+		}
 
-	if filterPredicates {
-		qm = qc.filterPredicates(qm)
+		if filterPredicates && !qm.satisfiesTextPredicates(qc.q, qc.text) {
+			continue
+		}
+		return qm, true
 	}
-	return qm, true
 }
 
 func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
@@ -992,33 +994,27 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	return qm, uint32(captureIndex), true
 }
 
-func (qc *QueryCursor) filterPredicates(m *QueryMatch) *QueryMatch {
-	qm := &QueryMatch{
-		ID:           m.ID,
-		PatternIndex: m.PatternIndex,
-	}
-
-	steps := qc.q.PredicatesForPattern(uint32(qm.PatternIndex))
+func (qm *QueryMatch) satisfiesTextPredicates(q *Query, text []byte) bool {
+	steps := q.PredicatesForPattern(uint32(qm.PatternIndex))
 	if len(steps) == 0 {
-		qm.Captures = m.Captures
-		return qm
+		return true
 	}
 
-	operator := qc.q.StringValueForId(steps[0].ValueId)
+	operator := q.StringValueForId(steps[0].ValueId)
 
 	switch operator {
 	case "eq?", "not-eq?":
 		isPositive := operator == "eq?"
 
-		expectedCaptureNameLeft := qc.q.CaptureNameForId(steps[1].ValueId)
+		expectedCaptureNameLeft := q.CaptureNameForId(steps[1].ValueId)
 
 		if steps[2].Type == QueryPredicateStepTypeCapture {
-			expectedCaptureNameRight := qc.q.CaptureNameForId(steps[2].ValueId)
+			expectedCaptureNameRight := q.CaptureNameForId(steps[2].ValueId)
 
 			var nodeLeft, nodeRight *Node
 
-			for _, c := range m.Captures {
-				captureName := qc.q.CaptureNameForId(c.Index)
+			for _, c := range qm.Captures {
+				captureName := q.CaptureNameForId(c.Index)
 
 				if captureName == expectedCaptureNameLeft {
 					nodeLeft = c.Node
@@ -1028,45 +1024,46 @@ func (qc *QueryCursor) filterPredicates(m *QueryMatch) *QueryMatch {
 				}
 
 				if nodeLeft != nil && nodeRight != nil {
-					if (nodeLeft.Content(qc.text) == nodeRight.Content(qc.text)) == isPositive {
-						qm.Captures = append(qm.Captures, c)
+					matches := nodeLeft.Content(text) == nodeRight.Content(text)
+					if isPositive {
+						return matches
 					}
-					break
+					return !matches
 				}
 			}
 		} else {
-			expectedValueRight := qc.q.StringValueForId(steps[2].ValueId)
+			expectedValueRight := q.StringValueForId(steps[2].ValueId)
 
-			for _, c := range m.Captures {
-				captureName := qc.q.CaptureNameForId(c.Index)
-				if expectedCaptureNameLeft != captureName {
-					continue
-				}
-
-				if (c.Node.Content(qc.text) == expectedValueRight) == isPositive {
-					qm.Captures = append(qm.Captures, c)
+			for _, c := range qm.Captures {
+				captureName := q.CaptureNameForId(c.Index)
+				if expectedCaptureNameLeft == captureName {
+					matches := c.Node.Content(text) == expectedValueRight
+					if isPositive {
+						return matches
+					}
+					return !matches
 				}
 			}
 		}
 	case "match?", "not-match?":
 		isPositive := operator == "match?"
 
-		expectedCaptureName := qc.q.CaptureNameForId(steps[1].ValueId)
-		regex := regexp.MustCompile(qc.q.StringValueForId(steps[2].ValueId))
+		expectedCaptureName := q.CaptureNameForId(steps[1].ValueId)
+		regex := regexp.MustCompile(q.StringValueForId(steps[2].ValueId))
 
-		for _, c := range m.Captures {
-			captureName := qc.q.CaptureNameForId(c.Index)
-			if expectedCaptureName != captureName {
-				continue
+		for _, c := range qm.Captures {
+			captureName := q.CaptureNameForId(c.Index)
+			if expectedCaptureName == captureName {
+				matches := regex.Match([]byte(c.Node.Content(text)))
+				if isPositive {
+					return matches
+				}
+				return !matches
 			}
 
-			if regex.Match([]byte(c.Node.Content(qc.text))) == isPositive {
-				qm.Captures = append(qm.Captures, c)
-			}
 		}
 	}
-
-	return qm
+	return false
 }
 
 // keeps callbacks for parser.parse method
