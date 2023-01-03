@@ -321,23 +321,23 @@ func TestQuery(t *testing.T) {
 	js := "1 + 2"
 
 	// test single capture
-	testCaptures(t, js, "(sum left: (expression) @left)", []string{
+	testCaptures(t, js, "(sum left: (expression) @left)", 1, []string{
 		"1",
 	})
 
 	// test multiple captures
-	testCaptures(t, js, "(sum left: _* @left right: _* @right)", []string{
+	testCaptures(t, js, "(sum left: _* @left right: _* @right)", 1, []string{
 		"1",
 		"2",
 	})
 
 	// test predicate match
-	testCaptures(t, js, `((sum left: _ @left) (#match? @left "^[0-9]+$"))`, []string{
+	testCaptures(t, js, `((sum left: _ @left) (#match? @left "^[0-9]+$"))`, 1, []string{
 		"1",
 	})
 
 	// test predicate not match
-	testCaptures(t, js, `((sum left: _ @left) (#not-match? @left "^[0-9]+$"))`, []string{})
+	testCaptures(t, js, `((sum left: _ @left) (#not-match? @left "^[0-9]+$"))`, 0, []string{})
 
 	// test match only
 	parser := NewParser()
@@ -365,7 +365,7 @@ func TestQuery(t *testing.T) {
 	assert.Equal(t, 3, matched)
 }
 
-func testCaptures(t *testing.T, body, sq string, expected []string) {
+func testCaptures(t *testing.T, body, sq string, expectedMatchCount int, expectedCaptures []string) {
 	assert := assert.New(t)
 
 	parser := NewParser()
@@ -380,19 +380,22 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 	qc := NewQueryCursor()
 	qc.Exec(q, root, []byte(body))
 
+	matches := 0
 	actual := []string{}
 	for {
 		m, ok := qc.NextMatch()
 		if !ok {
 			break
 		}
+		matches++
 
 		for _, c := range m.Captures {
 			actual = append(actual, c.Node.Content([]byte(body)))
 		}
 	}
 
-	assert.EqualValues(expected, actual)
+	assert.Equal(expectedMatchCount, matches)
+	assert.EqualValues(expectedCaptures, actual)
 }
 
 func TestQueryError(t *testing.T) {
