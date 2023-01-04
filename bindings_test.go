@@ -115,7 +115,7 @@ func TestTree(t *testing.T) {
 
 	descendantNode := n.NamedDescendantForPointRange(Point{Row: 0, Column: 5}, Point{Row: 0, Column: 11})
 	assert.NotNil(descendantNode, "Descendant node was nil")
-	assert.Equal("(3 + 3)", descendantNode.Content(newText))
+	assert.Equal("(3 + 3)", descendantNode.Content())
 }
 
 func TestErrorNodes(t *testing.T) {
@@ -321,15 +321,23 @@ func TestQuery(t *testing.T) {
 	js := "1 + 2"
 
 	// test single capture
-	testCaptures(t, js, "(sum left: (expression) @left)", []string{
+	testCaptures(t, js, "(sum left: (expression) @left)", 1, []string{
 		"1",
 	})
 
 	// test multiple captures
-	testCaptures(t, js, "(sum left: _* @left right: _* @right)", []string{
+	testCaptures(t, js, "(sum left: _* @left right: _* @right)", 1, []string{
 		"1",
 		"2",
 	})
+
+	// test predicate match
+	testCaptures(t, js, `((sum left: _ @left) (#match? @left "^[0-9]+$"))`, 1, []string{
+		"1",
+	})
+
+	// test predicate not match
+	testCaptures(t, js, `((sum left: _ @left) (#not-match? @left "^[0-9]+$"))`, 0, []string{})
 
 	// test match only
 	parser := NewParser()
@@ -357,7 +365,7 @@ func TestQuery(t *testing.T) {
 	assert.Equal(t, 3, matched)
 }
 
-func testCaptures(t *testing.T, body, sq string, expected []string) {
+func testCaptures(t *testing.T, body, sq string, expectedMatchCount int, expectedCaptures []string) {
 	assert := assert.New(t)
 
 	parser := NewParser()
@@ -372,19 +380,22 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 	qc := NewQueryCursor()
 	qc.Exec(q, root)
 
+	matches := 0
 	actual := []string{}
 	for {
 		m, ok := qc.NextMatch()
 		if !ok {
 			break
 		}
+		matches++
 
 		for _, c := range m.Captures {
-			actual = append(actual, c.Node.Content([]byte(body)))
+			actual = append(actual, c.Node.Content())
 		}
 	}
 
-	assert.EqualValues(expected, actual)
+	assert.Equal(expectedMatchCount, matches)
+	assert.EqualValues(expectedCaptures, actual)
 }
 
 func TestQueryError(t *testing.T) {
@@ -742,92 +753,6 @@ func TestLeakRootNode(t *testing.T) {
 	assert.Less(t, m.Alloc, uint64(1024*1024))
 }
 
-func TestParseInput(t *testing.T) {
-	assert := assert.New(t)
-
-	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
-
-	// empty input
-	input := Input{
-		Encoding: InputEncodingUTF8,
-		Read: func(offset uint32, position Point) []byte {
-			return nil
-		},
-	}
-	tree, err := parser.ParseInputCtx(context.Background(), nil, input)
-	assert.NoError(err)
-	n := tree.RootNode()
-	assert.Equal("(ERROR)", n.String())
-
-	// return all data in one go
-	var readTimes int
-	inputData := []byte("12345 + 23456")
-
-	input.Read = func(offset uint32, position Point) []byte {
-		if readTimes > 0 {
-			return nil
-		}
-		readTimes++
-
-		return inputData
-	}
-	tree, err = parser.ParseInputCtx(context.Background(), nil, input)
-	assert.NoError(err)
-	n = tree.RootNode()
-	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
-	assert.Equal(readTimes, 1)
-
-	// return all data in multiple sequantial reads
-	input.Read = func(offset uint32, position Point) []byte {
-		if int(offset) >= len(inputData) {
-			return nil
-		}
-		readTimes++
-		end := int(offset + 5)
-		if len(inputData) < end {
-			end = len(inputData)
-		}
-
-		return inputData[offset:end]
-	}
-	tree, err = parser.ParseInputCtx(context.Background(), nil, input)
-	assert.NoError(err)
-	n = tree.RootNode()
-	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
-	assert.Equal(readTimes, 4)
-}
-
-func TestLeakParseInput(t *testing.T) {
-	ctx := context.Background()
-	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
-
-	inputData := []byte("1 + 2")
-	input := Input{
-		Encoding: InputEncodingUTF8,
-		Read: func(offset uint32, position Point) []byte {
-			if offset > 0 {
-				return nil
-			}
-
-			return inputData
-		},
-	}
-
-	for i := 0; i < 100000; i++ {
-		_, _ = parser.ParseInputCtx(ctx, nil, input)
-	}
-
-	runtime.GC()
-
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-
-	// shouldn't exceed 1mb that go runtime takes
-	assert.Less(t, m.Alloc, uint64(1024*1024))
-}
-
 // see https://github.com/smacker/go-tree-sitter/issues/75
 func TestCursorKeepsQuery(t *testing.T) {
 	source := bytes.Repeat([]byte("1 + 1"), 10000)
@@ -858,104 +783,51 @@ func TestCursorKeepsQuery(t *testing.T) {
 	}
 }
 
-func TestFilterPredicates(t *testing.T) {
+func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 	testCases := []struct {
-		input          string
-		query          string
-		expectedBefore int
-		expectedAfter  int
+		input    string
+		query    string
+		expected bool
 	}{
 		{
 			input: `// foo`,
 			query: `((comment) @capture
-  (#match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
+		(#match? @capture "^// [a-z]+$"))`,
+			expected: true,
 		},
 		{
 			input: `// foo123`,
 			query: `((comment) @capture
-  (#match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo`,
-			query: `((comment) @capture
-  (#not-match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo123`,
-			query: `((comment) @capture
-  (#not-match? @capture "^// [a-z]+$"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
+		(#match? @capture "^// [a-z]+$"))`,
+			expected: false,
 		},
 		{
 			input: `// foo`,
 			query: `((comment) @capture
   (#eq? @capture "// foo"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
+			expected: true,
 		},
 		{
 			input: `// foo`,
 			query: `((comment) @capture
-  (#eq? @capture "// bar"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
+		(#eq? @capture "// bar"))`,
+			expected: false,
 		},
 		{
 			input: `1234 + 1234`,
 			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  1,
+		left: (expression (number) @left)
+		right: (expression (number) @right))
+		(#eq? @left @right))`,
+			expected: true,
 		},
 		{
 			input: `1234 + 4321`,
 			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo`,
-			query: `((comment) @capture
-  (#not-eq? @capture "// foo"))`,
-			expectedBefore: 1,
-			expectedAfter:  0,
-		},
-		{
-			input: `// foo`,
-			query: `((comment) @capture
-  (#not-eq? @capture "// bar"))`,
-			expectedBefore: 1,
-			expectedAfter:  1,
-		},
-		{
-			input: `1234 + 1234`,
-			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#not-eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  0,
-		},
-		{
-			input: `1234 + 4321`,
-			query: `((sum
-  left: (expression (number) @left)
-  right: (expression (number) @right))
-  (#not-eq? @left @right))`,
-			expectedBefore: 2,
-			expectedAfter:  1,
+		left: (expression (number) @left)
+		right: (expression (number) @right))
+		(#eq? @left @right))`,
+			expected: false,
 		},
 	}
 
@@ -970,12 +842,25 @@ func TestFilterPredicates(t *testing.T) {
 		qc := NewQueryCursor()
 		qc.Exec(q, root)
 
-		before, ok := qc.NextMatch()
+		qm, ok := qc.nextMatch(false)
 		assert.True(t, ok)
-		assert.Len(t, before.Captures, testCase.expectedBefore, fmt.Sprintf("test num %d failed", testNum))
 
-		after := qc.FilterPredicates(before, []byte(testCase.input))
-		assert.Len(t, after.Captures, testCase.expectedAfter, fmt.Sprintf("test num %d failed", testNum))
+		actual := qm.satisfiesTextPredicates(qc.q)
+		assert.Equal(t, testCase.expected, actual, fmt.Sprintf("test num %d failed", testNum))
+
+		// Repeat query by inverting the predicate and expectation
+		inverseQuery := strings.ReplaceAll(testCase.query, "#match?", "#not-match?")
+		inverseQuery = strings.ReplaceAll(inverseQuery, "#eq?", "#not-eq?")
+		expected := !testCase.expected
+
+		q, _ = NewQuery([]byte(inverseQuery), getTestGrammar())
+		qc = NewQueryCursor()
+		qc.Exec(q, root)
+
+		qm, ok = qc.nextMatch(false)
+		assert.True(t, ok)
+		actual = qm.satisfiesTextPredicates(qc.q)
+		assert.Equal(t, expected, actual, fmt.Sprintf("test num %d (inverse) failed", testNum))
 	}
 }
 
@@ -1005,29 +890,5 @@ func BenchmarkParseCancellable(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		_, _ = parser.ParseCtx(ctx, nil, inputData)
-	}
-}
-
-func BenchmarkParseInput(b *testing.B) {
-	ctx := context.Background()
-	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
-
-	inputData := []byte("1 + 2")
-	input := Input{
-		Encoding: InputEncodingUTF8,
-		Read: func(offset uint32, position Point) []byte {
-			if offset > 0 {
-				return nil
-			}
-
-			return inputData
-		},
-	}
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, _ = parser.ParseInputCtx(ctx, nil, input)
 	}
 }

@@ -120,33 +120,12 @@ func (p *Parser) ParseCtx(ctx context.Context, oldTree *Tree, content []byte) (*
 	close(parseComplete)
 	C.free(input)
 
-	return p.convertTSTree(ctx, BaseTree)
-}
-
-// ParseInput produces new Tree by reading from a callback defined in input
-// it is useful if your data is stored in specialized data structure
-// as it will avoid copying the data into []bytes
-// and faster access to edited part of the data
-func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
-	t, _ := p.ParseInputCtx(context.Background(), oldTree, input)
-	return t
-}
-
-// ParseInputCtx produces new Tree by reading from a callback defined in input
-// it is useful if your data is stored in specialized data structure
-// as it will avoid copying the data into []bytes
-// and faster access to edited part of the data
-func (p *Parser) ParseInputCtx(ctx context.Context, oldTree *Tree, input Input) (*Tree, error) {
-	var BaseTree *C.TSTree
-	if oldTree != nil {
-		BaseTree = oldTree.c
+	t, err := p.convertTSTree(ctx, BaseTree)
+	if err != nil {
+		return nil, err
 	}
-
-	funcID := readFuncs.register(input.Read)
-	BaseTree = C.call_ts_parser_parse(p.c, BaseTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
-	readFuncs.unregister(funcID)
-
-	return p.convertTSTree(ctx, BaseTree)
+	t.input = content
+	return t, nil
 }
 
 // convertTSTree converts the tree-sitter response into a *Tree or an error.
@@ -272,19 +251,28 @@ type Tree struct {
 	// Otherwise Parser may be GC'ed (and deleted by the finalizer) while some Tree objects are still in use.
 	p *Parser
 
+	input []byte
+
 	// most probably better save node.id
 	cache map[C.TSNode]*Node
 }
 
 // Copy returns a new copy of a tree
 func (t *Tree) Copy() *Tree {
-	return t.p.newTree(C.ts_tree_copy(t.c))
+	nt := t.p.newTree(C.ts_tree_copy(t.c))
+	nt.input = t.input
+	return nt
 }
 
 // RootNode returns root node of a tree
 func (t *Tree) RootNode() *Node {
 	ptr := C.ts_tree_root_node(t.c)
 	return t.cachedNode(ptr)
+}
+
+// Input returns the input given to parse this tree
+func (t *Tree) Input() []byte {
+	return t.input
 }
 
 func (t *Tree) cachedNode(ptr C.TSNode) *Node {
@@ -565,8 +553,8 @@ func (n Node) Edit(i EditInput) {
 }
 
 // Content returns node's source code from input as a string
-func (n Node) Content(input []byte) string {
-	return string(input[n.StartByte():n.EndByte()])
+func (n Node) Content() string {
+	return string(n.t.input[n.StartByte():n.EndByte()])
 }
 
 func (n Node) NamedDescendantForPointRange(start Point, end Point) *Node {
@@ -925,32 +913,41 @@ type QueryMatch struct {
 // Otherwise, it will populate the QueryMatch with data
 // about which pattern matched and which nodes were captured.
 func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
+	return qc.nextMatch(true)
+}
+
+func (qc *QueryCursor) nextMatch(filterPredicates bool) (*QueryMatch, bool) {
 	var (
 		cqm C.TSQueryMatch
 		cqc []C.TSQueryCapture
 	)
 
-	if ok := C.ts_query_cursor_next_match(qc.c, &cqm); !bool(ok) {
-		return nil, false
-	}
+	for {
+		if ok := C.ts_query_cursor_next_match(qc.c, &cqm); !bool(ok) {
+			return nil, false
+		}
 
-	qm := &QueryMatch{
-		ID:           uint32(cqm.id),
-		PatternIndex: uint16(cqm.pattern_index),
-	}
+		qm := &QueryMatch{
+			ID:           uint32(cqm.id),
+			PatternIndex: uint16(cqm.pattern_index),
+		}
 
-	count := int(cqm.capture_count)
-	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
-	slice.Cap = count
-	slice.Len = count
-	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
-	for _, c := range cqc {
-		idx := uint32(c.index)
-		node := qc.t.cachedNode(c.node)
-		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
-	}
+		count := int(cqm.capture_count)
+		slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
+		slice.Cap = count
+		slice.Len = count
+		slice.Data = uintptr(unsafe.Pointer(cqm.captures))
+		for _, c := range cqc {
+			idx := uint32(c.index)
+			node := qc.t.cachedNode(c.node)
+			qm.Captures = append(qm.Captures, QueryCapture{idx, node})
+		}
 
-	return qm, true
+		if filterPredicates && !qm.satisfiesTextPredicates(qc.q) {
+			continue
+		}
+		return qm, true
+	}
 }
 
 func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
@@ -983,33 +980,27 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	return qm, uint32(captureIndex), true
 }
 
-func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch {
-	qm := &QueryMatch{
-		ID:           m.ID,
-		PatternIndex: m.PatternIndex,
-	}
-
-	steps := qc.q.PredicatesForPattern(uint32(qm.PatternIndex))
+func (qm *QueryMatch) satisfiesTextPredicates(q *Query) bool {
+	steps := q.PredicatesForPattern(uint32(qm.PatternIndex))
 	if len(steps) == 0 {
-		qm.Captures = m.Captures
-		return qm
+		return true
 	}
 
-	operator := qc.q.StringValueForId(steps[0].ValueId)
+	operator := q.StringValueForId(steps[0].ValueId)
 
 	switch operator {
 	case "eq?", "not-eq?":
 		isPositive := operator == "eq?"
 
-		expectedCaptureNameLeft := qc.q.CaptureNameForId(steps[1].ValueId)
+		expectedCaptureNameLeft := q.CaptureNameForId(steps[1].ValueId)
 
 		if steps[2].Type == QueryPredicateStepTypeCapture {
-			expectedCaptureNameRight := qc.q.CaptureNameForId(steps[2].ValueId)
+			expectedCaptureNameRight := q.CaptureNameForId(steps[2].ValueId)
 
 			var nodeLeft, nodeRight *Node
 
-			for _, c := range m.Captures {
-				captureName := qc.q.CaptureNameForId(c.Index)
+			for _, c := range qm.Captures {
+				captureName := q.CaptureNameForId(c.Index)
 
 				if captureName == expectedCaptureNameLeft {
 					nodeLeft = c.Node
@@ -1019,45 +1010,46 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 				}
 
 				if nodeLeft != nil && nodeRight != nil {
-					if (nodeLeft.Content(input) == nodeRight.Content(input)) == isPositive {
-						qm.Captures = append(qm.Captures, c)
+					matches := nodeLeft.Content() == nodeRight.Content()
+					if isPositive {
+						return matches
 					}
-					break
+					return !matches
 				}
 			}
 		} else {
-			expectedValueRight := qc.q.StringValueForId(steps[2].ValueId)
+			expectedValueRight := q.StringValueForId(steps[2].ValueId)
 
-			for _, c := range m.Captures {
-				captureName := qc.q.CaptureNameForId(c.Index)
-				if expectedCaptureNameLeft != captureName {
-					continue
-				}
-
-				if (c.Node.Content(input) == expectedValueRight) == isPositive {
-					qm.Captures = append(qm.Captures, c)
+			for _, c := range qm.Captures {
+				captureName := q.CaptureNameForId(c.Index)
+				if expectedCaptureNameLeft == captureName {
+					matches := c.Node.Content() == expectedValueRight
+					if isPositive {
+						return matches
+					}
+					return !matches
 				}
 			}
 		}
 	case "match?", "not-match?":
 		isPositive := operator == "match?"
 
-		expectedCaptureName := qc.q.CaptureNameForId(steps[1].ValueId)
-		regex := regexp.MustCompile(qc.q.StringValueForId(steps[2].ValueId))
+		expectedCaptureName := q.CaptureNameForId(steps[1].ValueId)
+		regex := regexp.MustCompile(q.StringValueForId(steps[2].ValueId))
 
-		for _, c := range m.Captures {
-			captureName := qc.q.CaptureNameForId(c.Index)
-			if expectedCaptureName != captureName {
-				continue
+		for _, c := range qm.Captures {
+			captureName := q.CaptureNameForId(c.Index)
+			if expectedCaptureName == captureName {
+				matches := regex.Match([]byte(c.Node.Content()))
+				if isPositive {
+					return matches
+				}
+				return !matches
 			}
 
-			if regex.Match([]byte(c.Node.Content(input))) == isPositive {
-				qm.Captures = append(qm.Captures, c)
-			}
 		}
 	}
-
-	return qm
+	return false
 }
 
 // keeps callbacks for parser.parse method
