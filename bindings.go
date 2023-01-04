@@ -260,8 +260,7 @@ type Tree struct {
 // Copy returns a new copy of a tree
 func (t *Tree) Copy() *Tree {
 	nt := t.p.newTree(C.ts_tree_copy(t.c))
-	nt.input = make([]byte, len(t.input))
-	copy(nt.input, t.input)
+	nt.input = t.input
 	return nt
 }
 
