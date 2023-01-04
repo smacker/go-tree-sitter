@@ -120,33 +120,12 @@ func (p *Parser) ParseCtx(ctx context.Context, oldTree *Tree, content []byte) (*
 	close(parseComplete)
 	C.free(input)
 
-	return p.convertTSTree(ctx, BaseTree)
-}
-
-// ParseInput produces new Tree by reading from a callback defined in input
-// it is useful if your data is stored in specialized data structure
-// as it will avoid copying the data into []bytes
-// and faster access to edited part of the data
-func (p *Parser) ParseInput(oldTree *Tree, input Input) *Tree {
-	t, _ := p.ParseInputCtx(context.Background(), oldTree, input)
-	return t
-}
-
-// ParseInputCtx produces new Tree by reading from a callback defined in input
-// it is useful if your data is stored in specialized data structure
-// as it will avoid copying the data into []bytes
-// and faster access to edited part of the data
-func (p *Parser) ParseInputCtx(ctx context.Context, oldTree *Tree, input Input) (*Tree, error) {
-	var BaseTree *C.TSTree
-	if oldTree != nil {
-		BaseTree = oldTree.c
+	t, err := p.convertTSTree(ctx, BaseTree)
+	if err != nil {
+		return nil, err
 	}
-
-	funcID := readFuncs.register(input.Read)
-	BaseTree = C.call_ts_parser_parse(p.c, BaseTree, C.int(funcID), C.TSInputEncoding(input.Encoding))
-	readFuncs.unregister(funcID)
-
-	return p.convertTSTree(ctx, BaseTree)
+	t.input = content
+	return t, nil
 }
 
 // convertTSTree converts the tree-sitter response into a *Tree or an error.
@@ -272,19 +251,28 @@ type Tree struct {
 	// Otherwise Parser may be GC'ed (and deleted by the finalizer) while some Tree objects are still in use.
 	p *Parser
 
+	input []byte
+
 	// most probably better save node.id
 	cache map[C.TSNode]*Node
 }
 
 // Copy returns a new copy of a tree
 func (t *Tree) Copy() *Tree {
-	return t.p.newTree(C.ts_tree_copy(t.c))
+	nt := t.p.newTree(C.ts_tree_copy(t.c))
+	nt.input = t.input
+	return nt
 }
 
 // RootNode returns root node of a tree
 func (t *Tree) RootNode() *Node {
 	ptr := C.ts_tree_root_node(t.c)
 	return t.cachedNode(ptr)
+}
+
+// Input returns the input given to parse this tree
+func (t *Tree) Input() []byte {
+	return t.input
 }
 
 func (t *Tree) cachedNode(ptr C.TSNode) *Node {
@@ -565,8 +553,8 @@ func (n Node) Edit(i EditInput) {
 }
 
 // Content returns node's source code from input as a string
-func (n Node) Content(input []byte) string {
-	return string(input[n.StartByte():n.EndByte()])
+func (n Node) Content() string {
+	return string(n.t.input[n.StartByte():n.EndByte()])
 }
 
 func (n Node) NamedDescendantForPointRange(start Point, end Point) *Node {
@@ -865,7 +853,6 @@ type QueryCursor struct {
 	// keep a pointer to the query to avoid garbage collection
 	q *Query
 
-	text     []byte
 	isClosed bool
 }
 
@@ -881,7 +868,6 @@ func NewQueryCursor() *QueryCursor {
 func (qc *QueryCursor) Exec(q *Query, n *Node, text []byte) {
 	qc.q = q
 	qc.t = n.t
-	qc.text = text
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
 }
 
@@ -957,7 +943,7 @@ func (qc *QueryCursor) nextMatch(filterPredicates bool) (*QueryMatch, bool) {
 			qm.Captures = append(qm.Captures, QueryCapture{idx, node})
 		}
 
-		if filterPredicates && !qm.satisfiesTextPredicates(qc.q, qc.text) {
+		if filterPredicates && !qm.satisfiesTextPredicates(qc.q) {
 			continue
 		}
 		return qm, true
@@ -994,7 +980,7 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	return qm, uint32(captureIndex), true
 }
 
-func (qm *QueryMatch) satisfiesTextPredicates(q *Query, text []byte) bool {
+func (qm *QueryMatch) satisfiesTextPredicates(q *Query) bool {
 	steps := q.PredicatesForPattern(uint32(qm.PatternIndex))
 	if len(steps) == 0 {
 		return true
@@ -1024,7 +1010,7 @@ func (qm *QueryMatch) satisfiesTextPredicates(q *Query, text []byte) bool {
 				}
 
 				if nodeLeft != nil && nodeRight != nil {
-					matches := nodeLeft.Content(text) == nodeRight.Content(text)
+					matches := nodeLeft.Content() == nodeRight.Content()
 					if isPositive {
 						return matches
 					}
@@ -1037,7 +1023,7 @@ func (qm *QueryMatch) satisfiesTextPredicates(q *Query, text []byte) bool {
 			for _, c := range qm.Captures {
 				captureName := q.CaptureNameForId(c.Index)
 				if expectedCaptureNameLeft == captureName {
-					matches := c.Node.Content(text) == expectedValueRight
+					matches := c.Node.Content() == expectedValueRight
 					if isPositive {
 						return matches
 					}
@@ -1054,7 +1040,7 @@ func (qm *QueryMatch) satisfiesTextPredicates(q *Query, text []byte) bool {
 		for _, c := range qm.Captures {
 			captureName := q.CaptureNameForId(c.Index)
 			if expectedCaptureName == captureName {
-				matches := regex.Match([]byte(c.Node.Content(text)))
+				matches := regex.Match([]byte(c.Node.Content()))
 				if isPositive {
 					return matches
 				}

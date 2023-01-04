@@ -115,7 +115,7 @@ func TestTree(t *testing.T) {
 
 	descendantNode := n.NamedDescendantForPointRange(Point{Row: 0, Column: 5}, Point{Row: 0, Column: 11})
 	assert.NotNil(descendantNode, "Descendant node was nil")
-	assert.Equal("(3 + 3)", descendantNode.Content(newText))
+	assert.Equal("(3 + 3)", descendantNode.Content())
 }
 
 func TestErrorNodes(t *testing.T) {
@@ -390,7 +390,7 @@ func testCaptures(t *testing.T, body, sq string, expectedMatchCount int, expecte
 		matches++
 
 		for _, c := range m.Captures {
-			actual = append(actual, c.Node.Content([]byte(body)))
+			actual = append(actual, c.Node.Content())
 		}
 	}
 
@@ -753,92 +753,6 @@ func TestLeakRootNode(t *testing.T) {
 	assert.Less(t, m.Alloc, uint64(1024*1024))
 }
 
-func TestParseInput(t *testing.T) {
-	assert := assert.New(t)
-
-	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
-
-	// empty input
-	input := Input{
-		Encoding: InputEncodingUTF8,
-		Read: func(offset uint32, position Point) []byte {
-			return nil
-		},
-	}
-	tree, err := parser.ParseInputCtx(context.Background(), nil, input)
-	assert.NoError(err)
-	n := tree.RootNode()
-	assert.Equal("(ERROR)", n.String())
-
-	// return all data in one go
-	var readTimes int
-	inputData := []byte("12345 + 23456")
-
-	input.Read = func(offset uint32, position Point) []byte {
-		if readTimes > 0 {
-			return nil
-		}
-		readTimes++
-
-		return inputData
-	}
-	tree, err = parser.ParseInputCtx(context.Background(), nil, input)
-	assert.NoError(err)
-	n = tree.RootNode()
-	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
-	assert.Equal(readTimes, 1)
-
-	// return all data in multiple sequantial reads
-	input.Read = func(offset uint32, position Point) []byte {
-		if int(offset) >= len(inputData) {
-			return nil
-		}
-		readTimes++
-		end := int(offset + 5)
-		if len(inputData) < end {
-			end = len(inputData)
-		}
-
-		return inputData[offset:end]
-	}
-	tree, err = parser.ParseInputCtx(context.Background(), nil, input)
-	assert.NoError(err)
-	n = tree.RootNode()
-	assert.Equal("(expression (sum left: (expression (number)) right: (expression (number))))", n.String())
-	assert.Equal(readTimes, 4)
-}
-
-func TestLeakParseInput(t *testing.T) {
-	ctx := context.Background()
-	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
-
-	inputData := []byte("1 + 2")
-	input := Input{
-		Encoding: InputEncodingUTF8,
-		Read: func(offset uint32, position Point) []byte {
-			if offset > 0 {
-				return nil
-			}
-
-			return inputData
-		},
-	}
-
-	for i := 0; i < 100000; i++ {
-		_, _ = parser.ParseInputCtx(ctx, nil, input)
-	}
-
-	runtime.GC()
-
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-
-	// shouldn't exceed 1mb that go runtime takes
-	assert.Less(t, m.Alloc, uint64(1024*1024))
-}
-
 // see https://github.com/smacker/go-tree-sitter/issues/75
 func TestCursorKeepsQuery(t *testing.T) {
 	source := bytes.Repeat([]byte("1 + 1"), 10000)
@@ -931,7 +845,7 @@ func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 		qm, ok := qc.nextMatch(false)
 		assert.True(t, ok)
 
-		actual := qm.satisfiesTextPredicates(qc.q, qc.text)
+		actual := qm.satisfiesTextPredicates(qc.q)
 		assert.Equal(t, testCase.expected, actual, fmt.Sprintf("test num %d failed", testNum))
 
 		// Repeat query by inverting the predicate and expectation
@@ -945,7 +859,7 @@ func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 
 		qm, ok = qc.nextMatch(false)
 		assert.True(t, ok)
-		actual = qm.satisfiesTextPredicates(qc.q, qc.text)
+		actual = qm.satisfiesTextPredicates(qc.q)
 		assert.Equal(t, expected, actual, fmt.Sprintf("test num %d (inverse) failed", testNum))
 	}
 }
@@ -976,29 +890,5 @@ func BenchmarkParseCancellable(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		_, _ = parser.ParseCtx(ctx, nil, inputData)
-	}
-}
-
-func BenchmarkParseInput(b *testing.B) {
-	ctx := context.Background()
-	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
-
-	inputData := []byte("1 + 2")
-	input := Input{
-		Encoding: InputEncodingUTF8,
-		Read: func(offset uint32, position Point) []byte {
-			if offset > 0 {
-				return nil
-			}
-
-			return inputData
-		},
-	}
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, _ = parser.ParseInputCtx(ctx, nil, input)
 	}
 }
