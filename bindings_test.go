@@ -350,7 +350,7 @@ func TestQuery(t *testing.T) {
 	assert.Nil(t, err)
 
 	qc := NewQueryCursor()
-	qc.Exec(q, root, []byte(js))
+	qc.Exec(q, root)
 
 	var matched int
 	for {
@@ -378,7 +378,7 @@ func testCaptures(t *testing.T, body, sq string, expectedMatchCount int, expecte
 	assert.Nil(err)
 
 	qc := NewQueryCursor()
-	qc.Exec(q, root, []byte(body))
+	qc.Exec(q, root)
 
 	matches := 0
 	actual := []string{}
@@ -771,7 +771,7 @@ func TestCursorKeepsQuery(t *testing.T) {
 
 		qc := NewQueryCursor()
 
-		qc.Exec(query, root, source)
+		qc.Exec(query, root)
 
 		for {
 			// ensure qc.NextMatch() doesn't  cause a segfault
@@ -840,7 +840,7 @@ func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 
 		q, _ := NewQuery([]byte(testCase.query), getTestGrammar())
 		qc := NewQueryCursor()
-		qc.Exec(q, root, []byte(testCase.input))
+		qc.Exec(q, root)
 
 		qm, ok := qc.nextMatch(false)
 		assert.True(t, ok)
@@ -855,7 +855,7 @@ func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 
 		q, _ = NewQuery([]byte(inverseQuery), getTestGrammar())
 		qc = NewQueryCursor()
-		qc.Exec(q, root, []byte(testCase.input))
+		qc.Exec(q, root)
 
 		qm, ok = qc.nextMatch(false)
 		assert.True(t, ok)

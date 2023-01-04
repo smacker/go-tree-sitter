@@ -865,7 +865,7 @@ func NewQueryCursor() *QueryCursor {
 }
 
 // Exec executes the query on a given syntax node.
-func (qc *QueryCursor) Exec(q *Query, n *Node, text []byte) {
+func (qc *QueryCursor) Exec(q *Query, n *Node) {
 	qc.q = q
 	qc.t = n.t
 	C.ts_query_cursor_exec(qc.c, q.c, n.c)
