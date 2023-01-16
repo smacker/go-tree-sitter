@@ -33,6 +33,7 @@ grammars=(
     ["toml"]="v0.5.1;parser.c;scanner.c"
     ["typescript"]="v0.20.1"
     ["yaml"]="v0.5.0;parser.c;scanner.cc;schema.generated.cc"
+    ["kotlin"]="main;parser.c;scanner.c"
 )
 
 declare -A repositories
@@ -47,6 +48,7 @@ repositories=(
     ["dockerfile"]="camdencheek/tree-sitter-dockerfile"
     ["protobuf"]="mitchellh/tree-sitter-proto"
     ["elixir"]="elixir-lang/tree-sitter-elixir"
+    ["kotlin"]="fwcd/tree-sitter-kotlin"
 )
 
 
