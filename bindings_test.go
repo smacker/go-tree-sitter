@@ -829,6 +829,20 @@ func TestQueryMatch_satisfiesTextPredicates(t *testing.T) {
 		(#eq? @left @right))`,
 			expected: false,
 		},
+		{
+			input: `
+			// foo
+			
+			// bar
+			
+			// baz`,
+			query: `(
+		(comment) @capture1 (#match? @capture1 "^// foo")
+		(comment) @capture2 (#match? @capture2 "^// bar$")
+		(comment) @capture3 (#eq? @capture3 "// baz")
+		)`,
+			expected: true,
+		},
 	}
 
 	parser := NewParser()

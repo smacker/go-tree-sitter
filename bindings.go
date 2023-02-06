@@ -829,6 +829,9 @@ func (q *Query) PredicatesForPattern(patternIndex uint32) []QueryPredicateStep {
 		stepType := QueryPredicateStepType(s._type)
 		valueId := uint32(s.value_id)
 		predicateSteps = append(predicateSteps, QueryPredicateStep{stepType, valueId})
+		if stepType == QueryPredicateStepTypeDone {
+			break
+		}
 	}
 
 	return predicateSteps
