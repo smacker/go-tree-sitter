@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"regexp"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -737,6 +738,49 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 	}
 
 	q := &Query{c: c}
+
+	for i := uint32(0); i < q.PatternCount(); i++ {
+		steps := q.PredicatesForPattern(i)
+		if len(steps) == 0 {
+			continue
+		}
+
+		if steps[0].Type != QueryPredicateStepTypeString {
+			return nil, errors.New("predicate must begin with a literal value")
+		}
+
+		operator := q.StringValueForId(steps[0].ValueId)
+		switch operator {
+		case "eq?", "not-eq?":
+			if len(steps) != 4 {
+				return nil, fmt.Errorf("wrong number of arguments to `#%s` predicate. Expected 2, got %d", operator, len(steps)-2)
+			}
+			if steps[1].Type != QueryPredicateStepTypeCapture {
+				return nil, fmt.Errorf("first argument of `#%s` predicate must be a capture. Got %s", operator, q.StringValueForId(steps[1].ValueId))
+			}
+		case "match?", "not-match?":
+			if len(steps) != 4 {
+				return nil, fmt.Errorf("wrong number of arguments to `#%s` predicate. Expected 2, got %d", operator, len(steps)-2)
+			}
+			if steps[1].Type != QueryPredicateStepTypeCapture {
+				return nil, fmt.Errorf("first argument of `#%s` predicate must be a capture. Got %s", operator, q.StringValueForId(steps[1].ValueId))
+			}
+			if steps[2].Type != QueryPredicateStepTypeString {
+				return nil, fmt.Errorf("second argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[2].ValueId))
+			}
+		case "set!", "is?", "is-not?":
+			if len(steps) < 3 || len(steps) > 4 {
+				return nil, fmt.Errorf("wrong number of arguments to `#%s` predicate. Expected 1 or 2, got %d", operator, len(steps)-2)
+			}
+			if steps[1].Type != QueryPredicateStepTypeString {
+				return nil, fmt.Errorf("first argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[1].ValueId))
+			}
+			if len(steps) > 2 && steps[2].Type != QueryPredicateStepTypeString {
+				return nil, fmt.Errorf("second argument of `#%s` predicate must be a string. Got %s", operator, q.StringValueForId(steps[2].ValueId))
+			}
+		}
+	}
+
 	runtime.SetFinalizer(q, (*Query).Close)
 
 	return q, nil
@@ -937,6 +981,83 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	}
 
 	return qm, uint32(captureIndex), true
+}
+
+func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch {
+	qm := &QueryMatch{
+		ID:           m.ID,
+		PatternIndex: m.PatternIndex,
+	}
+
+	steps := qc.q.PredicatesForPattern(uint32(qm.PatternIndex))
+	if len(steps) == 0 {
+		qm.Captures = m.Captures
+		return qm
+	}
+
+	operator := qc.q.StringValueForId(steps[0].ValueId)
+
+	switch operator {
+	case "eq?", "not-eq?":
+		isPositive := operator == "eq?"
+
+		expectedCaptureNameLeft := qc.q.CaptureNameForId(steps[1].ValueId)
+
+		if steps[2].Type == QueryPredicateStepTypeCapture {
+			expectedCaptureNameRight := qc.q.CaptureNameForId(steps[2].ValueId)
+
+			var nodeLeft, nodeRight *Node
+
+			for _, c := range m.Captures {
+				captureName := qc.q.CaptureNameForId(c.Index)
+
+				if captureName == expectedCaptureNameLeft {
+					nodeLeft = c.Node
+				}
+				if captureName == expectedCaptureNameRight {
+					nodeRight = c.Node
+				}
+
+				if nodeLeft != nil && nodeRight != nil {
+					if (nodeLeft.Content(input) == nodeRight.Content(input)) == isPositive {
+						qm.Captures = append(qm.Captures, c)
+					}
+					break
+				}
+			}
+		} else {
+			expectedValueRight := qc.q.StringValueForId(steps[2].ValueId)
+
+			for _, c := range m.Captures {
+				captureName := qc.q.CaptureNameForId(c.Index)
+				if expectedCaptureNameLeft != captureName {
+					continue
+				}
+
+				if (c.Node.Content(input) == expectedValueRight) == isPositive {
+					qm.Captures = append(qm.Captures, c)
+				}
+			}
+		}
+	case "match?", "not-match?":
+		isPositive := operator == "match?"
+
+		expectedCaptureName := qc.q.CaptureNameForId(steps[1].ValueId)
+		regex := regexp.MustCompile(qc.q.StringValueForId(steps[2].ValueId))
+
+		for _, c := range m.Captures {
+			captureName := qc.q.CaptureNameForId(c.Index)
+			if expectedCaptureName != captureName {
+				continue
+			}
+
+			if regex.Match([]byte(c.Node.Content(input))) == isPositive {
+				qm.Captures = append(qm.Captures, c)
+			}
+		}
+	}
+
+	return qm
 }
 
 // keeps callbacks for parser.parse method
