@@ -7,7 +7,7 @@ Golang bindings for [tree-sitter](https://github.com/tree-sitter/tree-sitter)
 
 ## Usage
 
-Create a parser with that grammar:
+Create a parser with a grammar:
 
 ```go
 import (
@@ -38,6 +38,19 @@ fmt.Println(child.Type()) // lexical_declaration
 fmt.Println(child.StartByte()) // 0
 fmt.Println(child.EndByte()) // 9
 ```
+
+### Custom grammars
+
+This repository provides grammars for many common languages out of the box.
+
+But if you need support for any other language you can keep it inside your own project or publish it as a separate repository to share with the community. 
+
+See explanation on how to create a grammar for go-tree-sitter [here](https://github.com/smacker/go-tree-sitter/issues/57).
+
+Know external grammars:
+
+- [Salesforce grammars](https://github.com/aheber/tree-sitter-sfapex) - including Apex, SOQL, and SOSL languages.
+- [Ruby](https://github.com/shagabutdinov/go-tree-sitter-ruby) - Deprecated, grammar is provided by main repo instead
 
 ### Editing
 
@@ -86,7 +99,7 @@ Usage [example](./_examples/predicates/main.go):
 
 ```go
 func main() {
-    // Javascript code
+	// Javascript code
 	sourceCode := []byte(`
 		const camelCaseConst = 1;
 		const SCREAMING_SNAKE_CASE_CONST = 2;
