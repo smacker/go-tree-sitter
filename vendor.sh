@@ -165,6 +165,56 @@ function download_yaml() {
     rm "$target/combined.cc.bak"
 }
 
+GRAMMARS_JSON="grammars.json"
+
+declare -A grammar_urls
+declare -A grammar_references
+declare -A grammar_revisions
+
+# load_grammars loads the grammars from the "grammars.json" file.
+function load_grammars() {
+    if ! test -f "$GRAMMARS_JSON"; then
+        echo "$GRAMMARS_JSON does not exist"
+        exit 1
+    fi
+
+    while read -r entry; do
+        properties=$(echo $entry | jq -r '.language, .url, .reference, .revision')
+        read language url reference revision < <(echo $properties)
+
+        grammar_urls[$language]=$url
+        grammar_references[$language]=$reference
+        grammar_revisions[$language]=$revision
+    done < <(jq -c '.[]' $GRAMMARS_JSON )
+}
+
+# save_grammars saves the grammars in the "grammars.json" file.
+function save_grammars() {
+    json_string="[]"
+    for language in "${!grammar_urls[@]}"; do
+        url=${grammar_urls[$language]}
+        reference=${grammar_references[$language]}
+        revision=${grammar_revisions[$language]}
+
+        json_string=$(jq --arg lang $language --arg url "$url" --arg ref "$reference" --arg rev "$revision" '. |= . + [{"language": $lang, "url": $url, "reference": $ref, "revision": $rev}]' < <(echo $json_string))
+    done
+
+    jq '. |=  sort_by(.language)'  < <(echo $json_string) > $GRAMMARS_JSON
+}
+
+# update_grammar updates the properties of the given grammar.
+function update_grammar() {
+    language=$1
+    url=$2
+    reference=$3
+
+    revision=`git ls-remote --tags --heads --refs --sort='-v:refname' "$url" $reference | head -n 1 | cut -f1`
+
+    grammar_urls[$language]=$url
+    grammar_references[$language]=$reference
+    grammar_revisions[$language]=$revision
+}
+
 function download() {
     to_download=$1
     if [ -z "$1" ]; then
@@ -187,6 +237,13 @@ function download() {
         else
             download_grammar $grammar `echo $version | tr ';' ' '`
         fi
+
+        repository=${repositories[$grammar]}
+        if [ "$repository" == "" ]; then
+            repository="tree-sitter/tree-sitter-$grammar"
+        fi
+        url="https://github.com/$repository"
+        update_grammar $grammar "$url" "$version"
     done
 }
 
@@ -229,7 +286,7 @@ function help() {
 case $1 in
 check-updates) check-updates
 ;;
-download) download $2
+download) load_grammars; download $2; save_grammars
 ;;
 *) help
 ;;

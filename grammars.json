@@ -1,0 +1,164 @@
+[
+  {
+    "language": "bash",
+    "url": "https://github.com/tree-sitter/tree-sitter-bash",
+    "reference": "v0.19.0",
+    "revision": "df0f7bcd72c2a6632f8a15c0ba88972ec5e96878"
+  },
+  {
+    "language": "c",
+    "url": "https://github.com/tree-sitter/tree-sitter-c",
+    "reference": "v0.20.2",
+    "revision": "7175a6dd5fc1cee660dce6fe23f6043d75af424a"
+  },
+  {
+    "language": "c-sharp",
+    "url": "https://github.com/tree-sitter/tree-sitter-c-sharp",
+    "reference": "v0.20.0",
+    "revision": "7a47daeaf0d410dd1a91c97b274bb7276dd96605"
+  },
+  {
+    "language": "cpp",
+    "url": "https://github.com/tree-sitter/tree-sitter-cpp",
+    "reference": "v0.20.0",
+    "revision": "f44509141e7e483323d2ec178f2d2e6c0fc041c1"
+  },
+  {
+    "language": "css",
+    "url": "https://github.com/tree-sitter/tree-sitter-css",
+    "reference": "v0.19.0",
+    "revision": "9668e889161358d18a558f68f1614b6edde34029"
+  },
+  {
+    "language": "cue",
+    "url": "https://github.com/eonpatapon/tree-sitter-cue",
+    "reference": "main",
+    "revision": "61843e3beebf19417e4fede4e8be4df1084317ad"
+  },
+  {
+    "language": "dockerfile",
+    "url": "https://github.com/camdencheek/tree-sitter-dockerfile",
+    "reference": "v0.1.2",
+    "revision": "d34a0cebd094e830bdd2106a28cb2f1fb22401d8"
+  },
+  {
+    "language": "elixir",
+    "url": "https://github.com/elixir-lang/tree-sitter-elixir",
+    "reference": "main",
+    "revision": "05e3631c6a0701c1fa518b0fee7be95a2ceef5e2"
+  },
+  {
+    "language": "elm",
+    "url": "https://github.com/elm-tooling/tree-sitter-elm",
+    "reference": "v5.3.7",
+    "revision": "8dd06afd9ca60a420374c6b65831e58a1d1237ad"
+  },
+  {
+    "language": "go",
+    "url": "https://github.com/tree-sitter/tree-sitter-go",
+    "reference": "master",
+    "revision": "05900faa3cdb5d2d8c8bd5e77ee698487e0a8611"
+  },
+  {
+    "language": "hcl",
+    "url": "https://github.com/mitchellh/tree-sitter-hcl",
+    "reference": "main",
+    "revision": "a8bd2568d37065a3b451cfd91745607fac4aac84"
+  },
+  {
+    "language": "html",
+    "url": "https://github.com/tree-sitter/tree-sitter-html",
+    "reference": "v0.19.0",
+    "revision": "d5bb5d5c9a9922cee28a391237840c6a6e05e25e"
+  },
+  {
+    "language": "java",
+    "url": "https://github.com/tree-sitter/tree-sitter-java",
+    "reference": "v0.20.1",
+    "revision": "09d650def6cdf7f479f4b78f595e9ef5b58ce31e"
+  },
+  {
+    "language": "javascript",
+    "url": "https://github.com/tree-sitter/tree-sitter-javascript",
+    "reference": "v0.19.0",
+    "revision": "efd8cc9ee8eb919c2ca0f0eebaeb8f39557d8a8a"
+  },
+  {
+    "language": "kotlin",
+    "url": "https://github.com/fwcd/tree-sitter-kotlin",
+    "reference": "main",
+    "revision": "cce9073807c6c1da81ce658d683fdac2878e5b57"
+  },
+  {
+    "language": "lua",
+    "url": "https://github.com/tjdevries/tree-sitter-lua",
+    "reference": "master",
+    "revision": "9ec837de6061c05d4f202047e3e9dcf644c779e8"
+  },
+  {
+    "language": "ocaml",
+    "url": "https://github.com/tree-sitter/tree-sitter-ocaml",
+    "reference": "v0.19.0",
+    "revision": "6f8eaf279b164894d5e97276581293204683cd92"
+  },
+  {
+    "language": "php",
+    "url": "https://github.com/tree-sitter/tree-sitter-php",
+    "reference": "v0.19.0",
+    "revision": "a509567b328c68463b2cea53fe6a6750d9df68a2"
+  },
+  {
+    "language": "protobuf",
+    "url": "https://github.com/mitchellh/tree-sitter-proto",
+    "reference": "main",
+    "revision": "42d82fa18f8afe59b5fc0b16c207ee4f84cb185f"
+  },
+  {
+    "language": "python",
+    "url": "https://github.com/tree-sitter/tree-sitter-python",
+    "reference": "v0.20.0",
+    "revision": "2b9e9e0d231d5dd9f491d47f704817baee7d5af0"
+  },
+  {
+    "language": "ruby",
+    "url": "https://github.com/tree-sitter/tree-sitter-ruby",
+    "reference": "v0.19.0",
+    "revision": "08c2016070ad340e696b23a825e0855c373300b1"
+  },
+  {
+    "language": "rust",
+    "url": "https://github.com/tree-sitter/tree-sitter-rust",
+    "reference": "v0.20.1",
+    "revision": "a250c4582510ff34767ec3b7dcdd3c24e8c8aa68"
+  },
+  {
+    "language": "scala",
+    "url": "https://github.com/tree-sitter/tree-sitter-scala",
+    "reference": "v0.19.0",
+    "revision": "88f2c61bc5944d84a416fc1899dccff6dc2378bf"
+  },
+  {
+    "language": "svelte",
+    "url": "https://github.com/Himujjal/tree-sitter-svelte",
+    "reference": "v0.9.0",
+    "revision": "cb7fa2c3635b4ffa1aac3251772ee6ad1867335a"
+  },
+  {
+    "language": "toml",
+    "url": "https://github.com/ikatyang/tree-sitter-toml",
+    "reference": "v0.5.1",
+    "revision": "5e73094257e819f637402bd81f4272ed91aa9870"
+  },
+  {
+    "language": "typescript",
+    "url": "https://github.com/tree-sitter/tree-sitter-typescript",
+    "reference": "v0.20.1",
+    "revision": "e8e714b7b5232b2c143bffbcb2413d687b8871f7"
+  },
+  {
+    "language": "yaml",
+    "url": "https://github.com/ikatyang/tree-sitter-yaml",
+    "reference": "v0.5.0",
+    "revision": "88b66903bdad1b139cde0b7cca2a27ee25737e3d"
+  }
+]
