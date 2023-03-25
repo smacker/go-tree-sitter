@@ -137,13 +137,22 @@ func main() {
 
 ## Development
 
+### Updating a grammar
+
 Check if any updates for vendored files are available:
 
 ```
-./vendor.sh check-updates
+go run _automation/main.go check-updates
 ```
 
 Update vendor files:
 
-- modify `grammars` array in `vendor.sh`
-- run `./vendor.sh download`.  (This script requires Bash v5, not the v3 of recent Mac OS.)
+- open `_automation/grammars.json`
+- modify `reference` (for tagged grammars) or `revision` (for grammars from a branch)
+- run `go run _automation/main.go <grammar-name>`
+
+It is also possible to update all grammars in one go using
+
+```
+go run _automation/main.go update-all
+```
