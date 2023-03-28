@@ -213,8 +213,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.1",
-    "revision": "a250c4582510ff34767ec3b7dcdd3c24e8c8aa68"
+    "reference": "v0.20.3",
+    "revision": "0431a2c60828731f27491ee9fdefe25e250ce9c9"
   },
   {
     "language": "scala",
