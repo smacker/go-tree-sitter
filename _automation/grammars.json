@@ -56,7 +56,7 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "4ffcda8c2bdfee1c2ba786cd503d0508ea92cca2"
+    "revision": "61843e3beebf19417e4fede4e8be4df1084317ad"
   },
   {
     "language": "dockerfile",
