@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"text/tabwriter"
 )
 
 var defaultLogger *Logger
