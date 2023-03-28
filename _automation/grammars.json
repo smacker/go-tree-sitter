@@ -84,8 +84,8 @@
       "parser.c",
       "scanner.cc"
     ],
-    "reference": "v5.3.7",
-    "revision": "8dd06afd9ca60a420374c6b65831e58a1d1237ad"
+    "reference": "v5.6.3",
+    "revision": "cce0e5938e7779f86cf8bf445eadf7df4b88229d"
   },
   {
     "language": "golang",
