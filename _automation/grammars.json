@@ -74,8 +74,8 @@
       "parser.c",
       "scanner.cc"
     ],
-    "reference": "main",
-    "revision": "05e3631c6a0701c1fa518b0fee7be95a2ceef5e2"
+    "reference": "v0.1.0",
+    "revision": "869dff3ceb8823ca4b17ca33b663667c8e41e8ba"
   },
   {
     "language": "elm",
