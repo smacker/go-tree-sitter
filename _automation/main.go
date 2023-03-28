@@ -135,16 +135,20 @@ func NewUpdateService() *UpdateService {
 
 func (s *UpdateService) CheckUpdates(ctx context.Context) {
 	newVersions := s.fetchNewVersions()
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
 	for i, g := range s.grammars {
 		nextVersion := newVersions[i]
-		remoteReference := g.Reference
-		outdatedStr := ""
-		if nextVersion != nil {
-			remoteReference = nextVersion.Reference
-			outdatedStr = "outdated"
+		fmt.Fprintf(w, "%s\t%s\t", g.Language, g.Reference)
+		if nextVersion == nil {
+			fmt.Fprintf(w, "(up-to-date)")
+		} else if g.Reference == nextVersion.Reference {
+			fmt.Fprintf(w, "(update available: %s -> %s)", g.Revision, nextVersion.Revision)
+		} else {
+			fmt.Fprintf(w, "(update available: %s -> %s)", g.Reference, nextVersion.Reference)
 		}
-		fmt.Printf("%s\t\tvendored: %s\tremote: %s\t%s\n", g.Language, g.Reference, remoteReference, outdatedStr)
+		fmt.Fprintln(w)
 	}
+	w.Flush()
 }
 
 func (s *UpdateService) fetchNewVersions() []*GrammarVersion {
