@@ -154,7 +154,7 @@
       "scanner.c"
     ],
     "reference": "master",
-    "revision": "9ec837de6061c05d4f202047e3e9dcf644c779e8"
+    "revision": "0e860f697901c9b610104eb61d3812755d5211fc"
   },
   {
     "language": "ocaml",
