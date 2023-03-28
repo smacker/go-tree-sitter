@@ -192,16 +192,16 @@ bool compareTags(const Tag *a, const Tag *b) {
   return true;
 }
 
-const bool is_void(Tag *tag) { return tag->type < END_OF_VOID_TAGS; }
+bool is_void(Tag *tag) { return tag->type < END_OF_VOID_TAGS; }
 
-const bool findTagType(const TagType *tt, TagType toFind) {
-  for (int i = 0; i < TTNAIP_LEN; i++)
+bool findTagType(const TagType *tt, TagType toFind) {
+  for (size_t i = 0; i < TTNAIP_LEN; i++)
     if (tt[i] == toFind)
       return true;
   return false;
 }
 
-const bool findTag(vc_vector *v, Tag *tag) {
+bool findTag(vc_vector *v, Tag *tag) {
   for (size_t i = 0; i < v->count; i++)
     if (compareTags(vc_vector_at(v, i), tag))
       return true;

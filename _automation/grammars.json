@@ -239,8 +239,8 @@
       "uthash.h",
       "vc_vector.h"
     ],
-    "reference": "v0.9.0",
-    "revision": "98274d94ec33e994e8354d9ddfdef58cca471294"
+    "reference": "v0.10.1",
+    "revision": "84c90ee15f851e1541c25c86e8a4338f5b4d5af2"
   },
   {
     "language": "toml",
