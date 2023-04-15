@@ -149,7 +149,7 @@ Update vendor files:
 
 - open `_automation/grammars.json`
 - modify `reference` (for tagged grammars) or `revision` (for grammars from a branch)
-- run `go run _automation/main.go <grammar-name>`
+- run `go run _automation/main.go update <grammar-name>`
 
 It is also possible to update all grammars in one go using
 
