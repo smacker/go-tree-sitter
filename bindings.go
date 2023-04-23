@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -678,36 +679,39 @@ const (
 	QueryErrorNodeType
 	QueryErrorField
 	QueryErrorCapture
+	QueryErrorStructure
+	QueryErrorLanguage
 )
+
+func QueryErrorTypeToString(errorType QueryErrorType) string {
+	switch errorType {
+	case QueryErrorNone:
+		return "none"
+	case QueryErrorNodeType:
+		return "node type"
+	case QueryErrorField:
+		return "field"
+	case QueryErrorCapture:
+		return "capture"
+	case QueryErrorSyntax:
+		return "syntax"
+	default:
+		return "unknown"
+	}
+
+}
 
 // QueryError - if there is an error in the query,
 // then the Offset argument will be set to the byte offset of the error,
 // and the Type argument will be set to a value that indicates the type of error.
 type QueryError struct {
-	Offset uint32
-	Type   QueryErrorType
+	Offset  uint32
+	Type    QueryErrorType
+	Message string
 }
 
 func (qe *QueryError) Error() string {
-	switch qe.Type {
-	case QueryErrorNone:
-		return ""
-
-	case QueryErrorSyntax:
-		return fmt.Sprintf("syntax error (offset: %d)", qe.Offset)
-
-	case QueryErrorNodeType:
-		return fmt.Sprintf("node type error (offset: %d)", qe.Offset)
-
-	case QueryErrorField:
-		return fmt.Sprintf("field error (offset: %d)", qe.Offset)
-
-	case QueryErrorCapture:
-		return fmt.Sprintf("capture error (offset: %d)", qe.Offset)
-
-	default:
-		return fmt.Sprintf("unknown error (offset: %d)", qe.Offset)
-	}
+	return qe.Message
 }
 
 // Query API
@@ -734,7 +738,65 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 	)
 	C.free(input)
 	if errtype != C.TSQueryError(QueryErrorNone) {
-		return nil, &QueryError{Offset: uint32(erroff), Type: QueryErrorType(errtype)}
+		errorOffset := uint32(erroff)
+		// search for the line containing the offset
+		line := 1
+		line_start := 0
+		for i, c := range pattern {
+			line_start = i
+			if uint32(i) >= errorOffset {
+				break
+			}
+			if c == '\n' {
+				line++
+			}
+		}
+		column := int(errorOffset) - line_start
+		errorType := QueryErrorType(errtype)
+		errorTypeToString := QueryErrorTypeToString(errorType)
+
+		var message string
+		switch errorType {
+		// errors that apply to a single identifier
+		case QueryErrorNodeType:
+			fallthrough
+		case QueryErrorField:
+			fallthrough
+		case QueryErrorCapture:
+			// find identifier at input[errorOffset]
+			// and report it in the error message
+			s := string(pattern[errorOffset:])
+			identifierRegexp := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*`)
+			m := identifierRegexp.FindStringSubmatch(s)
+			if len(m) > 0 {
+				message = fmt.Sprintf("invalid %s '%s' at line %d column %d",
+					errorTypeToString, m[0], line, column)
+			} else {
+				message = fmt.Sprintf("invalid %s at line %d column %d",
+					errorTypeToString, line, column)
+			}
+
+		// errors the report position
+		case QueryErrorSyntax:
+			fallthrough
+		case QueryErrorStructure:
+			fallthrough
+		case QueryErrorLanguage:
+			fallthrough
+		default:
+			s := string(pattern[errorOffset:])
+			lines := strings.Split(s, "\n")
+			whitespace := strings.Repeat(" ", column)
+			message = fmt.Sprintf("invalid %s at line %d column %d\n%s\n%s^",
+				errorTypeToString, line, column,
+				lines[0], whitespace)
+		}
+
+		return nil, &QueryError{
+			Offset:  errorOffset,
+			Type:    errorType,
+			Message: message,
+		}
 	}
 
 	q := &Query{c: c}
@@ -856,6 +918,20 @@ func (q *Query) StringValueForId(id uint32) string {
 	var length C.uint32_t
 	value := C.ts_query_string_value_for_id(q.c, C.uint32_t(id), &length)
 	return C.GoStringN(value, C.int(length))
+}
+
+type Quantifier int
+
+const (
+	QuantifierZero = iota
+	QuantifierZeroOrOne
+	QuantifierZeroOrMore
+	QuantifierOne
+	QuantifierOneOrMore
+)
+
+func (q *Query) CaptureQuantifierForId(id uint32, captureId uint32) Quantifier {
+	return Quantifier(C.ts_query_capture_quantifier_for_id(q.c, C.uint32_t(id), C.uint32_t(captureId)))
 }
 
 // QueryCursor carries the state needed for processing the queries.
