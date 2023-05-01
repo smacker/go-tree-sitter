@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -678,36 +679,39 @@ const (
 	QueryErrorNodeType
 	QueryErrorField
 	QueryErrorCapture
+	QueryErrorStructure
+	QueryErrorLanguage
 )
+
+func QueryErrorTypeToString(errorType QueryErrorType) string {
+	switch errorType {
+	case QueryErrorNone:
+		return "none"
+	case QueryErrorNodeType:
+		return "node type"
+	case QueryErrorField:
+		return "field"
+	case QueryErrorCapture:
+		return "capture"
+	case QueryErrorSyntax:
+		return "syntax"
+	default:
+		return "unknown"
+	}
+
+}
 
 // QueryError - if there is an error in the query,
 // then the Offset argument will be set to the byte offset of the error,
 // and the Type argument will be set to a value that indicates the type of error.
 type QueryError struct {
-	Offset uint32
-	Type   QueryErrorType
+	Offset  uint32
+	Type    QueryErrorType
+	Message string
 }
 
 func (qe *QueryError) Error() string {
-	switch qe.Type {
-	case QueryErrorNone:
-		return ""
-
-	case QueryErrorSyntax:
-		return fmt.Sprintf("syntax error (offset: %d)", qe.Offset)
-
-	case QueryErrorNodeType:
-		return fmt.Sprintf("node type error (offset: %d)", qe.Offset)
-
-	case QueryErrorField:
-		return fmt.Sprintf("field error (offset: %d)", qe.Offset)
-
-	case QueryErrorCapture:
-		return fmt.Sprintf("capture error (offset: %d)", qe.Offset)
-
-	default:
-		return fmt.Sprintf("unknown error (offset: %d)", qe.Offset)
-	}
+	return qe.Message
 }
 
 // Query API
@@ -734,7 +738,65 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 	)
 	C.free(input)
 	if errtype != C.TSQueryError(QueryErrorNone) {
-		return nil, &QueryError{Offset: uint32(erroff), Type: QueryErrorType(errtype)}
+		errorOffset := uint32(erroff)
+		// search for the line containing the offset
+		line := 1
+		line_start := 0
+		for i, c := range pattern {
+			line_start = i
+			if uint32(i) >= errorOffset {
+				break
+			}
+			if c == '\n' {
+				line++
+			}
+		}
+		column := int(errorOffset) - line_start
+		errorType := QueryErrorType(errtype)
+		errorTypeToString := QueryErrorTypeToString(errorType)
+
+		var message string
+		switch errorType {
+		// errors that apply to a single identifier
+		case QueryErrorNodeType:
+			fallthrough
+		case QueryErrorField:
+			fallthrough
+		case QueryErrorCapture:
+			// find identifier at input[errorOffset]
+			// and report it in the error message
+			s := string(pattern[errorOffset:])
+			identifierRegexp := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_-]*`)
+			m := identifierRegexp.FindStringSubmatch(s)
+			if len(m) > 0 {
+				message = fmt.Sprintf("invalid %s '%s' at line %d column %d",
+					errorTypeToString, m[0], line, column)
+			} else {
+				message = fmt.Sprintf("invalid %s at line %d column %d",
+					errorTypeToString, line, column)
+			}
+
+		// errors the report position
+		case QueryErrorSyntax:
+			fallthrough
+		case QueryErrorStructure:
+			fallthrough
+		case QueryErrorLanguage:
+			fallthrough
+		default:
+			s := string(pattern[errorOffset:])
+			lines := strings.Split(s, "\n")
+			whitespace := strings.Repeat(" ", column)
+			message = fmt.Sprintf("invalid %s at line %d column %d\n%s\n%s^",
+				errorTypeToString, line, column,
+				lines[0], whitespace)
+		}
+
+		return nil, &QueryError{
+			Offset:  errorOffset,
+			Type:    errorType,
+			Message: message,
+		}
 	}
 
 	q := &Query{c: c}
@@ -856,6 +918,20 @@ func (q *Query) StringValueForId(id uint32) string {
 	var length C.uint32_t
 	value := C.ts_query_string_value_for_id(q.c, C.uint32_t(id), &length)
 	return C.GoStringN(value, C.int(length))
+}
+
+type Quantifier int
+
+const (
+	QuantifierZero = iota
+	QuantifierZeroOrOne
+	QuantifierZeroOrMore
+	QuantifierOne
+	QuantifierOneOrMore
+)
+
+func (q *Query) CaptureQuantifierForId(id uint32, captureId uint32) Quantifier {
+	return Quantifier(C.ts_query_capture_quantifier_for_id(q.c, C.uint32_t(id), C.uint32_t(captureId)))
 }
 
 // QueryCursor carries the state needed for processing the queries.
@@ -989,27 +1065,32 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 		PatternIndex: m.PatternIndex,
 	}
 
-	steps := qc.q.PredicatesForPattern(uint32(qm.PatternIndex))
+	q := qc.q
+
+	steps := q.PredicatesForPattern(uint32(qm.PatternIndex))
 	if len(steps) == 0 {
 		qm.Captures = m.Captures
 		return qm
 	}
 
-	operator := qc.q.StringValueForId(steps[0].ValueId)
+	operator := q.StringValueForId(steps[0].ValueId)
 
 	switch operator {
 	case "eq?", "not-eq?":
 		isPositive := operator == "eq?"
 
-		expectedCaptureNameLeft := qc.q.CaptureNameForId(steps[1].ValueId)
+		expectedCaptureNameLeft := q.CaptureNameForId(steps[1].ValueId)
 
 		if steps[2].Type == QueryPredicateStepTypeCapture {
-			expectedCaptureNameRight := qc.q.CaptureNameForId(steps[2].ValueId)
+			expectedCaptureNameRight := q.CaptureNameForId(steps[2].ValueId)
 
 			var nodeLeft, nodeRight *Node
 
+			found := false
+
 			for _, c := range m.Captures {
-				captureName := qc.q.CaptureNameForId(c.Index)
+				captureName := q.CaptureNameForId(c.Index)
+				qm.Captures = append(qm.Captures, c)
 
 				if captureName == expectedCaptureNameLeft {
 					nodeLeft = c.Node
@@ -1020,33 +1101,45 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 
 				if nodeLeft != nil && nodeRight != nil {
 					if (nodeLeft.Content(input) == nodeRight.Content(input)) == isPositive {
-						qm.Captures = append(qm.Captures, c)
+						found = true
 					}
 					break
 				}
 			}
-		} else {
-			expectedValueRight := qc.q.StringValueForId(steps[2].ValueId)
 
+			if !found {
+				qm.Captures = nil
+			}
+		} else {
+			expectedValueRight := q.StringValueForId(steps[2].ValueId)
+
+			found := false
 			for _, c := range m.Captures {
-				captureName := qc.q.CaptureNameForId(c.Index)
+				captureName := q.CaptureNameForId(c.Index)
+
+				qm.Captures = append(qm.Captures, c)
 				if expectedCaptureNameLeft != captureName {
 					continue
 				}
 
 				if (c.Node.Content(input) == expectedValueRight) == isPositive {
-					qm.Captures = append(qm.Captures, c)
+					found = true
 				}
 			}
+
+			if !found {
+				qm.Captures = nil
+			}
 		}
+
 	case "match?", "not-match?":
 		isPositive := operator == "match?"
 
-		expectedCaptureName := qc.q.CaptureNameForId(steps[1].ValueId)
-		regex := regexp.MustCompile(qc.q.StringValueForId(steps[2].ValueId))
+		expectedCaptureName := q.CaptureNameForId(steps[1].ValueId)
+		regex := regexp.MustCompile(q.StringValueForId(steps[2].ValueId))
 
 		for _, c := range m.Captures {
-			captureName := qc.q.CaptureNameForId(c.Index)
+			captureName := q.CaptureNameForId(c.Index)
 			if expectedCaptureName != captureName {
 				continue
 			}
@@ -1058,6 +1151,7 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 	}
 
 	return qm
+
 }
 
 // keeps callbacks for parser.parse method
