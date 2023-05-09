@@ -66,7 +66,7 @@
       "scanner.c"
     ],
     "reference": "master",
-    "revision": "53485a8f301254e19c518aa20c80f1bcf7cf5c62"
+    "revision": "939e5e18321a695f39889ae9dcf3c0255a107109"
   },
   {
     "language": "dockerfile",
@@ -94,8 +94,8 @@
       "parser.c",
       "scanner.cc"
     ],
-    "reference": "v5.6.3",
-    "revision": "cce0e5938e7779f86cf8bf445eadf7df4b88229d"
+    "reference": "v5.6.4",
+    "revision": "692c50c0b961364c40299e73c1306aecb5d20f40"
   },
   {
     "language": "golang",
@@ -153,7 +153,7 @@
       "parser.c"
     ],
     "reference": "master",
-    "revision": "73076754005a460947cafe8e03a8cf5fa4fa2938"
+    "revision": "40a81c01a40ac48744e0c8ccabbaba1920441199"
   },
   {
     "language": "kotlin",
@@ -163,7 +163,16 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "c84d16e7f75032cdd8c4ad986a76ca9e1fe4e639"
+    "revision": "100d79fd96b56a1b99099a8d2f3c114b8687acfb"
+  },
+  {
+    "language": "less",
+    "url": "https://github.com/codepen/tree-sitter-less",
+    "files": [
+      "parser.c"
+    ],
+    "reference": "main",
+    "revision": "fcd5b67b2979e8aa27bd12bbd39ae9435cc507eb"
   },
   {
     "language": "lua",
