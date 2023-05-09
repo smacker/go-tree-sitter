@@ -1,7 +1,7 @@
 package less
 
 //#include "parser.h"
-//TSLanguage *tree_sitter_python();
+//TSLanguage *tree_sitter_less();
 import "C"
 
 import (
