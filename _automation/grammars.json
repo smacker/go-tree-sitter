@@ -254,6 +254,16 @@
     "revision": "42d82fa18f8afe59b5fc0b16c207ee4f84cb185f"
   },
   {
+    "language": "pug",
+    "url": "https://github.com/codepen/tree-sitter-pug",
+    "files": [
+      "parser.c",
+      "scanner.cc"
+    ],
+    "reference": "master",
+    "revision": "edf87be0dc0aa69937c77130be91195b07e7bca3"
+  },
+  {
     "language": "python",
     "url": "https://github.com/tree-sitter/tree-sitter-python",
     "files": [
