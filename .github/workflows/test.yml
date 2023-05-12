@@ -4,20 +4,18 @@ on:
     branches:
       - master
   pull_request:
+  # Comment
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go: ['1.17', '1.16', '1.15', '1.14']
-    name: Test on ${{ matrix.go }}
+    name: go-tree-sitter
     steps:
-      - uses: actions/checkout@v2
-      - name: Setup go
-        uses: actions/setup-go@v2
+      - name: Check out source code
+        uses: actions/checkout@v3.3.0
+      - uses: actions/setup-go@v3.3.1
         with:
-          go-version: ${{ matrix.go }}
+          go-version: 1.19
       - name: Download dependencies
         run: go get -t ./...
       - name: Run tests
