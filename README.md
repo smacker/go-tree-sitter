@@ -43,7 +43,7 @@ fmt.Println(child.EndByte()) // 9
 
 This repository provides grammars for many common languages out of the box.
 
-But if you need support for any other language you can keep it inside your own project or publish it as a separate repository to share with the community. 
+But if you need support for any other language you can keep it inside your own project or publish it as a separate repository to share with the community.
 
 See explanation on how to create a grammar for go-tree-sitter [here](https://github.com/smacker/go-tree-sitter/issues/57).
 
@@ -149,7 +149,7 @@ Update vendor files:
 
 - open `_automation/grammars.json`
 - modify `reference` (for tagged grammars) or `revision` (for grammars from a branch)
-- run `go run _automation/main.go <grammar-name>`
+- run `c <grammar-name>`
 
 It is also possible to update all grammars in one go using
 

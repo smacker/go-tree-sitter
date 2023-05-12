@@ -393,7 +393,8 @@ func TestQueryError(t *testing.T) {
 
 	assert.Nil(q)
 	assert.NotNil(err)
-	assert.EqualValues(&QueryError{Offset: 0x02, Type: QueryErrorNodeType}, err)
+	assert.EqualValues(&QueryError{Offset: 0x02, Type: QueryErrorNodeType,
+		Message: "invalid node type 'unknown' at line 1 column 0"}, err)
 }
 
 func doWorkLifetime(t testing.TB, n *Node) {

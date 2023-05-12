@@ -294,7 +294,7 @@ func TestFilterPredicates(t *testing.T) {
   right: (expression (number) @right))
   (#eq? @left @right))`,
 			expectedBefore: 2,
-			expectedAfter:  1,
+			expectedAfter:  2,
 		},
 		{
 			input: `1234 + 4321`,
@@ -335,7 +335,16 @@ func TestFilterPredicates(t *testing.T) {
   right: (expression (number) @right))
   (#not-eq? @left @right))`,
 			expectedBefore: 2,
-			expectedAfter:  1,
+			expectedAfter:  2,
+		},
+		{
+			input: `1234 + 4321`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#eq? @left 1234))`,
+			expectedBefore: 2,
+			expectedAfter:  2,
 		},
 	}
 
