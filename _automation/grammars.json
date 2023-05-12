@@ -163,7 +163,7 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "100d79fd96b56a1b99099a8d2f3c114b8687acfb"
+    "revision": "cce9073807c6c1da81ce658d683fdac2878e5b57"
   },
   {
     "language": "less",
@@ -171,7 +171,7 @@
     "files": [
       "parser.c"
     ],
-    "reference": "main",
+    "reference": "master",
     "revision": "fcd5b67b2979e8aa27bd12bbd39ae9435cc507eb"
   },
   {
