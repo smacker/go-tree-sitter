@@ -315,6 +315,15 @@
     "revision": "c478c6868648eff49eb04a4df90d703dc45b312a"
   },
   {
+    "language": "stylus",
+    "url": "https://github.com/codepen/tree-sitter-stylus",
+    "files": [
+      "parser.c"
+    ],
+    "reference": "master",
+    "revision": "21b8be58f02814b71152354c8e6602708a3fb6e4"
+  },
+  {
     "language": "svelte",
     "url": "https://github.com/Himujjal/tree-sitter-svelte",
     "files": [
