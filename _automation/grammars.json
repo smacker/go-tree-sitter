@@ -320,8 +320,8 @@
     "files": [
       "parser.c"
     ],
-    "reference": "master",
-    "revision": "21b8be58f02814b71152354c8e6602708a3fb6e4"
+    "reference": "quotes",
+    "revision": "43c01801db89303578490d09eb15b4c1ca27ce2d"
   },
   {
     "language": "svelte",

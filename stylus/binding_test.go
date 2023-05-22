@@ -15,7 +15,7 @@ func TestStylusGrammar(t *testing.T) {
 	n, err := sitter.ParseCtx(context.Background(), []byte("@import \"hello\";"), stylus.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
-		"(doc (import (string)))",
+		"(doc (import_statement (quoted_import_reference (import_reference))))",
 		n.String(),
 	)
 }
