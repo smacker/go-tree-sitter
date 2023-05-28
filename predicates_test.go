@@ -99,6 +99,12 @@ func TestQueryWithPredicates(t *testing.T) {
 		},
 		{
 			success: true,
+			msg:     "#eq?: success double predicate test",
+			pattern: `((expression) @capture
+ (#eq? @capture @capture) (#eq? @capture "this"))`,
+		},
+		{
+			success: true,
 			msg:     "#eq?: success test",
 			pattern: `((expression) @capture
  (#eq? @capture @capture))`,
@@ -288,6 +294,13 @@ func TestFilterPredicates(t *testing.T) {
 			expectedAfter:  0,
 		},
 		{
+			input: `// foo`,
+			query: `((comment) @capture
+  (#eq? @capture "// foo") (#eq? @capture "// bar"))`,
+			expectedBefore: 1,
+			expectedAfter:  0,
+		},
+		{
 			input: `1234 + 1234`,
 			query: `((sum
   left: (expression (number) @left)
@@ -345,6 +358,24 @@ func TestFilterPredicates(t *testing.T) {
   (#eq? @left 1234))`,
 			expectedBefore: 2,
 			expectedAfter:  2,
+		},
+		{
+			input: `1234 + 4321`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#eq? @left 1234) (#not-eq? @left @right))`,
+			expectedBefore: 2,
+			expectedAfter:  2,
+		},
+		{
+			input: `1234 + 4321`,
+			query: `((sum
+  left: (expression (number) @left)
+  right: (expression (number) @right))
+  (#eq? @left 1234) (#eq? @left 4321))`,
+			expectedBefore: 2,
+			expectedAfter:  0,
 		},
 	}
 
