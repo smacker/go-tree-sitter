@@ -801,6 +801,7 @@ func NewQuery(pattern []byte, lang *Language) (*Query, error) {
 
 	q := &Query{c: c}
 
+	// Copied from: https://github.com/klothoplatform/go-tree-sitter/commit/e351b20167b26d515627a4a1a884528ede5fef79
 	// this is just used for syntax validation - it does not actually filter anything
 	for i := uint32(0); i < q.PatternCount(); i++ {
 		predicates := q.PredicatesForPattern(i)
@@ -1061,6 +1062,8 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 
 	return qm, uint32(captureIndex), true
 }
+
+// Copied From: https://github.com/klothoplatform/go-tree-sitter/commit/e351b20167b26d515627a4a1a884528ede5fef79
 
 func splitPredicates(steps []QueryPredicateStep) [][]QueryPredicateStep {
 	var predicateSteps [][]QueryPredicateStep
