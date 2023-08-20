@@ -133,8 +133,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.19.0",
-    "revision": "efd8cc9ee8eb919c2ca0f0eebaeb8f39557d8a8a"
+    "reference": "master",
+    "revision": "c69aabab53609d00e8e198ab902e4fde4b8e449f"
   },
   {
     "language": "kotlin",
