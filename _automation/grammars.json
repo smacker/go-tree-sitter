@@ -98,13 +98,13 @@
   },
   {
     "language": "hcl",
-    "url": "https://github.com/mitchellh/tree-sitter-hcl",
+    "url": "https://github.com/MichaHoffmann/tree-sitter-hcl",
     "files": [
       "parser.c",
-      "scanner.cc"
+      "scanner.c"
     ],
     "reference": "main",
-    "revision": "a8bd2568d37065a3b451cfd91745607fac4aac84"
+    "revision": "b5539065432c08e4118eb3ee7c94902fdda85708"
   },
   {
     "language": "html",
