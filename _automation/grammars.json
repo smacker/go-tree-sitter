@@ -144,7 +144,7 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "cce9073807c6c1da81ce658d683fdac2878e5b57"
+    "revision": "5baa0fe2288830f88bd38e328b08d829f3914164"
   },
   {
     "language": "lua",
