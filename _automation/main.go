@@ -45,8 +45,9 @@ func (g *Grammar) ContentURL() string {
 	)
 }
 
+// Try to fetch tag if reference, otherwise fetch commit
 func (g *Grammar) FetchNewVersion() *GrammarVersion {
-	if strings.HasPrefix(g.Reference, "v") {
+	if g.Reference != "" {
 		tag, rev := fetchLastTag(g.URL)
 		if tag != g.Reference {
 			return &GrammarVersion{
@@ -421,7 +422,7 @@ func logAndExit(logger *Logger, msg string, args ...interface{}) {
 // Git
 
 func fetchLastTag(repository string) (string, string) {
-	cmd := exec.Command("git", "ls-remote", "--tags", "--refs", "--sort", "-v:refname", repository, "v*")
+	cmd := exec.Command("git", "ls-remote", "--tags", "--refs", "--sort", "-v:refname", repository)
 	b, err := cmd.Output()
 	if err != nil {
 		logAndExit(defaultLogger, err.Error())
