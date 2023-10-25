@@ -228,6 +228,17 @@
     "revision": "918f0fb948405181707a1772cab639f2d278d384"
   },
   {
+    "language": "sparql",
+    "url": "https://github.com/BonaBeavis/tree-sitter-sparql",
+    "files": [
+      "parser.c",
+      "grammar.json",
+      "node-types.json"
+    ],
+    "reference": "0.1.0",
+    "revision": "05f949d3c1c15e3261473a244d3ce87777374dec"
+  },
+  {
     "language": "svelte",
     "url": "https://github.com/Himujjal/tree-sitter-svelte",
     "files": [
