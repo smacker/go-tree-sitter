@@ -421,7 +421,7 @@ func logAndExit(logger *Logger, msg string, args ...interface{}) {
 // Git
 
 func fetchLastTag(repository string) (string, string) {
-	cmd := exec.Command("git", "ls-remote", "--tags", "--refs", "--sort", "-v:refname", repository, "v*")
+	cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository, "v*")
 	b, err := cmd.Output()
 	if err != nil {
 		logAndExit(defaultLogger, err.Error())
@@ -429,7 +429,10 @@ func fetchLastTag(repository string) (string, string) {
 	line := strings.SplitN(string(b), "\n", 2)[0]
 	parts := strings.Split(line, "\t")
 
-	return strings.Split(parts[1], "/")[2], parts[0]
+	tag := strings.TrimRight(strings.Split(parts[1], "/")[2], "^{}")
+	rev := strings.Split(parts[0], "^")[0]
+
+	return tag, rev
 }
 
 func fetchLastCommit(repository, branch string) string {
