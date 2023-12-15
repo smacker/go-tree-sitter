@@ -259,8 +259,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.2",
-    "revision": "5d20856f34315b068c41edaee2ac8a100081d259"
+    "reference": "v0.20.3",
+    "revision": "c604297f8197b468026f2ea32119935887e01c67"
   },
   {
     "language": "yaml",
