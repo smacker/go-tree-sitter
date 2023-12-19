@@ -66,23 +66,36 @@ void ts_tree_edit(TSTree *self, const TSInputEdit *edit) {
           range->end_point = POINT_MAX;
         }
       }
-      if (range->start_byte >= edit->old_end_byte) {
-        range->start_byte = edit->new_end_byte + (range->start_byte - edit->old_end_byte);
-        range->start_point = point_add(
-          edit->new_end_point,
-          point_sub(range->start_point, edit->old_end_point)
-        );
-        if (range->start_byte < edit->new_end_byte) {
-          range->start_byte = UINT32_MAX;
-          range->start_point = POINT_MAX;
-        }
+    } else if (range->end_byte > edit->start_byte) {
+      range->end_byte = edit->start_byte;
+      range->end_point = edit->start_point;
+    }
+    if (range->start_byte >= edit->old_end_byte) {
+      range->start_byte = edit->new_end_byte + (range->start_byte - edit->old_end_byte);
+      range->start_point = point_add(
+        edit->new_end_point,
+        point_sub(range->start_point, edit->old_end_point)
+      );
+      if (range->start_byte < edit->new_end_byte) {
+        range->start_byte = UINT32_MAX;
+        range->start_point = POINT_MAX;
       }
+    } else if (range->start_byte > edit->start_byte) {
+      range->start_byte = edit->start_byte;
+      range->start_point = edit->start_point;
     }
   }
 
   SubtreePool pool = ts_subtree_pool_new(0);
   self->root = ts_subtree_edit(self->root, edit, &pool);
   ts_subtree_pool_delete(&pool);
+}
+
+TSRange *ts_tree_included_ranges(const TSTree *self, uint32_t *length) {
+  *length = self->included_range_count;
+  TSRange *ranges = ts_calloc(self->included_range_count, sizeof(TSRange));
+  memcpy(ranges, self->included_ranges, self->included_range_count * sizeof(TSRange));
+  return ranges;
 }
 
 TSRange *ts_tree_get_changed_ranges(const TSTree *self, const TSTree *other, uint32_t *count) {
@@ -110,6 +123,21 @@ TSRange *ts_tree_get_changed_ranges(const TSTree *self, const TSTree *other, uin
   return result;
 }
 
-void ts_tree_print_dot_graph(const TSTree *self, FILE *file) {
-  ts_subtree_print_dot_graph(self->root, self->language, file);
+#ifdef _WIN32
+
+void ts_tree_print_dot_graph(const TSTree *self, int fd) {
+  (void)self;
+  (void)fd;
 }
+
+#else
+
+#include <unistd.h>
+
+void ts_tree_print_dot_graph(const TSTree *self, int fd) {
+  FILE *file = fdopen(dup(fd), "a");
+  ts_subtree_print_dot_graph(self->root, self->language, file);
+  fclose(file);
+}
+
+#endif

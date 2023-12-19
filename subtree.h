@@ -114,7 +114,7 @@ typedef struct {
   Length size;
   uint32_t lookahead_bytes;
   uint32_t error_cost;
-  uint16_t child_count;
+  uint32_t child_count;
   TSSymbol symbol;
   TSStateId parse_state;
 
@@ -289,6 +289,12 @@ static inline uint32_t ts_subtree_child_count(Subtree self) {
 
 static inline uint32_t ts_subtree_repeat_depth(Subtree self) {
   return self.data.is_inline ? 0 : self.ptr->repeat_depth;
+}
+
+static inline uint32_t ts_subtree_is_repetition(Subtree self) {
+  return self.data.is_inline
+    ? 0
+    : !self.ptr->named && !self.ptr->visible && self.ptr->child_count != 0;
 }
 
 static inline uint32_t ts_subtree_node_count(Subtree self) {

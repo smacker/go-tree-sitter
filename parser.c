@@ -447,8 +447,14 @@ static Subtree ts_parser__lex(
         // avoid infinite loops which could otherwise occur, because the lexer is
         // looking for any possible token, instead of looking for the specific set of
         // tokens that are valid in some parse state.
+        //
+        // Note that it's possible that the token end position may be *before* the
+        // original position of the lexer because of the way that tokens are positioned
+        // at included range boundaries: when a token is terminated at the start of
+        // an included range, it is marked as ending at the *end* of the preceding
+        // included range.
         if (
-          self->lexer.token_end_position.bytes == current_position.bytes &&
+          self->lexer.token_end_position.bytes <= current_position.bytes &&
           (error_mode || !ts_stack_has_advanced_since_error(self->stack, version)) &&
           !external_scanner_state_changed
         ) {
@@ -525,10 +531,6 @@ static Subtree ts_parser__lex(
       self->language
     );
   } else {
-    if (self->lexer.token_end_position.bytes < self->lexer.token_start_position.bytes) {
-      self->lexer.token_start_position = self->lexer.token_end_position;
-    }
-
     bool is_keyword = false;
     TSSymbol symbol = self->lexer.data.result_symbol;
     Length padding = length_sub(self->lexer.token_start_position, start_position);
@@ -605,7 +607,7 @@ static Subtree ts_parser__get_cached_token(
 
 static void ts_parser__set_cached_token(
   TSParser *self,
-  size_t byte_index,
+  uint32_t byte_index,
   Subtree last_external_token,
   Subtree token
 ) {
@@ -1461,7 +1463,9 @@ static bool ts_parser__advance(
       ((self->cancellation_flag && atomic_load(self->cancellation_flag)) ||
        (!clock_is_null(self->end_clock) && clock_is_gt(clock_now(), self->end_clock)))
     ) {
-      ts_subtree_release(&self->tree_pool, lookahead);
+      if (lookahead.ptr) {
+        ts_subtree_release(&self->tree_pool, lookahead);
+      }
       return false;
     }
 
@@ -1937,8 +1941,16 @@ TSTree *ts_parser_parse(
       }
     }
 
+    // After advancing each version of the stack, re-sort the versions by their cost,
+    // removing any versions that are no longer worth pursuing.
     unsigned min_error_cost = ts_parser__condense_stack(self);
+
+    // If there's already a finished parse tree that's better than any in-progress version,
+    // then terminate parsing. Clear the parse stack to remove any extra references to subtrees
+    // within the finished tree, ensuring that these subtrees can be safely mutated in-place
+    // for rebalancing.
     if (self->finished_tree.ptr && ts_subtree_error_cost(self->finished_tree) < min_error_cost) {
+      ts_stack_clear(self->stack);
       break;
     }
 
