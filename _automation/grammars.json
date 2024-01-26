@@ -123,8 +123,8 @@
     "files": [
       "parser.c"
     ],
-    "reference": "v0.20.1",
-    "revision": "09d650def6cdf7f479f4b78f595e9ef5b58ce31e"
+    "reference": "v0.20.2",
+    "revision": "2b57cd9541f9fd3a89207d054ce8fbe72657c444"
   },
   {
     "language": "javascript",
