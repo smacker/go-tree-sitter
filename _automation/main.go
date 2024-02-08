@@ -1,6 +1,3 @@
-//go:build tools
-// +build tools
-
 package main
 
 import (
@@ -13,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -46,8 +44,9 @@ func (g *Grammar) ContentURL() string {
 }
 
 func (g *Grammar) FetchNewVersion() *GrammarVersion {
-	if strings.HasPrefix(g.Reference, "v") {
-		tag, rev := fetchLastTag(g.URL)
+	// if strings.HasPrefix(g.Reference, "v") {
+	tag, rev, err := fetchLatestReleaseTagAndRev(g.URL)
+	if err == nil {
 		if tag != g.Reference {
 			return &GrammarVersion{
 				Reference: tag,
@@ -55,6 +54,9 @@ func (g *Grammar) FetchNewVersion() *GrammarVersion {
 			}
 		}
 	} else {
+		// fmt.Println("*** Error: " + err.Error())
+
+		// } else {
 		rev := fetchLastCommit(g.URL, g.Reference)
 		if rev != g.Revision {
 			return &GrammarVersion{
@@ -95,6 +97,8 @@ func root(args []string) error {
 		flagsParse(fs, args[1:])
 
 		s.UpdateAll(ctx)
+	case "run-tests":
+		return runTests(ctx)
 	default:
 		return fmt.Errorf("unknown sub-command")
 	}
@@ -107,6 +111,39 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func runTests(ctx context.Context) error {
+	logger := getLogger(ctx)
+
+	curDir, _ := os.Getwd()
+	// parentDir := filepath.Dir(curDir)
+	// Look up one directory from the current working directory.
+	searchDir := filepath.Join(curDir, "*")
+	// Search for all binding_test.go files in the parent directory and its subdirectories.
+	pattern := filepath.Join(searchDir, "binding_test.go")
+	files, err := filepath.Glob(pattern)
+	if err != nil {
+		logAndExit(logger, "Failed to find test files: "+err.Error())
+	}
+	if len(files) == 0 {
+		logAndExit(logger, "No binding_test.go files found")
+	}
+
+	for _, file := range files {
+		// Run `go test -v` for each found test file.
+		cmd := exec.Command("go", "test", "-v", file)
+		cmd.Dir = filepath.Dir(file) // Set working directory to the test file's directory.
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			logger.Error(fmt.Sprintf("Tests failed for %s: %s", file, err.Error()))
+			fmt.Printf("%s\n", string(output))
+			continue
+		}
+		fmt.Printf("Tests passed for %s\n", file)
+		fmt.Printf("%s\n", string(output))
+	}
+	return nil
 }
 
 type UpdateService struct {
@@ -419,20 +456,85 @@ func logAndExit(logger *Logger, msg string, args ...interface{}) {
 }
 
 // Git
+// // fetchLastTag fetches the latest tag and its corresponding revision (commit SHA) from the specified repository.
+// func fetchLastTag(repository string) (string, string, error) {
+// 	// Execute the 'git ls-remote' command to list remote tags, sorted by version number.
+// 	cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository) //, "v*")
+// 	b, err := cmd.Output()
+// 	if err != nil {
+// 		// Return the error to the caller.
+// 		return "", "", fmt.Errorf("failed to execute git command: %w", err)
+// 	}
 
-func fetchLastTag(repository string) (string, string) {
-	cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository, "v*")
+// 	// Split the output to get the first line, which contains the latest tag.
+// 	lines := strings.Split(string(b), "\n")
+// 	if len(lines) == 0 || lines[0] == "" {
+// 		// Return an error if the output is unexpectedly empty.
+// 		return "", "", fmt.Errorf("no tags found in the repository")
+// 	}
+
+// 	line := lines[0]
+// 	parts := strings.Split(line, "\t")
+// 	if len(parts) < 2 {
+// 		// Return an error if the line format is not as expected.
+// 		return "", "", fmt.Errorf("unexpected format of git command output")
+// 	}
+
+// 	// Extract the tag name, trimming the "refs/tags/" prefix and any "^{}" suffix.
+// 	refParts := strings.Split(parts[1], "/")
+// 	if len(refParts) < 3 {
+// 		// Return an error if the ref path format is not as expected.
+// 		return "", "", fmt.Errorf("unexpected format of git ref path")
+// 	}
+// 	tag := strings.TrimRight(refParts[len(refParts)-1], "^{}")
+
+// 	// The revision (commit SHA) is the first part of the line.
+// 	rev := parts[0]
+
+// 	return tag, rev, nil
+// }
+
+// fetchLatestReleaseTagAndRev fetches the tag name and revision (commit SHA) of the latest release.
+func fetchLatestReleaseTagAndRev(repository string) (string, string, error) {
+	// Fetch tags from the remote repository, sorted by version number.
+	cmd := exec.Command("git", "ls-remote", "--tags", "--sort=-v:refname", repository)
+
+	// Execute the command and get the output.
 	b, err := cmd.Output()
 	if err != nil {
+		// Log the error and exit if the command execution fails.
 		logAndExit(defaultLogger, err.Error())
+		return "", "", err
 	}
-	line := strings.SplitN(string(b), "\n", 2)[0]
-	parts := strings.Split(line, "\t")
 
-	tag := strings.TrimRight(strings.Split(parts[1], "/")[2], "^{}")
-	rev := strings.Split(parts[0], "^")[0]
+	// Split the output into lines.
+	lines := strings.Split(string(b), "\n")
 
-	return tag, rev
+	// Iterate over the lines to find the first valid tag.
+	for _, line := range lines {
+		if line == "" {
+			continue // Skip empty lines.
+		}
+
+		// Split each line into parts (SHA and ref path).
+		parts := strings.Split(line, "\t")
+		if len(parts) < 2 {
+			continue // Skip if the line does not have both parts.
+		}
+
+		// Extract the tag name, trimming the "refs/tags/" prefix and any potential suffix.
+		tag := strings.TrimPrefix(parts[1], "refs/tags/")
+		tag = strings.TrimRight(tag, "^{}")
+
+		// Extract the revision (commit SHA).
+		rev := parts[0]
+
+		// Return the first valid tag and its revision.
+		return tag, rev, nil
+	}
+
+	// Return an error if no valid tags were found.
+	return "", "", fmt.Errorf("no tags found in the repository")
 }
 
 func fetchLastCommit(repository, branch string) string {
