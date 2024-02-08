@@ -11,6 +11,9 @@ Create a parser with a grammar:
 
 ```go
 import (
+	"context"
+	"fmt"
+
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/javascript"
 )
@@ -23,7 +26,7 @@ Parse some code:
 
 ```go
 sourceCode := []byte("let a = 1")
-tree := parser.Parse(nil, sourceCode)
+tree, _ := parser.ParseCtx(context.Background(), nil, sourceCode)
 ```
 
 Inspect the syntax tree:
