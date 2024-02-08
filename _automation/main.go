@@ -121,10 +121,8 @@ func runTests(ctx context.Context) error {
 	logger := getLogger(ctx)
 
 	curDir, _ := os.Getwd()
-	// parentDir := filepath.Dir(curDir)
-	// Look up one directory from the current working directory.
 	searchDir := filepath.Join(curDir, "*")
-	// Search for all binding_test.go files in the parent directory and its subdirectories.
+	// Search for all binding_test.go files in subdirectories.
 	pattern := filepath.Join(searchDir, "binding_test.go")
 	files, err := filepath.Glob(pattern)
 	if err != nil {
