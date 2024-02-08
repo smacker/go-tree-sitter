@@ -1,3 +1,6 @@
+//go:build tools
+// +build tools
+
 package main
 
 import (
@@ -44,7 +47,8 @@ func (g *Grammar) ContentURL() string {
 }
 
 func (g *Grammar) FetchNewVersion() *GrammarVersion {
-	// if strings.HasPrefix(g.Reference, "v") {
+
+	//attempt to retrieve tag from latest RELEASE in this grammar's repo
 	tag, rev, err := fetchLatestReleaseTagAndRev(g.URL)
 	if err == nil {
 		if tag != g.Reference {
@@ -54,9 +58,9 @@ func (g *Grammar) FetchNewVersion() *GrammarVersion {
 			}
 		}
 	} else {
-		// fmt.Println("*** Error: " + err.Error())
 
-		// } else {
+		//error retrieving tag from latest RELEASE or there are not any.
+		// fallback to fetching the latest commit
 		rev := fetchLastCommit(g.URL, g.Reference)
 		if rev != g.Revision {
 			return &GrammarVersion{

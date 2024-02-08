@@ -9,6 +9,7 @@ If a grammar repository includes a Release, this updater prioritizes updating to
 - **Check for Updates**: Scan through defined grammars and check if there are new versions available.
 - **Update Grammar**: Update a specific grammar to its latest version.
 - **Update All**: Batch update all grammars to their latest versions.
+- **Run Tests**: Run binding_test.go defined by every grammar
 
 ## Prerequisites
 
