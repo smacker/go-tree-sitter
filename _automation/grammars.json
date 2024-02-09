@@ -243,6 +243,16 @@
     "revision": "84c90ee15f851e1541c25c86e8a4338f5b4d5af2"
   },
   {
+    "language": "swift",
+    "url": "https://github.com/alex-pinkus/tree-sitter-swift",
+    "files": [
+      "parser.c",
+      "scanner.c"
+    ],
+    "reference": "0.4.0",
+    "revision": "1c586339fb00014b23d6933f2cc32b588a226f3b"
+  },
+  {
     "language": "toml",
     "url": "https://github.com/ikatyang/tree-sitter-toml",
     "files": [

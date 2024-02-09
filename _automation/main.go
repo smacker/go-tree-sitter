@@ -4,12 +4,14 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -275,6 +277,8 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 		s.downloadTypescript(ctx, g)
 	case "yaml":
 		s.downloadYaml(ctx, g)
+	case "swift":
+		s.downloadSwift(ctx, g)
 	default:
 		s.defaultGrammarDownload(ctx, g)
 	}
@@ -428,6 +432,165 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 	}
 }
 
+// Add this function to your UpdateService methods
+func (s *UpdateService) downloadSwift(ctx context.Context, g *Grammar) {
+	logger := getLogger(ctx).With("language", "swift")
+	logger.Info("downloading Swift parser")
+
+	// Fetch the latest release information
+	//latestReleaseURL := fmt.Sprintf("%s/releases/latest", g.URL)
+	tag, _, err := fetchLatestReleaseTagAndRev(g.URL)
+
+	if err != nil {
+		logAndExit(logger, "Failed to get latest tag: "+err.Error())
+	}
+
+	// Construct the download URL for generated-src.zip from the latest release
+	downloadURL := fmt.Sprintf("%s/releases/download/%s/generated-parser-src.zip", g.URL, tag)
+	logger.Info("Download URL: " + downloadURL)
+
+	// Download the zip file
+	zipResp, err := http.Get(downloadURL)
+	if err != nil {
+		logAndExit(logger, "Failed to download generated-src.zip: "+err.Error())
+	}
+	defer zipResp.Body.Close()
+
+	zipFile, err := os.CreateTemp("", "generated-parser-src-*.zip")
+	if err != nil {
+		logAndExit(logger, "Failed to create temp file for zip: "+err.Error())
+	}
+	defer os.Remove(zipFile.Name()) // Clean up
+
+	_, err = io.Copy(zipFile, zipResp.Body)
+	if err != nil {
+		logAndExit(logger, "Failed to save generated-src.zip: "+err.Error())
+	}
+
+	// Unzip the downloaded file
+	if err := unzip(zipFile.Name(), "./swift"); err != nil {
+		logAndExit(logger, "Failed to unzip generated-src.zip: "+err.Error())
+	}
+
+	// Additional file processing
+	swiftParserDir := "./swift"
+	treeSitterDir := filepath.Join(swiftParserDir, "tree_sitter")
+
+	// Move .c and .h files to the swift/ directory
+	if err := filepath.Walk(treeSitterDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if strings.HasSuffix(info.Name(), ".c") || strings.HasSuffix(info.Name(), ".h") {
+			destPath := filepath.Join(swiftParserDir, info.Name())
+			return os.Rename(path, destPath)
+		}
+		return nil
+	}); err != nil {
+		logAndExit(logger, "Failed to move files: "+err.Error())
+	}
+
+	// Fix include paths in source files
+	if err := fixIncludePaths(swiftParserDir); err != nil {
+		logAndExit(logger, "Failed to fix include paths: "+err.Error())
+	}
+
+	os.RemoveAll(treeSitterDir)
+	grammarsJson := filepath.Join(swiftParserDir, "grammar.json")
+	nodeTypesJson := filepath.Join(swiftParserDir, "node-types.json")
+	os.Remove(grammarsJson)
+	os.Remove(nodeTypesJson)
+
+	logger.Info("Swift parser downloaded and prepared successfully.")
+}
+
+// fixIncludePaths updates include paths in .c and .h files within the specified directory.
+func fixIncludePaths(dir string) error {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".c") || strings.HasSuffix(file.Name(), ".h") {
+			filePath := filepath.Join(dir, file.Name())
+			if err := updateFileContents(filePath); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// updateFileContents reads a file and replaces include directives with corrected paths.
+func updateFileContents(filePath string) error {
+	input, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(input), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, `<tree_sitter/`) {
+			lines[i] = strings.Replace(line, `<tree_sitter/`, `<`, 1)
+		} else if strings.Contains(line, `"tree_sitter/`) {
+			lines[i] = strings.Replace(line, `"tree_sitter/`, `"`, 1)
+		}
+	}
+	output := strings.Join(lines, "\n")
+	return ioutil.WriteFile(filePath, []byte(output), 0644)
+}
+
+// unzip extracts the contents of a zip file to a specified destination directory
+func unzip(src, dest string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	os.MkdirAll(dest, 0755)
+
+	for _, f := range r.File {
+		fpath := filepath.Join(dest, f.Name)
+
+		// Check for ZipSlip (Directory traversal)
+		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
+			return fmt.Errorf("%s: illegal file path", fpath)
+		}
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+			return err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		// Close the file without deferring to ensure we can handle the error
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // for yaml grammar scanner.cc includes schema.generated.cc file
 // it causes cgo to compile schema.generated.cc twice and throw duplicate symbols error
 func (s *UpdateService) downloadYaml(ctx context.Context, g *Grammar) {
@@ -531,7 +694,10 @@ func fetchLatestReleaseTagAndRev(repository string) (string, string, error) {
 		// Extract the revision (commit SHA).
 		rev := parts[0]
 
-		// Return the first valid tag and its revision.
+		//accomodate swift grammar -- a latest release with this suffix does not contain generated files we need
+		if strings.Contains(repository, "-swift") && (strings.HasSuffix(tag, "-with-generated-files")) {
+			continue
+		}
 		return tag, rev, nil
 	}
 
