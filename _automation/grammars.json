@@ -97,6 +97,16 @@
     "revision": "64457ea6b73ef5422ed1687178d4545c3e91334a"
   },
   {
+    "language": "groovy",
+    "url": "https://github.com/murtaza64/tree-sitter-groovy",
+    "files": [
+      "parser.c",
+      "scanner.c"
+    ],
+    "reference": "main",
+    "revision": "235009aad0f580211fc12014bb0846c3910130c1"
+  },
+  {
     "language": "hcl",
     "url": "https://github.com/MichaHoffmann/tree-sitter-hcl",
     "files": [
