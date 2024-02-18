@@ -4,7 +4,6 @@
 package main
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -15,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -29,9 +27,12 @@ func init() {
 
 const grammarsJson = "./_automation/grammars.json"
 
+//const grammarsJson = "./grammars.json" //todo: for debugging
+
 type GrammarVersion struct {
-	Reference string `json:"reference"`
-	Revision  string `json:"revision"`
+	Reference      string `json:"reference"`
+	Revision       string `json:"revision"`
+	UpdatedBasedOn string `json:"updateBasedOn"` //"tag" or "commit". If not defined, "commit" is default
 }
 
 type Grammar struct {
@@ -49,10 +50,8 @@ func (g *Grammar) ContentURL() string {
 }
 
 func (g *Grammar) FetchNewVersion() *GrammarVersion {
-
-	//attempt to retrieve tag from latest RELEASE in this grammar's repo
-	tag, rev, err := fetchLatestReleaseTagAndRev(g.URL)
-	if err == nil {
+	if strings.HasPrefix(g.Reference, "v") || strings.EqualFold(g.UpdatedBasedOn, "tag") {
+		tag, rev := fetchLastTag(g.URL)
 		if tag != g.Reference {
 			return &GrammarVersion{
 				Reference: tag,
@@ -60,9 +59,6 @@ func (g *Grammar) FetchNewVersion() *GrammarVersion {
 			}
 		}
 	} else {
-
-		//error retrieving tag from latest RELEASE or there are not any.
-		// fallback to fetching the latest commit
 		rev := fetchLastCommit(g.URL, g.Reference)
 		if rev != g.Revision {
 			return &GrammarVersion{
@@ -103,8 +99,6 @@ func root(args []string) error {
 		flagsParse(fs, args[1:])
 
 		s.UpdateAll(ctx)
-	case "run-tests":
-		return runTests(ctx)
 	default:
 		return fmt.Errorf("unknown sub-command")
 	}
@@ -117,37 +111,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-}
-
-func runTests(ctx context.Context) error {
-	logger := getLogger(ctx)
-
-	curDir, _ := os.Getwd()
-	searchDir := filepath.Join(curDir, "*")
-	// Search for all binding_test.go files in subdirectories.
-	pattern := filepath.Join(searchDir, "binding_test.go")
-	files, err := filepath.Glob(pattern)
-	if err != nil {
-		logAndExit(logger, "Failed to find test files: "+err.Error())
-	}
-	if len(files) == 0 {
-		logAndExit(logger, "No binding_test.go files found")
-	}
-
-	for _, file := range files {
-		// Run `go test -v` for each found test file.
-		cmd := exec.Command("go", "test", "-v", file)
-		cmd.Dir = filepath.Dir(file) // Set working directory to the test file's directory.
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			logger.Error(fmt.Sprintf("Tests failed for %s: %s", file, err.Error()))
-			fmt.Printf("%s\n", string(output))
-			continue
-		}
-		fmt.Printf("Tests passed for %s\n", file)
-		fmt.Printf("%s\n", string(output))
-	}
-	return nil
 }
 
 type UpdateService struct {
@@ -277,8 +240,6 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 		s.downloadTypescript(ctx, g)
 	case "yaml":
 		s.downloadYaml(ctx, g)
-	case "swift":
-		s.downloadSwift(ctx, g)
 	default:
 		s.defaultGrammarDownload(ctx, g)
 	}
@@ -432,165 +393,6 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 	}
 }
 
-// Add this function to your UpdateService methods
-func (s *UpdateService) downloadSwift(ctx context.Context, g *Grammar) {
-	logger := getLogger(ctx).With("language", "swift")
-	logger.Info("downloading Swift parser")
-
-	// Fetch the latest release information
-	//latestReleaseURL := fmt.Sprintf("%s/releases/latest", g.URL)
-	tag, _, err := fetchLatestReleaseTagAndRev(g.URL)
-
-	if err != nil {
-		logAndExit(logger, "Failed to get latest tag: "+err.Error())
-	}
-
-	// Construct the download URL for generated-src.zip from the latest release
-	downloadURL := fmt.Sprintf("%s/releases/download/%s/generated-parser-src.zip", g.URL, tag)
-	logger.Info("Download URL: " + downloadURL)
-
-	// Download the zip file
-	zipResp, err := http.Get(downloadURL)
-	if err != nil {
-		logAndExit(logger, "Failed to download generated-src.zip: "+err.Error())
-	}
-	defer zipResp.Body.Close()
-
-	zipFile, err := os.CreateTemp("", "generated-parser-src-*.zip")
-	if err != nil {
-		logAndExit(logger, "Failed to create temp file for zip: "+err.Error())
-	}
-	defer os.Remove(zipFile.Name()) // Clean up
-
-	_, err = io.Copy(zipFile, zipResp.Body)
-	if err != nil {
-		logAndExit(logger, "Failed to save generated-src.zip: "+err.Error())
-	}
-
-	// Unzip the downloaded file
-	if err := unzip(zipFile.Name(), "./swift"); err != nil {
-		logAndExit(logger, "Failed to unzip generated-src.zip: "+err.Error())
-	}
-
-	// Additional file processing
-	swiftParserDir := "./swift"
-	treeSitterDir := filepath.Join(swiftParserDir, "tree_sitter")
-
-	// Move .c and .h files to the swift/ directory
-	if err := filepath.Walk(treeSitterDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if strings.HasSuffix(info.Name(), ".c") || strings.HasSuffix(info.Name(), ".h") {
-			destPath := filepath.Join(swiftParserDir, info.Name())
-			return os.Rename(path, destPath)
-		}
-		return nil
-	}); err != nil {
-		logAndExit(logger, "Failed to move files: "+err.Error())
-	}
-
-	// Fix include paths in source files
-	if err := fixIncludePaths(swiftParserDir); err != nil {
-		logAndExit(logger, "Failed to fix include paths: "+err.Error())
-	}
-
-	os.RemoveAll(treeSitterDir)
-	grammarsJson := filepath.Join(swiftParserDir, "grammar.json")
-	nodeTypesJson := filepath.Join(swiftParserDir, "node-types.json")
-	os.Remove(grammarsJson)
-	os.Remove(nodeTypesJson)
-
-	logger.Info("Swift parser downloaded and prepared successfully.")
-}
-
-// fixIncludePaths updates include paths in .c and .h files within the specified directory.
-func fixIncludePaths(dir string) error {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		if strings.HasSuffix(file.Name(), ".c") || strings.HasSuffix(file.Name(), ".h") {
-			filePath := filepath.Join(dir, file.Name())
-			if err := updateFileContents(filePath); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// updateFileContents reads a file and replaces include directives with corrected paths.
-func updateFileContents(filePath string) error {
-	input, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-
-	lines := strings.Split(string(input), "\n")
-	for i, line := range lines {
-		if strings.Contains(line, `<tree_sitter/`) {
-			lines[i] = strings.Replace(line, `<tree_sitter/`, `<`, 1)
-		} else if strings.Contains(line, `"tree_sitter/`) {
-			lines[i] = strings.Replace(line, `"tree_sitter/`, `"`, 1)
-		}
-	}
-	output := strings.Join(lines, "\n")
-	return ioutil.WriteFile(filePath, []byte(output), 0644)
-}
-
-// unzip extracts the contents of a zip file to a specified destination directory
-func unzip(src, dest string) error {
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	os.MkdirAll(dest, 0755)
-
-	for _, f := range r.File {
-		fpath := filepath.Join(dest, f.Name)
-
-		// Check for ZipSlip (Directory traversal)
-		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return fmt.Errorf("%s: illegal file path", fpath)
-		}
-
-		if f.FileInfo().IsDir() {
-			os.MkdirAll(fpath, os.ModePerm)
-			continue
-		}
-
-		if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
-			return err
-		}
-
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-		if err != nil {
-			return err
-		}
-
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(outFile, rc)
-
-		// Close the file without deferring to ensure we can handle the error
-		outFile.Close()
-		rc.Close()
-
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // for yaml grammar scanner.cc includes schema.generated.cc file
 // it causes cgo to compile schema.generated.cc twice and throw duplicate symbols error
 func (s *UpdateService) downloadYaml(ctx context.Context, g *Grammar) {
@@ -615,94 +417,55 @@ func (s *UpdateService) downloadYaml(ctx context.Context, g *Grammar) {
 	_ = os.WriteFile(fmt.Sprintf("%s/scanner.cc", g.Language), b, 0644)
 }
 
+// updateFileContents reads a file and replaces include directives with corrected paths.
+func updateFileContents(filePath string) error {
+	input, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(input), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, `<tree_sitter/`) {
+			lines[i] = strings.Replace(line, `<tree_sitter/`, `<`, 1)
+		} else if strings.Contains(line, `"tree_sitter/`) {
+			lines[i] = strings.Replace(line, `"tree_sitter/`, `"`, 1)
+		}
+	}
+	output := strings.Join(lines, "\n")
+	return ioutil.WriteFile(filePath, []byte(output), 0644)
+}
+
 func logAndExit(logger *Logger, msg string, args ...interface{}) {
 	logger.Error(msg, args...)
 	os.Exit(1)
 }
 
 // Git
-// // fetchLastTag fetches the latest tag and its corresponding revision (commit SHA) from the specified repository.
-// func fetchLastTag(repository string) (string, string, error) {
-// 	// Execute the 'git ls-remote' command to list remote tags, sorted by version number.
-// 	cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository) //, "v*")
-// 	b, err := cmd.Output()
-// 	if err != nil {
-// 		// Return the error to the caller.
-// 		return "", "", fmt.Errorf("failed to execute git command: %w", err)
-// 	}
 
-// 	// Split the output to get the first line, which contains the latest tag.
-// 	lines := strings.Split(string(b), "\n")
-// 	if len(lines) == 0 || lines[0] == "" {
-// 		// Return an error if the output is unexpectedly empty.
-// 		return "", "", fmt.Errorf("no tags found in the repository")
-// 	}
-
-// 	line := lines[0]
-// 	parts := strings.Split(line, "\t")
-// 	if len(parts) < 2 {
-// 		// Return an error if the line format is not as expected.
-// 		return "", "", fmt.Errorf("unexpected format of git command output")
-// 	}
-
-// 	// Extract the tag name, trimming the "refs/tags/" prefix and any "^{}" suffix.
-// 	refParts := strings.Split(parts[1], "/")
-// 	if len(refParts) < 3 {
-// 		// Return an error if the ref path format is not as expected.
-// 		return "", "", fmt.Errorf("unexpected format of git ref path")
-// 	}
-// 	tag := strings.TrimRight(refParts[len(refParts)-1], "^{}")
-
-// 	// The revision (commit SHA) is the first part of the line.
-// 	rev := parts[0]
-
-// 	return tag, rev, nil
-// }
-
-// fetchLatestReleaseTagAndRev fetches the tag name and revision (commit SHA) of the latest release.
-func fetchLatestReleaseTagAndRev(repository string) (string, string, error) {
-	// Fetch tags from the remote repository, sorted by version number.
-	cmd := exec.Command("git", "ls-remote", "--tags", "--sort=-v:refname", repository)
-
-	// Execute the command and get the output.
+func fetchLastTag(repository string) (string, string) {
+	cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository, "v*")
 	b, err := cmd.Output()
 	if err != nil {
-		// Log the error and exit if the command execution fails.
 		logAndExit(defaultLogger, err.Error())
-		return "", "", err
 	}
+	line := strings.SplitN(string(b), "\n", 2)[0]
 
-	// Split the output into lines.
-	lines := strings.Split(string(b), "\n")
-
-	// Iterate over the lines to find the first valid tag.
-	for _, line := range lines {
-		if line == "" {
-			continue // Skip empty lines.
+	//handle situation when nothing is returned because tag doesn't start with `v`
+	if len(line) < 1 {
+		cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository)
+		b, err := cmd.Output()
+		if err != nil {
+			logAndExit(defaultLogger, err.Error())
 		}
-
-		// Split each line into parts (SHA and ref path).
-		parts := strings.Split(line, "\t")
-		if len(parts) < 2 {
-			continue // Skip if the line does not have both parts.
-		}
-
-		// Extract the tag name, trimming the "refs/tags/" prefix and any potential suffix.
-		tag := strings.TrimPrefix(parts[1], "refs/tags/")
-		tag = strings.TrimRight(tag, "^{}")
-
-		// Extract the revision (commit SHA).
-		rev := parts[0]
-
-		//accomodate swift grammar -- a latest release with this suffix does not contain generated files we need
-		if strings.Contains(repository, "-swift") && (strings.HasSuffix(tag, "-with-generated-files")) {
-			continue
-		}
-		return tag, rev, nil
+		line = strings.SplitN(string(b), "\n", 2)[0]
 	}
+	parts := strings.Split(line, "\t")
 
-	// Return an error if no valid tags were found.
-	return "", "", fmt.Errorf("no tags found in the repository")
+	tag := strings.TrimRight(strings.Split(parts[1], "/")[2], "^{}")
+	rev := strings.Split(parts[0], "^")[0]
+
+	return tag, rev
 }
 
 func fetchLastCommit(repository, branch string) string {
