@@ -10,7 +10,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -413,25 +412,6 @@ func (s *UpdateService) downloadYaml(ctx context.Context, g *Grammar) {
 	b = bytes.ReplaceAll(b, []byte(`#include "./schema.generated.cc"`), []byte(""))
 
 	_ = os.WriteFile(fmt.Sprintf("%s/scanner.cc", g.Language), b, 0644)
-}
-
-// updateFileContents reads a file and replaces include directives with corrected paths.
-func updateFileContents(filePath string) error {
-	input, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-
-	lines := strings.Split(string(input), "\n")
-	for i, line := range lines {
-		if strings.Contains(line, `<tree_sitter/`) {
-			lines[i] = strings.Replace(line, `<tree_sitter/`, `<`, 1)
-		} else if strings.Contains(line, `"tree_sitter/`) {
-			lines[i] = strings.Replace(line, `"tree_sitter/`, `"`, 1)
-		}
-	}
-	output := strings.Join(lines, "\n")
-	return ioutil.WriteFile(filePath, []byte(output), 0644)
 }
 
 func logAndExit(logger *Logger, msg string, args ...interface{}) {
