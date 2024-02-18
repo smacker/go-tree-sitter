@@ -27,8 +27,6 @@ func init() {
 
 const grammarsJson = "./_automation/grammars.json"
 
-//const grammarsJson = "./grammars.json" //todo: for debugging
-
 type GrammarVersion struct {
 	Reference      string `json:"reference"`
 	Revision       string `json:"revision"`

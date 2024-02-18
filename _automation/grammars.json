@@ -8,7 +8,7 @@
     ],
     "reference": "v0.19.0",
     "revision": "b6667bed364733c8a8f8e5973749f86cfa04ba2a",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "c",
@@ -18,7 +18,7 @@
     ],
     "reference": "v0.20.2",
     "revision": "7175a6dd5fc1cee660dce6fe23f6043d75af424a",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "csharp",
@@ -29,7 +29,7 @@
     ],
     "reference": "v0.20.0",
     "revision": "7a47daeaf0d410dd1a91c97b274bb7276dd96605",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "cpp",
@@ -40,7 +40,7 @@
     ],
     "reference": "v0.20.0",
     "revision": "f44509141e7e483323d2ec178f2d2e6c0fc041c1",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "css",
@@ -51,7 +51,7 @@
     ],
     "reference": "v0.19.0",
     "revision": "9668e889161358d18a558f68f1614b6edde34029",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "cue",
@@ -62,7 +62,7 @@
     ],
     "reference": "main",
     "revision": "61843e3beebf19417e4fede4e8be4df1084317ad",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "dockerfile",
@@ -72,7 +72,7 @@
     ],
     "reference": "v0.1.2",
     "revision": "d34a0cebd094e830bdd2106a28cb2f1fb22401d8",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "elixir",
@@ -83,7 +83,7 @@
     ],
     "reference": "v0.1.0",
     "revision": "869dff3ceb8823ca4b17ca33b663667c8e41e8ba",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "elm",
@@ -94,7 +94,7 @@
     ],
     "reference": "v5.6.3",
     "revision": "cce0e5938e7779f86cf8bf445eadf7df4b88229d",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "golang",
@@ -104,7 +104,7 @@
     ],
     "reference": "master",
     "revision": "64457ea6b73ef5422ed1687178d4545c3e91334a",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "hcl",
@@ -115,7 +115,7 @@
     ],
     "reference": "main",
     "revision": "b5539065432c08e4118eb3ee7c94902fdda85708",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "html",
@@ -127,7 +127,7 @@
     ],
     "reference": "v0.19.0",
     "revision": "d93af487cc75120c89257195e6be46c999c6ba18",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "java",
@@ -137,7 +137,7 @@
     ],
     "reference": "v0.20.2",
     "revision": "2b57cd9541f9fd3a89207d054ce8fbe72657c444",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "javascript",
@@ -148,7 +148,7 @@
     ],
     "reference": "v0.20.1",
     "revision": "f1e5a09b8d02f8209a68249c93f0ad647b228e6e",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "kotlin",
@@ -159,7 +159,7 @@
     ],
     "reference": "0.3.1",
     "revision": "be65fd695273434d91d1ca3829097b1211992a84",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "lua",
@@ -170,7 +170,7 @@
     ],
     "reference": "master",
     "revision": "0e860f697901c9b610104eb61d3812755d5211fc",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "ocaml",
@@ -182,7 +182,7 @@
     ],
     "reference": "v0.20.1",
     "revision": "de07323343946c32759933cb3b7c78e821098cad",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "php",
@@ -193,7 +193,7 @@
     ],
     "reference": "v0.19.0",
     "revision": "3ef0d5c253affe4b7fb46d9505db6df143db565a",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "protobuf",
@@ -203,7 +203,7 @@
     ],
     "reference": "main",
     "revision": "42d82fa18f8afe59b5fc0b16c207ee4f84cb185f",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "python",
@@ -214,7 +214,7 @@
     ],
     "reference": "v0.20.0",
     "revision": "2b9e9e0d231d5dd9f491d47f704817baee7d5af0",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "ruby",
@@ -225,7 +225,7 @@
     ],
     "reference": "v0.19.0",
     "revision": "fe6a2d634da0e16b11b5aa255cc3df568a4572fd",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "rust",
@@ -236,7 +236,7 @@
     ],
     "reference": "v0.20.3",
     "revision": "0431a2c60828731f27491ee9fdefe25e250ce9c9",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "scala",
@@ -248,7 +248,7 @@
     ],
     "reference": "v0.19.1",
     "revision": "918f0fb948405181707a1772cab639f2d278d384",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "svelte",
@@ -264,7 +264,7 @@
     ],
     "reference": "v0.10.1",
     "revision": "84c90ee15f851e1541c25c86e8a4338f5b4d5af2",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "swift",
@@ -286,7 +286,7 @@
     ],
     "reference": "v0.5.1",
     "revision": "474fbbec27e27d76b45aeaf9191e8acb13a699e2",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "typescript",
@@ -297,7 +297,7 @@
     ],
     "reference": "v0.20.3",
     "revision": "c604297f8197b468026f2ea32119935887e01c67",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   },
   {
     "language": "yaml",
@@ -309,6 +309,6 @@
     ],
     "reference": "v0.5.0",
     "revision": "6129a83eeec7d6070b1c0567ec7ce3509ead607c",
-    "updateBasedOn": ""
+    "updateBasedOn": "commit"
   }
 ]
