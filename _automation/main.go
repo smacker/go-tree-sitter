@@ -365,6 +365,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 			fmt.Sprintf("%s/%s/common/scanner.h", url, g.Revision),
 			fmt.Sprintf("%s/%s/scanner.h", g.Language, lang),
 			map[string]string{
+				`"tree_sitter/parser.h"`:   `"parser.h"`,
 				`<tree_sitter/parser.h>`: `"parser.h"`,
 			},
 		)
@@ -381,6 +382,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 				fmt.Sprintf("%s/%s/%s/src/%s", url, g.Revision, lang, f),
 				fmt.Sprintf("%s/%s/%s", g.Language, lang, f),
 				map[string]string{
+					`"tree_sitter/parser.h"`:   `"parser.h"`,
 					`<tree_sitter/parser.h>`:   `"parser.h"`,
 					`"../../common/scanner.h"`: `"scanner.h"`,
 				},
