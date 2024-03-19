@@ -47,7 +47,7 @@ func (g *Grammar) ContentURL() string {
 }
 
 func (g *Grammar) FetchNewVersion() *GrammarVersion {
-	if strings.HasPrefix(g.Reference, "v") || strings.EqualFold(g.UpdatedBasedOn, "tag") {
+	if strings.EqualFold(g.UpdatedBasedOn, "tag") {
 		tag, rev := fetchLastTag(g.URL)
 		if tag != g.Reference {
 			return &GrammarVersion{
