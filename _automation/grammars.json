@@ -157,8 +157,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "0.3.1",
-    "revision": "be65fd695273434d91d1ca3829097b1211992a84",
+    "reference": "0.3.5",
+    "revision": "51e451be6c18e2cc123249f49edf8e26fc50311c",
     "updateBasedOn": "tag"
   },
   {
@@ -273,8 +273,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "0.4.0-with-generated-files",
-    "revision": "b1b66955d420d5cf5ff268ae552f0d6e43ff66e1",
+    "reference": "0.4.3-with-generated-files",
+    "revision": "caa99d7d3c14aac03b5f16fc86fedf8755570760",
     "updateBasedOn": "tag"
   },
   {

@@ -46,9 +46,9 @@ typedef struct {
 
 static Stack *new_stack() {
   Delimiter *arr = malloc(TREE_SITTER_SERIALIZATION_BUFFER_SIZE);
-  if (arr == NULL) exit(1);
+  if (arr == NULL) abort();
   Stack *stack = malloc(sizeof(Stack));
-  if (stack == NULL) exit(1);
+  if (stack == NULL) abort();
   stack->arr = arr;
   stack->len = 0;
   return stack;
@@ -60,12 +60,12 @@ static void free_stack(Stack *stack) {
 }
 
 static void push(Stack *stack, char chr, bool triple) {
-  if (stack->len >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) exit(1);
+  if (stack->len >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) abort();
   stack->arr[stack->len++] = (Delimiter)(triple ? (chr + 1) : chr);
 }
 
 static Delimiter pop(Stack *stack) {
-  if (stack->len == 0) exit(1);
+  if (stack->len == 0) abort();
   return stack->arr[stack->len--];
 }
 
