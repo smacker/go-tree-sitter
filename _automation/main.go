@@ -27,8 +27,9 @@ func init() {
 const grammarsJson = "./_automation/grammars.json"
 
 type GrammarVersion struct {
-	Reference string `json:"reference"`
-	Revision  string `json:"revision"`
+	Reference      string `json:"reference"`
+	Revision       string `json:"revision"`
+	UpdatedBasedOn string `json:"updateBasedOn"` //"tag" or "commit". If not defined, "commit" is default
 }
 
 type Grammar struct {
@@ -46,7 +47,7 @@ func (g *Grammar) ContentURL() string {
 }
 
 func (g *Grammar) FetchNewVersion() *GrammarVersion {
-	if strings.HasPrefix(g.Reference, "v") {
+	if strings.EqualFold(g.UpdatedBasedOn, "tag") {
 		tag, rev := fetchLastTag(g.URL)
 		if tag != g.Reference {
 			return &GrammarVersion{
@@ -427,6 +428,16 @@ func fetchLastTag(repository string) (string, string) {
 		logAndExit(defaultLogger, err.Error())
 	}
 	line := strings.SplitN(string(b), "\n", 2)[0]
+
+	//handle situation when nothing is returned because tag doesn't start with `v`
+	if len(line) < 1 {
+		cmd := exec.Command("git", "ls-remote", "--tags", "--sort", "-v:refname", repository)
+		b, err := cmd.Output()
+		if err != nil {
+			logAndExit(defaultLogger, err.Error())
+		}
+		line = strings.SplitN(string(b), "\n", 2)[0]
+	}
 	parts := strings.Split(line, "\t")
 
 	tag := strings.TrimRight(strings.Split(parts[1], "/")[2], "^{}")

@@ -7,7 +7,8 @@
       "scanner.cc"
     ],
     "reference": "v0.19.0",
-    "revision": "b6667bed364733c8a8f8e5973749f86cfa04ba2a"
+    "revision": "b6667bed364733c8a8f8e5973749f86cfa04ba2a",
+    "updateBasedOn": "tag"
   },
   {
     "language": "c",
@@ -16,7 +17,8 @@
       "parser.c"
     ],
     "reference": "v0.20.2",
-    "revision": "7175a6dd5fc1cee660dce6fe23f6043d75af424a"
+    "revision": "7175a6dd5fc1cee660dce6fe23f6043d75af424a",
+    "updateBasedOn": "tag"
   },
   {
     "language": "csharp",
@@ -26,7 +28,8 @@
       "scanner.c"
     ],
     "reference": "v0.20.0",
-    "revision": "7a47daeaf0d410dd1a91c97b274bb7276dd96605"
+    "revision": "7a47daeaf0d410dd1a91c97b274bb7276dd96605",
+    "updateBasedOn": "tag"
   },
   {
     "language": "cpp",
@@ -36,7 +39,8 @@
       "scanner.cc"
     ],
     "reference": "v0.20.0",
-    "revision": "f44509141e7e483323d2ec178f2d2e6c0fc041c1"
+    "revision": "f44509141e7e483323d2ec178f2d2e6c0fc041c1",
+    "updateBasedOn": "tag"
   },
   {
     "language": "css",
@@ -46,7 +50,8 @@
       "scanner.c"
     ],
     "reference": "v0.19.0",
-    "revision": "9668e889161358d18a558f68f1614b6edde34029"
+    "revision": "9668e889161358d18a558f68f1614b6edde34029",
+    "updateBasedOn": "tag"
   },
   {
     "language": "cue",
@@ -56,7 +61,8 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "61843e3beebf19417e4fede4e8be4df1084317ad"
+    "revision": "61843e3beebf19417e4fede4e8be4df1084317ad",
+    "updateBasedOn": "commit"
   },
   {
     "language": "dockerfile",
@@ -65,7 +71,8 @@
       "parser.c"
     ],
     "reference": "v0.1.2",
-    "revision": "d34a0cebd094e830bdd2106a28cb2f1fb22401d8"
+    "revision": "d34a0cebd094e830bdd2106a28cb2f1fb22401d8",
+    "updateBasedOn": "tag"
   },
   {
     "language": "elixir",
@@ -75,7 +82,8 @@
       "scanner.cc"
     ],
     "reference": "v0.1.0",
-    "revision": "869dff3ceb8823ca4b17ca33b663667c8e41e8ba"
+    "revision": "869dff3ceb8823ca4b17ca33b663667c8e41e8ba",
+    "updateBasedOn": "tag"
   },
   {
     "language": "elm",
@@ -85,7 +93,8 @@
       "scanner.cc"
     ],
     "reference": "v5.6.3",
-    "revision": "cce0e5938e7779f86cf8bf445eadf7df4b88229d"
+    "revision": "cce0e5938e7779f86cf8bf445eadf7df4b88229d",
+    "updateBasedOn": "tag"
   },
   {
     "language": "golang",
@@ -94,7 +103,8 @@
       "parser.c"
     ],
     "reference": "master",
-    "revision": "64457ea6b73ef5422ed1687178d4545c3e91334a"
+    "revision": "64457ea6b73ef5422ed1687178d4545c3e91334a",
+    "updateBasedOn": "commit"
   },
   {
     "language": "groovy",
@@ -114,7 +124,8 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "b5539065432c08e4118eb3ee7c94902fdda85708"
+    "revision": "b5539065432c08e4118eb3ee7c94902fdda85708",
+    "updateBasedOn": "commit"
   },
   {
     "language": "html",
@@ -125,7 +136,8 @@
       "tag.h"
     ],
     "reference": "v0.19.0",
-    "revision": "d93af487cc75120c89257195e6be46c999c6ba18"
+    "revision": "d93af487cc75120c89257195e6be46c999c6ba18",
+    "updateBasedOn": "tag"
   },
   {
     "language": "java",
@@ -133,8 +145,9 @@
     "files": [
       "parser.c"
     ],
-    "reference": "v0.20.2",
-    "revision": "2b57cd9541f9fd3a89207d054ce8fbe72657c444"
+    "reference": "v0.20.1",
+    "revision": "2b57cd9541f9fd3a89207d054ce8fbe72657c444",
+    "updateBasedOn": "tag"
   },
   {
     "language": "javascript",
@@ -144,7 +157,8 @@
       "scanner.c"
     ],
     "reference": "v0.20.1",
-    "revision": "f1e5a09b8d02f8209a68249c93f0ad647b228e6e"
+    "revision": "f1e5a09b8d02f8209a68249c93f0ad647b228e6e",
+    "updateBasedOn": "tag"
   },
   {
     "language": "kotlin",
@@ -153,8 +167,9 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "main",
-    "revision": "cce9073807c6c1da81ce658d683fdac2878e5b57"
+    "reference": "0.3.5",
+    "revision": "51e451be6c18e2cc123249f49edf8e26fc50311c",
+    "updateBasedOn": "tag"
   },
   {
     "language": "lua",
@@ -164,7 +179,8 @@
       "scanner.c"
     ],
     "reference": "master",
-    "revision": "0e860f697901c9b610104eb61d3812755d5211fc"
+    "revision": "0e860f697901c9b610104eb61d3812755d5211fc",
+    "updateBasedOn": "commit"
   },
   {
     "language": "ocaml",
@@ -175,7 +191,8 @@
       "scanner.h"
     ],
     "reference": "v0.20.1",
-    "revision": "de07323343946c32759933cb3b7c78e821098cad"
+    "revision": "de07323343946c32759933cb3b7c78e821098cad",
+    "updateBasedOn": "tag"
   },
   {
     "language": "php",
@@ -185,7 +202,8 @@
       "scanner.cc"
     ],
     "reference": "v0.19.0",
-    "revision": "3ef0d5c253affe4b7fb46d9505db6df143db565a"
+    "revision": "3ef0d5c253affe4b7fb46d9505db6df143db565a",
+    "updateBasedOn": "tag"
   },
   {
     "language": "protobuf",
@@ -194,7 +212,8 @@
       "parser.c"
     ],
     "reference": "main",
-    "revision": "42d82fa18f8afe59b5fc0b16c207ee4f84cb185f"
+    "revision": "42d82fa18f8afe59b5fc0b16c207ee4f84cb185f",
+    "updateBasedOn": "commit"
   },
   {
     "language": "python",
@@ -204,7 +223,8 @@
       "scanner.cc"
     ],
     "reference": "v0.20.0",
-    "revision": "2b9e9e0d231d5dd9f491d47f704817baee7d5af0"
+    "revision": "2b9e9e0d231d5dd9f491d47f704817baee7d5af0",
+    "updateBasedOn": "tag"
   },
   {
     "language": "ruby",
@@ -214,7 +234,8 @@
       "scanner.cc"
     ],
     "reference": "v0.19.0",
-    "revision": "fe6a2d634da0e16b11b5aa255cc3df568a4572fd"
+    "revision": "fe6a2d634da0e16b11b5aa255cc3df568a4572fd",
+    "updateBasedOn": "tag"
   },
   {
     "language": "rust",
@@ -224,7 +245,8 @@
       "scanner.c"
     ],
     "reference": "v0.20.3",
-    "revision": "0431a2c60828731f27491ee9fdefe25e250ce9c9"
+    "revision": "0431a2c60828731f27491ee9fdefe25e250ce9c9",
+    "updateBasedOn": "tag"
   },
   {
     "language": "scala",
@@ -235,7 +257,8 @@
       "stack.h"
     ],
     "reference": "v0.19.1",
-    "revision": "918f0fb948405181707a1772cab639f2d278d384"
+    "revision": "918f0fb948405181707a1772cab639f2d278d384",
+    "updateBasedOn": "tag"
   },
   {
     "language": "svelte",
@@ -250,7 +273,19 @@
       "vc_vector.h"
     ],
     "reference": "v0.10.1",
-    "revision": "84c90ee15f851e1541c25c86e8a4338f5b4d5af2"
+    "revision": "84c90ee15f851e1541c25c86e8a4338f5b4d5af2",
+    "updateBasedOn": "tag"
+  },
+  {
+    "language": "swift",
+    "url": "https://github.com/alex-pinkus/tree-sitter-swift",
+    "files": [
+      "parser.c",
+      "scanner.c"
+    ],
+    "reference": "0.4.3-with-generated-files",
+    "revision": "caa99d7d3c14aac03b5f16fc86fedf8755570760",
+    "updateBasedOn": "tag"
   },
   {
     "language": "toml",
@@ -260,7 +295,8 @@
       "scanner.c"
     ],
     "reference": "v0.5.1",
-    "revision": "474fbbec27e27d76b45aeaf9191e8acb13a699e2"
+    "revision": "474fbbec27e27d76b45aeaf9191e8acb13a699e2",
+    "updateBasedOn": "tag"
   },
   {
     "language": "typescript",
@@ -270,7 +306,8 @@
       "scanner.c"
     ],
     "reference": "v0.20.3",
-    "revision": "c604297f8197b468026f2ea32119935887e01c67"
+    "revision": "c604297f8197b468026f2ea32119935887e01c67",
+    "updateBasedOn": "tag"
   },
   {
     "language": "yaml",
@@ -281,6 +318,7 @@
       "schema.generated.cc"
     ],
     "reference": "v0.5.0",
-    "revision": "6129a83eeec7d6070b1c0567ec7ce3509ead607c"
+    "revision": "6129a83eeec7d6070b1c0567ec7ce3509ead607c",
+    "updateBasedOn": "tag"
   }
 ]
