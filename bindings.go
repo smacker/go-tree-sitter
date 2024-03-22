@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"reflect"
 	"regexp"
 	"runtime"
 	"strings"
@@ -18,7 +17,7 @@ import (
 )
 
 // maintain a map of read functions that can be called from C
-var readFuncs = &readFuncsMap{funcs: make(map[int]ReadFunc)}
+var readFuncs = &readFuncsMap{funcs: map[int]ReadFunc{}}
 
 // Parse is a shortcut for parsing bytes of source code,
 // returns root node
@@ -44,9 +43,9 @@ func ParseCtx(ctx context.Context, content []byte, lang *Language) (*Node, error
 
 // Parser produces concrete syntax tree based on source code using Language
 type Parser struct {
-	isClosed bool
 	c        *C.TSParser
 	cancel   *uintptr
+	isClosed bool
 }
 
 // NewParser creates new Parser
@@ -259,7 +258,7 @@ func (p *Parser) newTree(c *C.TSTree) *Tree {
 	base := &BaseTree{c: c}
 	runtime.SetFinalizer(base, (*BaseTree).Close)
 
-	newTree := &Tree{p: p, BaseTree: base, cache: make(map[C.TSNode]*Node)}
+	newTree := &Tree{p: p, BaseTree: base, cache: map[C.TSNode]*Node{}}
 	return newTree
 }
 
@@ -698,16 +697,15 @@ func QueryErrorTypeToString(errorType QueryErrorType) string {
 	default:
 		return "unknown"
 	}
-
 }
 
 // QueryError - if there is an error in the query,
 // then the Offset argument will be set to the byte offset of the error,
 // and the Type argument will be set to a value that indicates the type of error.
 type QueryError struct {
-	Offset  uint32
-	Type    QueryErrorType
 	Message string
+	Type    QueryErrorType
+	Offset  uint32
 }
 
 func (qe *QueryError) Error() string {
@@ -891,18 +889,13 @@ type QueryPredicateStep struct {
 
 func (q *Query) PredicatesForPattern(patternIndex uint32) [][]QueryPredicateStep {
 	var (
-		length          C.uint32_t
-		cPredicateSteps []C.TSQueryPredicateStep
-		predicateSteps  []QueryPredicateStep
+		length         C.uint32_t
+		predicateSteps []QueryPredicateStep
 	)
 
 	cPredicateStep := C.ts_query_predicates_for_pattern(q.c, C.uint32_t(patternIndex), &length)
+	cPredicateSteps := unsafe.Slice(cPredicateStep, int(length))
 
-	count := int(length)
-	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cPredicateSteps)))
-	slice.Cap = count
-	slice.Len = count
-	slice.Data = uintptr(unsafe.Pointer(cPredicateStep))
 	for _, s := range cPredicateSteps {
 		stepType := QueryPredicateStepType(s._type)
 		valueId := uint32(s.value_id)
@@ -989,15 +982,15 @@ func (qc *QueryCursor) Close() {
 
 // QueryCapture is a captured node by a query with an index
 type QueryCapture struct {
-	Index uint32
 	Node  *Node
+	Index uint32
 }
 
 // QueryMatch - you can then iterate over the matches.
 type QueryMatch struct {
+	Captures     []QueryCapture
 	ID           uint32
 	PatternIndex uint16
-	Captures     []QueryCapture
 }
 
 // NextMatch iterates over matches.
@@ -1005,10 +998,7 @@ type QueryMatch struct {
 // Otherwise, it will populate the QueryMatch with data
 // about which pattern matched and which nodes were captured.
 func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
-	var (
-		cqm C.TSQueryMatch
-		cqc []C.TSQueryCapture
-	)
+	var cqm C.TSQueryMatch
 
 	if ok := C.ts_query_cursor_next_match(qc.c, &cqm); !bool(ok) {
 		return nil, false
@@ -1019,15 +1009,11 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 		PatternIndex: uint16(cqm.pattern_index),
 	}
 
-	count := int(cqm.capture_count)
-	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
-	slice.Cap = count
-	slice.Len = count
-	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
+	cqc := unsafe.Slice(cqm.captures, int(cqm.capture_count))
 	for _, c := range cqc {
 		idx := uint32(c.index)
 		node := qc.t.cachedNode(c.node)
-		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
+		qm.Captures = append(qm.Captures, QueryCapture{Index: idx, Node: node})
 	}
 
 	return qm, true
@@ -1036,7 +1022,6 @@ func (qc *QueryCursor) NextMatch() (*QueryMatch, bool) {
 func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 	var (
 		cqm          C.TSQueryMatch
-		cqc          []C.TSQueryCapture
 		captureIndex C.uint32_t
 	)
 
@@ -1049,15 +1034,11 @@ func (qc *QueryCursor) NextCapture() (*QueryMatch, uint32, bool) {
 		PatternIndex: uint16(cqm.pattern_index),
 	}
 
-	count := int(cqm.capture_count)
-	slice := (*reflect.SliceHeader)((unsafe.Pointer(&cqc)))
-	slice.Cap = count
-	slice.Len = count
-	slice.Data = uintptr(unsafe.Pointer(cqm.captures))
+	cqc := unsafe.Slice(cqm.captures, int(cqm.capture_count))
 	for _, c := range cqc {
 		idx := uint32(c.index)
 		node := qc.t.cachedNode(c.node)
-		qm.Captures = append(qm.Captures, QueryCapture{idx, node})
+		qm.Captures = append(qm.Captures, QueryCapture{Index: idx, Node: node})
 	}
 
 	return qm, uint32(captureIndex), true
@@ -1144,10 +1125,10 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 				}
 			}
 
-			if matchedAll == false {
+			// TODO: This is an ineffective break statement. Is it a bug or just superfluous?
+			if !matchedAll {
 				break
 			}
-
 		case "match?", "not-match?":
 			isPositive := operator == "match?"
 
@@ -1173,15 +1154,14 @@ func (qc *QueryCursor) FilterPredicates(m *QueryMatch, input []byte) *QueryMatch
 	}
 
 	return qm
-
 }
 
 // keeps callbacks for parser.parse method
 type readFuncsMap struct {
-	sync.Mutex
-
 	funcs map[int]ReadFunc
 	count int
+
+	sync.Mutex
 }
 
 func (m *readFuncsMap) register(f ReadFunc) int {
