@@ -629,9 +629,9 @@ int ts_subtree_compare(Subtree left, Subtree right, SubtreePool *pool) {
 
     int result = 0;
     if (ts_subtree_symbol(left) < ts_subtree_symbol(right)) result = -1;
-    if (ts_subtree_symbol(right) < ts_subtree_symbol(left)) result = 1;
-    if (ts_subtree_child_count(left) < ts_subtree_child_count(right)) result = -1;
-    if (ts_subtree_child_count(right) < ts_subtree_child_count(left)) result = 1;
+    else if (ts_subtree_symbol(right) < ts_subtree_symbol(left)) result = 1;
+    else if (ts_subtree_child_count(left) < ts_subtree_child_count(right)) result = -1;
+    else if (ts_subtree_child_count(right) < ts_subtree_child_count(left)) result = 1;
     if (result != 0) {
       array_clear(&pool->tree_stack);
       return result;
@@ -997,7 +997,7 @@ void ts_subtree__print_dot_graph(const Subtree *self, uint32_t start_offset,
     ts_subtree_lookahead_bytes(*self)
   );
 
-  if (ts_subtree_is_error(*self) && ts_subtree_child_count(*self) == 0) {
+  if (ts_subtree_is_error(*self) && ts_subtree_child_count(*self) == 0 && self->ptr->lookahead_char != 0) {
     fprintf(f, "\ncharacter: '%c'", self->ptr->lookahead_char);
   }
 
