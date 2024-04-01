@@ -233,6 +233,8 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 	switch g.Language {
 	case "ocaml":
 		s.downloadOcaml(ctx, g)
+	case "php":
+		s.downloadPHP(ctx, g)
 	case "typescript":
 		s.downloadTypescript(ctx, g)
 	case "yaml":
@@ -347,6 +349,42 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 			fmt.Sprintf("%s/%s", g.Language, f),
 			map[string]string{
 				`<tree_sitter/parser.h>`:   `"parser.h"`,
+				`"../../common/scanner.h"`: `"scanner.h"`,
+			},
+		)
+	}
+}
+
+// php is just special
+func (s *UpdateService) downloadPHP(ctx context.Context, g *Grammar) {
+	url := g.ContentURL()
+
+	s.downloadFile(
+		ctx,
+		fmt.Sprintf("%s/%s/php/src/tree_sitter/parser.h", url, g.Revision),
+		fmt.Sprintf("%s/parser.h", g.Language),
+		nil,
+	)
+
+	fileMapping := map[string]string{
+		"parser.c":  "php/src/parser.c",
+		"scanner.h": "common/scanner.h",
+		"scanner.c": "php/src/scanner.c",
+	}
+
+	for _, f := range g.Files {
+		fp, ok := fileMapping[f]
+		if !ok {
+			logAndExit(getLogger(ctx), "mapping for file not found", "file", f)
+		}
+
+		s.downloadFile(
+			ctx,
+			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
+			fmt.Sprintf("%s/%s", g.Language, f),
+			map[string]string{
+				`<tree_sitter/parser.h>`:   `"parser.h"`,
+				`"tree_sitter/parser.h"`:   `"parser.h"`,
 				`"../../common/scanner.h"`: `"scanner.h"`,
 			},
 		)
