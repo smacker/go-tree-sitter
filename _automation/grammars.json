@@ -114,7 +114,8 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "235009aad0f580211fc12014bb0846c3910130c1"
+    "revision": "235009aad0f580211fc12014bb0846c3910130c1",
+    "updateBasedOn": ""
   },
   {
     "language": "hcl",
@@ -156,8 +157,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.1",
-    "revision": "f1e5a09b8d02f8209a68249c93f0ad647b228e6e",
+    "reference": "v0.20.4",
+    "revision": "de1e682289a417354df5b4437a3e4f92e0722a0f",
     "updateBasedOn": "tag"
   },
   {
