@@ -184,6 +184,14 @@
     "updateBasedOn": "commit"
   },
   {
+    "language": "objc",
+    "url": "https://github.com/jiyee/tree-sitter-objc",
+    "files": null,
+    "reference": "main",
+    "revision": "afec0de5a32d5894070b67932d6ff09e4f7c5879",
+    "updateBasedOn": "commit"
+  },
+  {
     "language": "ocaml",
     "url": "https://github.com/tree-sitter/tree-sitter-ocaml",
     "files": [
