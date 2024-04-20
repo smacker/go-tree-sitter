@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include "./subtree.h"
-#include "parser.h"
+#include "./parser.h"
 
 #define ts_builtin_sym_error_repeat (ts_builtin_sym_error - 1)
 

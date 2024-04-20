@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include "api.h"
 #include "./alloc.h"
 #include "./array.h"
@@ -818,14 +819,14 @@ static bool ts_parser__select_tree(TSParser *self, Subtree left, Subtree right) 
   }
 
   if (ts_subtree_dynamic_precedence(right) > ts_subtree_dynamic_precedence(left)) {
-    LOG("select_higher_precedence symbol:%s, prec:%u, over_symbol:%s, other_prec:%u",
+    LOG("select_higher_precedence symbol:%s, prec:%" PRId32 ", over_symbol:%s, other_prec:%u",
         TREE_NAME(right), ts_subtree_dynamic_precedence(right), TREE_NAME(left),
         ts_subtree_dynamic_precedence(left));
     return true;
   }
 
   if (ts_subtree_dynamic_precedence(left) > ts_subtree_dynamic_precedence(right)) {
-    LOG("select_higher_precedence symbol:%s, prec:%u, over_symbol:%s, other_prec:%u",
+    LOG("select_higher_precedence symbol:%s, prec:%" PRId32 ", over_symbol:%s, other_prec:%u",
         TREE_NAME(left), ts_subtree_dynamic_precedence(left), TREE_NAME(right),
         ts_subtree_dynamic_precedence(right));
     return false;
@@ -1768,7 +1769,7 @@ static unsigned ts_parser__condense_stack(TSParser *self) {
     }
   }
 
-  // Enfore a hard upper bound on the number of stack versions by
+  // Enforce a hard upper bound on the number of stack versions by
   // discarding the least promising versions.
   while (ts_stack_version_count(self->stack) > MAX_VERSION_COUNT) {
     ts_stack_remove_version(self->stack, MAX_VERSION_COUNT);
@@ -1869,6 +1870,7 @@ const TSLanguage *ts_parser_language(const TSParser *self) {
 
 bool ts_parser_set_language(TSParser *self, const TSLanguage *language) {
   ts_parser__external_scanner_destroy(self);
+  ts_language_delete(self->language);
   self->language = NULL;
 
   if (language) {
@@ -1885,7 +1887,7 @@ bool ts_parser_set_language(TSParser *self, const TSLanguage *language) {
     }
   }
 
-  self->language = language;
+  self->language = ts_language_copy(language);
   ts_parser__external_scanner_create(self);
   ts_parser_reset(self);
   return true;
@@ -2024,7 +2026,7 @@ TSTree *ts_parser_parse(
       bool allow_node_reuse = version_count == 1;
       while (ts_stack_is_active(self->stack, version)) {
         LOG(
-          "process version:%d, version_count:%u, state:%d, row:%u, col:%u",
+          "process version:%u, version_count:%u, state:%d, row:%u, col:%u",
           version,
           ts_stack_version_count(self->stack),
           ts_stack_state(self->stack, version),

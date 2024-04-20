@@ -16,7 +16,7 @@ import (
 )
 
 // Constants for the Tree Sitter version and download URL
-const sitterVersion = "0.20.9"
+const sitterVersion = "0.21.0"
 const sitterURL = "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v" + sitterVersion + ".tar.gz"
 
 func main() {
