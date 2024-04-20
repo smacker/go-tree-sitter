@@ -1,5 +1,5 @@
 #include "./language.h"
-#include "./wasm.h"
+#include "./wasm_store.h"
 #include "api.h"
 #include <string.h>
 
