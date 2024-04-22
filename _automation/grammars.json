@@ -157,8 +157,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.4",
-    "revision": "de1e682289a417354df5b4437a3e4f92e0722a0f",
+    "reference": "v0.21.0",
+    "revision": "d9b3a5841bd8f05e15db0748848ef3f5af5b5b44",
     "updateBasedOn": "tag"
   },
   {
