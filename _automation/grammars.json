@@ -61,7 +61,7 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "8a5f273bfa281c66354da562f2307c2d394b6c81",
+    "revision": "61843e3beebf19417e4fede4e8be4df1084317ad",
     "updateBasedOn": "commit"
   },
   {
@@ -79,10 +79,10 @@
     "url": "https://github.com/elixir-lang/tree-sitter-elixir",
     "files": [
       "parser.c",
-      "scanner.cc"
+      "scanner.c"
     ],
-    "reference": "v0.1.0",
-    "revision": "869dff3ceb8823ca4b17ca33b663667c8e41e8ba",
+    "reference": "v0.2.0",
+    "revision": "de690fa8a028f122af46d9d2685679fe5f2d7d60",
     "updateBasedOn": "tag"
   },
   {
