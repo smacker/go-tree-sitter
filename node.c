@@ -439,7 +439,14 @@ const char *ts_node_grammar_type(TSNode self) {
 }
 
 char *ts_node_string(TSNode self) {
-  return ts_subtree_string(ts_node__subtree(self), self.tree->language, false);
+  TSSymbol alias_symbol = ts_node__alias(&self);
+  return ts_subtree_string(
+    ts_node__subtree(self),
+    alias_symbol,
+    ts_language_symbol_metadata(self.tree->language, alias_symbol).visible,
+    self.tree->language,
+    false
+  );
 }
 
 bool ts_node_eq(TSNode self, TSNode other) {
@@ -513,7 +520,7 @@ TSNode ts_node_parent(TSNode self) {
         ts_node_start_byte(child) > ts_node_start_byte(self) ||
         child.id == self.id
       ) break;
-      if (iterator.position.bytes >= end_byte) {
+      if (iterator.position.bytes >= end_byte && ts_node_child_count(child) > 0) {
         node = child;
         if (ts_node__is_relevant(child, true)) {
           last_visible_node = node;

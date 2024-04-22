@@ -5,6 +5,7 @@
 #include "./stack.h"
 #include "./length.h"
 #include <assert.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 #define MAX_LINK_COUNT 8
@@ -12,9 +13,9 @@
 #define MAX_ITERATOR_COUNT 64
 
 #if defined _WIN32 && !defined __GNUC__
-#define inline __forceinline
+#define forceinline __forceinline
 #else
-#define inline static inline __attribute__((always_inline))
+#define forceinline static inline __attribute__((always_inline))
 #endif
 
 typedef struct StackNode StackNode;
@@ -227,7 +228,8 @@ static void stack_node_add_link(
       // If the previous nodes are mergeable, merge them recursively.
       if (
         existing_link->node->state == link.node->state &&
-        existing_link->node->position.bytes == link.node->position.bytes
+        existing_link->node->position.bytes == link.node->position.bytes &&
+        existing_link->node->error_cost == link.node->error_cost
       ) {
         for (int j = 0; j < link.node->link_count; j++) {
           stack_node_add_link(existing_link->node, link.node->links[j], subtree_pool);
@@ -509,7 +511,7 @@ void ts_stack_push(
   head->node = new_node;
 }
 
-inline StackAction pop_count_callback(void *payload, const StackIterator *iterator) {
+forceinline StackAction pop_count_callback(void *payload, const StackIterator *iterator) {
   unsigned *goal_subtree_count = payload;
   if (iterator->subtree_count == *goal_subtree_count) {
     return StackActionPop | StackActionStop;
@@ -522,7 +524,7 @@ StackSliceArray ts_stack_pop_count(Stack *self, StackVersion version, uint32_t c
   return stack__iter(self, version, pop_count_callback, &count, (int)count);
 }
 
-inline StackAction pop_pending_callback(void *payload, const StackIterator *iterator) {
+forceinline StackAction pop_pending_callback(void *payload, const StackIterator *iterator) {
   (void)payload;
   if (iterator->subtree_count >= 1) {
     if (iterator->is_pending) {
@@ -544,7 +546,7 @@ StackSliceArray ts_stack_pop_pending(Stack *self, StackVersion version) {
   return pop;
 }
 
-inline StackAction pop_error_callback(void *payload, const StackIterator *iterator) {
+forceinline StackAction pop_error_callback(void *payload, const StackIterator *iterator) {
   if (iterator->subtrees.size > 0) {
     bool *found_error = payload;
     if (!*found_error && ts_subtree_is_error(iterator->subtrees.contents[0])) {
@@ -575,7 +577,7 @@ SubtreeArray ts_stack_pop_error(Stack *self, StackVersion version) {
   return (SubtreeArray) {.size = 0};
 }
 
-inline StackAction pop_all_callback(void *payload, const StackIterator *iterator) {
+forceinline StackAction pop_all_callback(void *payload, const StackIterator *iterator) {
   (void)payload;
   return iterator->node->link_count == 0 ? StackActionPop : StackActionNone;
 }
@@ -589,7 +591,7 @@ typedef struct {
   unsigned max_depth;
 } SummarizeStackSession;
 
-inline StackAction summarize_stack_callback(void *payload, const StackIterator *iterator) {
+forceinline StackAction summarize_stack_callback(void *payload, const StackIterator *iterator) {
   SummarizeStackSession *session = payload;
   TSStateId state = iterator->node->state;
   unsigned depth = iterator->subtree_count;
@@ -866,7 +868,7 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f) 
           fprintf(f, "\"");
           fprintf(
             f,
-            "labeltooltip=\"error_cost: %u\ndynamic_precedence: %u\"",
+            "labeltooltip=\"error_cost: %u\ndynamic_precedence: %" PRId32 "\"",
             ts_subtree_error_cost(link.subtree),
             ts_subtree_dynamic_precedence(link.subtree)
           );
@@ -894,4 +896,4 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f) 
   return true;
 }
 
-#undef inline
+#undef forceinline

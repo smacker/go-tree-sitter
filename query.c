@@ -42,7 +42,7 @@ typedef struct {
  * - `depth` - The depth where this node occurs in the pattern. The root node
  *    of the pattern has depth zero.
  * - `negated_field_list_id` - An id representing a set of fields that must
- *    that must not be present on a node matching this step.
+ *    not be present on a node matching this step.
  *
  * Steps have some additional fields in order to handle the `.` (or "anchor") operator,
  * which forbids additional child nodes:
@@ -1030,7 +1030,7 @@ static inline void analysis_state_set__delete(AnalysisStateSet *self) {
  * QueryAnalyzer
  ****************/
 
-static inline QueryAnalysis query_analysis__new() {
+static inline QueryAnalysis query_analysis__new(void) {
   return (QueryAnalysis) {
     .states = array_new(),
     .next_states = array_new(),
@@ -2312,15 +2312,8 @@ static TSQueryError ts_query__parse_pattern(
         stream_scan_identifier(stream);
         uint32_t length = (uint32_t)(stream->input - node_name);
 
-        // TODO - remove.
-        // For temporary backward compatibility, handle predicates without the leading '#' sign.
-        if (length > 0 && (node_name[length - 1] == '!' || node_name[length - 1] == '?')) {
-          stream_reset(stream, node_name);
-          return ts_query__parse_predicate(self, stream);
-        }
-
         // Parse the wildcard symbol
-        else if (length == 1 && node_name[0] == '_') {
+        if (length == 1 && node_name[0] == '_') {
           symbol = WILDCARD_SYMBOL;
         }
 
@@ -2650,7 +2643,6 @@ static TSQueryError ts_query__parse_pattern(
           step->alternative_index < self->steps.size
         ) {
           step_index = step->alternative_index;
-          step = &self->steps.contents[step_index];
         } else {
           break;
         }
@@ -2698,7 +2690,7 @@ TSQuery *ts_query_new(
     .negated_fields = array_new(),
     .repeat_symbols_with_rootless_patterns = array_new(),
     .wildcard_root_pattern_count = 0,
-    .language = language,
+    .language = ts_language_copy(language),
   };
 
   array_push(&self->negated_fields, 0);
@@ -2812,6 +2804,7 @@ void ts_query_delete(TSQuery *self) {
     array_delete(&self->string_buffer);
     array_delete(&self->negated_fields);
     array_delete(&self->repeat_symbols_with_rootless_patterns);
+    ts_language_delete(self->language);
     symbol_table_delete(&self->captures);
     symbol_table_delete(&self->predicate_values);
     for (uint32_t index = 0; index < self->capture_quantifiers.size; index++) {
@@ -3848,7 +3841,7 @@ static inline bool ts_query_cursor__advance(
             continue;
           }
 
-          // Enfore the longest-match criteria. When a query pattern contains optional or
+          // Enforce the longest-match criteria. When a query pattern contains optional or
           // repeated nodes, this is necessary to avoid multiple redundant states, where
           // one state has a strict subset of another state's captures.
           bool did_remove = false;
