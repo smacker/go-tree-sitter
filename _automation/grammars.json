@@ -221,10 +221,10 @@
     "url": "https://github.com/tree-sitter/tree-sitter-python",
     "files": [
       "parser.c",
-      "scanner.cc"
+      "scanner.c"
     ],
-    "reference": "v0.20.0",
-    "revision": "2b9e9e0d231d5dd9f491d47f704817baee7d5af0",
+    "reference": "v0.21.0",
+    "revision": "0f9047c857ed0990931b1f899c7d3bf403703147",
     "updateBasedOn": "tag"
   },
   {
