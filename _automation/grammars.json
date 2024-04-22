@@ -16,8 +16,8 @@
     "files": [
       "parser.c"
     ],
-    "reference": "v0.20.2",
-    "revision": "7175a6dd5fc1cee660dce6fe23f6043d75af424a",
+    "reference": "v0.21.0",
+    "revision": "b125bec9b331722e4eaab6e02e1fe5b14eefd967",
     "updateBasedOn": "tag"
   },
   {
