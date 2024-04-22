@@ -4,10 +4,10 @@
     "url": "https://github.com/tree-sitter/tree-sitter-bash",
     "files": [
       "parser.c",
-      "scanner.cc"
+      "scanner.c"
     ],
-    "reference": "v0.19.0",
-    "revision": "b6667bed364733c8a8f8e5973749f86cfa04ba2a",
+    "reference": "v0.21.0",
+    "revision": "f3f26f47a126797c011c311cec9d449d855c3eab",
     "updateBasedOn": "tag"
   },
   {
