@@ -306,8 +306,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.3",
-    "revision": "c604297f8197b468026f2ea32119935887e01c67",
+    "reference": "v0.20.6",
+    "revision": "b00b8eb44f0b9f02556da0b1a4e2f71faed7e61b",
     "updateBasedOn": "tag"
   },
   {
