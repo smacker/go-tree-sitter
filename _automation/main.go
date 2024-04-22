@@ -271,6 +271,8 @@ func (s *UpdateService) defaultGrammarDownload(ctx context.Context, g *Grammar) 
 				`"tree_sitter/parser.h"`: `"parser.h"`,
 				`"tree_sitter/array.h"`:  `"../array.h"`,
 				`<tree_sitter/array.h>`:  `"../array.h"`,
+				`"tree_sitter/alloc.h"`:  `"../alloc.h"`,
+				`<tree_sitter/alloc.h>`:  `"../alloc.h"`,
 			},
 		)
 	}
