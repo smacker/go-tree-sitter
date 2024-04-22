@@ -273,8 +273,8 @@
       "uthash.h",
       "vc_vector.h"
     ],
-    "reference": "v0.10.1",
-    "revision": "84c90ee15f851e1541c25c86e8a4338f5b4d5af2",
+    "reference": "v0.11.0",
+    "revision": "be7f2e7db1fc19f0852265ec60923fc058380739",
     "updateBasedOn": "tag"
   },
   {

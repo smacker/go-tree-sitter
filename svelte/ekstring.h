@@ -53,7 +53,7 @@ ekstring concat_string_char(const ekstring s1, const char c) {
 }
 int parse_int(const ekstring s1) { return atoi(s1.buf); }
 const char *get_string_cstring(const ekstring s) { return s.buf; }
-void destroy_string(const ekstring s) {
+void destroy_string() {
   // za_Free(s.A, (void *)s.buf);
 }
 
