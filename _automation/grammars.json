@@ -90,10 +90,10 @@
     "url": "https://github.com/elm-tooling/tree-sitter-elm",
     "files": [
       "parser.c",
-      "scanner.cc"
+      "scanner.c"
     ],
-    "reference": "v5.6.3",
-    "revision": "cce0e5938e7779f86cf8bf445eadf7df4b88229d",
+    "reference": "v5.7.0",
+    "revision": "c26afd7f2316f689410a1622f1780eff054994b1",
     "updateBasedOn": "tag"
   },
   {
