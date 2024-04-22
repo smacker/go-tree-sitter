@@ -1,5 +1,3 @@
-// https://github.com/eonpatapon/tree-sitter-cue.git
-// Thanks to eonpatapon, teddylear and zidhuss
 #include "parser.h"
 
 enum TokenType {
@@ -9,8 +7,6 @@ enum TokenType {
   RAW_BYTES_CONTENT,
   MULTI_RAW_STR_CONTENT,
   MULTI_RAW_BYTES_CONTENT,
-
-  NONE
 };
 
 static void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
