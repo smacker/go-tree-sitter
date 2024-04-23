@@ -21,7 +21,7 @@ func TestGrammar(t *testing.T) {
 	n, err := sitter.ParseCtx(context.Background(), []byte(code), cue.GetLanguage())
 	assert.NoError(err)
 	assert.Equal(
-		"(source_file (field (label (identifier)) (value (struct_lit (field (label alias: (identifier) (identifier)) (value (string_type))) (field (label alias: (identifier) (simple_string_lit)) (value (bool_type)))))))",
+		"(source_file (field (label (identifier)) (value (struct_lit (field (label alias: (identifier) (identifier)) (value (primitive_type))) (field (label alias: (identifier) (string)) (value (primitive_type)))))))",
 		n.String(),
 	)
 }

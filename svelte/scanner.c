@@ -76,7 +76,7 @@ void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     vc_vector_resize(scanner->tags, tag_count, initTag(scanner->A));
     for (unsigned j = 0; j < serialized_tag_count; j++) {
       Tag *tag = vc_vector_at(scanner->tags, j);
-      tag->type = (TagType)(buffer[i++]);
+      tag->type = (TagType)(abs(buffer[i++]));
       if (tag->type == CUSTOM) {
         uint16_t name_length = (uint8_t)(buffer[i++]);
         tag->custom_tag_name =
@@ -248,7 +248,7 @@ bool scan_self_closing_tag_delimiter(Scanner *scanner, TSLexer *lexer) {
   return false;
 }
 
-bool scan_word(Scanner *scanner, TSLexer *lexer, ekstring word) {
+bool scan_word(TSLexer *lexer, ekstring word) {
   char c = lexer->lookahead;
   int i = 0;
   while (c == word.buf[i++]) {
@@ -288,13 +288,13 @@ bool scan_raw_text_expr(Scanner *scanner, TSLexer *lexer,
         c = lexer->lookahead;
         if (extraToken == RAW_TEXT_AWAIT && c == 't') {
           ekstring thenWord = init_string_str(scanner->A, "then", 4);
-          if (scan_word(scanner, lexer, thenWord)) {
+          if (scan_word(lexer, thenWord)) {
             lexer->result_symbol = RAW_TEXT_AWAIT;
             return true;
           }
         } else if (extraToken == RAW_TEXT_EACH && c == 'a') {
           ekstring asWord = init_string_str(scanner->A, "as", 2);
-          if (scan_word(scanner, lexer, asWord)) {
+          if (scan_word(lexer, asWord)) {
             lexer->result_symbol = RAW_TEXT_EACH;
             return true;
           }
@@ -395,7 +395,12 @@ bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
   return false;
 }
 
+#pragma GCC diagnostic push
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 void deleter(void *tag, za_Allocator *A) {}
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
 void *tree_sitter_svelte_external_scanner_create() {
   za_Allocator *A = za_New();
   Scanner *scanner = (Scanner *)za_Alloc(A, sizeof(Scanner));
