@@ -237,6 +237,8 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 		s.downloadTypescript(ctx, g)
 	case "yaml":
 		s.downloadYaml(ctx, g)
+	case "php":
+		s.downloadPhp(ctx, g)
 	default:
 		s.defaultGrammarDownload(ctx, g)
 	}
@@ -320,6 +322,44 @@ func (s *UpdateService) writeGrammarsFile(ctx context.Context) {
 	err = os.WriteFile(grammarsJson, b, 0644)
 	if err != nil {
 		logAndExit(getLogger(ctx), err.Error(), "file", grammarsJson)
+	}
+}
+
+func (s *UpdateService) downloadPhp(ctx context.Context, g *Grammar) {
+	fileMapping := map[string]string{
+		"parser.c":  "php/src/parser.c",
+		"scanner.c": "php/src/scanner.c",
+		"scanner.h": "common/scanner.h",
+	}
+
+	url := g.ContentURL()
+
+	treeSitterFiles := []string{"parser.h", "array.h", "alloc.h"}
+
+	for _, f := range treeSitterFiles {
+		s.downloadFile(
+			ctx,
+			fmt.Sprintf("%s/%s/php/src/tree_sitter/%s", url, g.Revision, f),
+			fmt.Sprintf("%s/tree_sitter/%s", g.Language, f),
+			nil,
+		)
+	}
+
+	for _, f := range g.Files {
+		fp, ok := fileMapping[f]
+		if !ok {
+			logAndExit(getLogger(ctx), "mapping for file not found", "file", f)
+		}
+
+		s.downloadFile(
+			ctx,
+			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
+			fmt.Sprintf("%s/%s", g.Language, f),
+			map[string]string{
+				`<tree_sitter/parser.h>`:   `"parser.h"`,
+				`"../../common/scanner.h"`: `"scanner.h"`,
+			},
+		)
 	}
 }
 
