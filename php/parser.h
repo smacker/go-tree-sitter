@@ -13,9 +13,8 @@ extern "C" {
 #define ts_builtin_sym_end 0
 #define TREE_SITTER_SERIALIZATION_BUFFER_SIZE 1024
 
-typedef uint16_t TSStateId;
-
 #ifndef TREE_SITTER_API_H_
+typedef uint16_t TSStateId;
 typedef uint16_t TSSymbol;
 typedef uint16_t TSFieldId;
 typedef struct TSLanguage TSLanguage;
@@ -87,6 +86,11 @@ typedef union {
   } entry;
 } TSParseActionEntry;
 
+typedef struct {
+  int32_t start;
+  int32_t end;
+} TSCharacterRange;
+
 struct TSLanguage {
   uint32_t version;
   uint32_t symbol_count;
@@ -102,8 +106,8 @@ struct TSLanguage {
   const uint16_t *small_parse_table;
   const uint32_t *small_parse_table_map;
   const TSParseActionEntry *parse_actions;
-  const char **symbol_names;
-  const char **field_names;
+  const char * const *symbol_names;
+  const char * const *field_names;
   const TSFieldMapSlice *field_map_slices;
   const TSFieldMapEntry *field_map_entries;
   const TSSymbolMetadata *symbol_metadata;
@@ -123,15 +127,41 @@ struct TSLanguage {
     unsigned (*serialize)(void *, char *);
     void (*deserialize)(void *, const char *, unsigned);
   } external_scanner;
+  const TSStateId *primary_state_ids;
 };
+
+static inline bool set_contains(TSCharacterRange *ranges, uint32_t len, int32_t lookahead) {
+  uint32_t index = 0;
+  uint32_t size = len - index;
+  while (size > 1) {
+    uint32_t half_size = size / 2;
+    uint32_t mid_index = index + half_size;
+    TSCharacterRange *range = &ranges[mid_index];
+    if (lookahead >= range->start && lookahead <= range->end) {
+      return true;
+    } else if (lookahead > range->end) {
+      index = mid_index;
+    }
+    size -= half_size;
+  }
+  TSCharacterRange *range = &ranges[index];
+  return (lookahead >= range->start && lookahead <= range->end);
+}
 
 /*
  *  Lexer Macros
  */
 
+#ifdef _MSC_VER
+#define UNUSED __pragma(warning(suppress : 4101))
+#else
+#define UNUSED __attribute__((unused))
+#endif
+
 #define START_LEXER()           \
   bool result = false;          \
   bool skip = false;            \
+  UNUSED                        \
   bool eof = false;             \
   int32_t lookahead;            \
   goto start;                   \
@@ -145,6 +175,17 @@ struct TSLanguage {
   {                          \
     state = state_value;     \
     goto next_state;         \
+  }
+
+#define ADVANCE_MAP(...)                                              \
+  {                                                                   \
+    static const uint16_t map[] = { __VA_ARGS__ };                    \
+    for (uint32_t i = 0; i < sizeof(map) / sizeof(map[0]); i += 2) {  \
+      if (map[i] == lookahead) {                                      \
+        state = map[i + 1];                                           \
+        goto next_state;                                              \
+      }                                                               \
+    }                                                                 \
   }
 
 #define SKIP(state_value) \
@@ -165,7 +206,7 @@ struct TSLanguage {
  *  Parse Table Macros
  */
 
-#define SMALL_STATE(id) id - LARGE_STATE_COUNT
+#define SMALL_STATE(id) ((id) - LARGE_STATE_COUNT)
 
 #define STATE(id) id
 
@@ -175,7 +216,7 @@ struct TSLanguage {
   {{                                  \
     .shift = {                        \
       .type = TSParseActionTypeShift, \
-      .state = state_value            \
+      .state = (state_value)          \
     }                                 \
   }}
 
@@ -183,7 +224,7 @@ struct TSLanguage {
   {{                                  \
     .shift = {                        \
       .type = TSParseActionTypeShift, \
-      .state = state_value,           \
+      .state = (state_value),         \
       .repetition = true              \
     }                                 \
   }}
@@ -196,14 +237,15 @@ struct TSLanguage {
     }                                 \
   }}
 
-#define REDUCE(symbol_val, child_count_val, ...) \
-  {{                                             \
-    .reduce = {                                  \
-      .type = TSParseActionTypeReduce,           \
-      .symbol = symbol_val,                      \
-      .child_count = child_count_val,            \
-      __VA_ARGS__                                \
-    },                                           \
+#define REDUCE(symbol_name, children, precedence, prod_id) \
+  {{                                                       \
+    .reduce = {                                            \
+      .type = TSParseActionTypeReduce,                     \
+      .symbol = symbol_name,                               \
+      .child_count = children,                             \
+      .dynamic_precedence = precedence,                    \
+      .production_id = prod_id                             \
+    },                                                     \
   }}
 
 #define RECOVER()                    \
