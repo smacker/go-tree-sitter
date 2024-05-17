@@ -333,5 +333,17 @@
     "reference": "v0.2.3",
     "revision": "62516e8c78380e3b51d5b55727995d2c511436d8",
     "updateBasedOn": "tag"
+  },
+  {
+    "language": "sql",
+    "url": "https://github.com/DerekStride/tree-sitter-sql",
+    "files": [
+      "parser.c",
+      "parser.h",
+      "scanner.c"
+    ],
+    "reference": "gh-pages",
+    "revision": "89fd00d0aff3bc9985ac37caf362ec4fd9b2ba1d",
+    "updateBasedOn": "commit"
   }
 ]
