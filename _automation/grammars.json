@@ -322,5 +322,16 @@
     "reference": "v0.5.0",
     "revision": "6129a83eeec7d6070b1c0567ec7ce3509ead607c",
     "updateBasedOn": "tag"
+  },
+  {
+    "language": "markdown",
+    "url": "https://github.com/tree-sitter-grammars/tree-sitter-markdown",
+    "files": [
+      "parser.c",
+      "scanner.c"
+    ],
+    "reference": "v0.2.3",
+    "revision": "62516e8c78380e3b51d5b55727995d2c511436d8",
+    "updateBasedOn": "tag"
   }
 ]
