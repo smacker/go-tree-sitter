@@ -239,6 +239,8 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 		s.downloadYaml(ctx, g)
 	case "php":
 		s.downloadPhp(ctx, g)
+	case "markdown":
+		s.downloadMarkdown(ctx, g)
 	default:
 		s.defaultGrammarDownload(ctx, g)
 	}
@@ -428,6 +430,34 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 				map[string]string{
 					`<tree_sitter/parser.h>`:   `"parser.h"`,
 					`"../../common/scanner.h"`: `"scanner.h"`,
+				},
+			)
+		}
+	}
+}
+
+// markdown is special as it contains 2 different grammars
+func (s *UpdateService) downloadMarkdown(ctx context.Context, g *Grammar) {
+	url := g.ContentURL()
+
+	langs := []string{"tree-sitter-markdown", "tree-sitter-markdown-inline"}
+	for _, lang := range langs {
+		s.makeDir(ctx, fmt.Sprintf("%s/%s", g.Language, lang))
+
+		s.downloadFile(
+			ctx,
+			fmt.Sprintf("%s/%s/%s/src/tree_sitter/parser.h", url, g.Revision, lang),
+			fmt.Sprintf("%s/%s/parser.h", g.Language, lang),
+			nil,
+		)
+
+		for _, f := range g.Files {
+			s.downloadFile(
+				ctx,
+				fmt.Sprintf("%s/%s/%s/src/%s", url, g.Revision, lang, f),
+				fmt.Sprintf("%s/%s/%s", g.Language, lang, f),
+				map[string]string{
+					`"tree_sitter/parser.h"`: `"parser.h"`,
 				},
 			)
 		}
