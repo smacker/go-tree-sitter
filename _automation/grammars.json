@@ -1,5 +1,15 @@
 [
   {
+    "language": "ada",
+    "url": "https://github.com/briot/tree-sitter-ada",
+    "files": [
+      "parser.c"
+    ],
+    "reference": "master",
+    "revision": "e8e2515465cc2d7c444498e68bdb9f1d86767f95",
+    "updateBasedOn": "commit"
+  },
+  {
     "language": "bash",
     "url": "https://github.com/tree-sitter/tree-sitter-bash",
     "files": [
