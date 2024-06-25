@@ -241,6 +241,8 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 		s.downloadPhp(ctx, g)
 	case "markdown":
 		s.downloadMarkdown(ctx, g)
+	case "sql":
+		s.downloadSql(ctx, g)
 	default:
 		s.defaultGrammarDownload(ctx, g)
 	}
@@ -486,6 +488,32 @@ func (s *UpdateService) downloadYaml(ctx context.Context, g *Grammar) {
 	b = bytes.ReplaceAll(b, []byte(`#include "./schema.generated.cc"`), []byte(""))
 
 	_ = os.WriteFile(fmt.Sprintf("%s/scanner.cc", g.Language), b, 0644)
+}
+
+// sql is special since its folder structure is different from the other ones
+func (s *UpdateService) downloadSql(ctx context.Context, g *Grammar) {
+	fileMapping := map[string]string{
+		"parser.h":  "tree_sitter/parser.h",
+		"scanner.c": "scanner.c",
+		"parser.c":  "parser.c",
+	}
+
+	s.makeDir(ctx, fmt.Sprintf("%s/tree_sitter", g.Language))
+
+	url := g.ContentURL()
+	for _, f := range g.Files {
+		fp, ok := fileMapping[f]
+		if !ok {
+			logAndExit(getLogger(ctx), "mapping for file not found", "file", f)
+		}
+
+		s.downloadFile(
+			ctx,
+			fmt.Sprintf("%s/%s/src/%s", url, g.Revision, fp),
+			fmt.Sprintf("%s/%s", g.Language, fp),
+			nil,
+		)
+	}
 }
 
 func logAndExit(logger *Logger, msg string, args ...interface{}) {
