@@ -276,8 +276,8 @@
       "scanner.c",
       "stack.h"
     ],
-    "reference": "v0.19.1",
-    "revision": "918f0fb948405181707a1772cab639f2d278d384",
+    "reference": "v0.22.0",
+    "revision": "5bce09bdd9d3dda5af5f4c67ca5e9bcbc7c44be2",
     "updateBasedOn": "tag"
   },
   {
