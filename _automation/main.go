@@ -362,15 +362,15 @@ func (s *UpdateService) downloadPhp(ctx context.Context, g *Grammar) {
 // ocaml is special since its folder structure is different from the other ones
 func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 	fileMapping := map[string]string{
-		"parser.c":  "grammars/ocaml/src/parser.c",
-		"scanner.c": "grammars/ocaml/src/scanner.c",
-		"scanner.h": "include/scanner.h",
+		"parser.c":   "ocaml/src/parser.c",
+		"scanner.cc": "ocaml/src/scanner.cc",
+		"scanner.h":  "common/scanner.h",
 	}
 
 	url := g.ContentURL()
 	s.downloadFile(
 		ctx,
-		fmt.Sprintf("%s/%s/include/tree_sitter/parser.h", url, g.Revision),
+		fmt.Sprintf("%s/%s/ocaml/src/tree_sitter/parser.h", url, g.Revision),
 		fmt.Sprintf("%s/parser.h", g.Language),
 		nil,
 	)
