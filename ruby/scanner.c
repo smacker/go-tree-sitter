@@ -1,65 +1,9 @@
+#include "../alloc.h"
+#include "../array.h"
 #include "parser.h"
-#include <assert.h>
+
 #include <string.h>
 #include <wctype.h>
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
-#define VEC_RESIZE(vec, _cap)                                                                                          \
-    void *tmp = realloc((vec).data, (_cap) * sizeof((vec).data[0]));                                                   \
-    assert(tmp != NULL);                                                                                               \
-    (vec).data = tmp;                                                                                                  \
-    assert((vec).data != NULL);                                                                                        \
-    (vec).cap = (_cap);
-
-#define VEC_PUSH(vec, el)                                                                                              \
-    if ((vec).cap == (vec).len) {                                                                                      \
-        VEC_RESIZE((vec), MAX(16, (vec).len * 2));                                                                     \
-    }                                                                                                                  \
-    (vec).data[(vec).len++] = (el);
-
-#define VEC_POP(vec) (vec).len--;
-
-#define VEC_ERASE(vec, n)                                                                                              \
-    {                                                                                                                  \
-        STRING_FREE((vec).data[n].word);                                                                               \
-        memmove((vec).data + n, (vec).data + n + 1, ((vec).len - n - 1) * sizeof((vec).data[0]));                      \
-        (vec).len--;                                                                                                   \
-    }
-
-#define VEC_BACK(vec) ((vec).data[(vec).len - 1])
-
-#define VEC_FREE(vec)                                                                                                  \
-    {                                                                                                                  \
-        if ((vec).data != NULL)                                                                                        \
-            free((vec).data);                                                                                          \
-    }
-
-#define VEC_CLEAR(vec) (vec).len = 0;
-
-#define STRING_RESIZE(vec, _cap)                                                                                       \
-    void *tmp = realloc((vec).data, (_cap + 1) * sizeof((vec).data[0]));                                               \
-    assert(tmp != NULL);                                                                                               \
-    (vec).data = tmp;                                                                                                  \
-    memset((vec).data + (vec).len, 0, ((_cap + 1) - (vec).len) * sizeof((vec).data[0]));                               \
-    (vec).cap = (_cap);
-
-#define STRING_GROW(vec, _cap)                                                                                         \
-    if ((vec).cap < (_cap)) {                                                                                          \
-        STRING_RESIZE((vec), (_cap));                                                                                  \
-    }
-
-#define STRING_PUSH(vec, el)                                                                                           \
-    if ((vec).cap == (vec).len) {                                                                                      \
-        STRING_RESIZE((vec), MAX(16, (vec).len * 2));                                                                  \
-    }                                                                                                                  \
-    (vec).data[(vec).len++] = (el);
-
-#define STRING_FREE(vec)                                                                                               \
-    {                                                                                                                  \
-        if ((vec).data != NULL)                                                                                        \
-            free((vec).data);                                                                                          \
-    }
 
 typedef enum {
     LINE_BREAK,
@@ -100,33 +44,15 @@ typedef enum {
     NONE
 } TokenType;
 
-typedef struct {
-    uint32_t len;
-    uint32_t cap;
-    char *data;
-} String;
-
-static String string_new() {
-    return (String){
-        .cap = 16,
-        .len = 0,
-        .data = calloc(17, sizeof(char)),
-    };
-}
+typedef Array(char) String;
 
 typedef struct {
     TokenType type;
-    uint32_t open_delimiter;
-    uint32_t close_delimiter;
-    uint32_t nesting_depth;
+    int32_t open_delimiter;
+    int32_t close_delimiter;
+    int32_t nesting_depth;
     bool allows_interpolation;
 } Literal;
-
-typedef struct {
-    uint32_t len;
-    uint32_t cap;
-    Literal *data;
-} LiteralVec;
 
 typedef struct {
     String word;
@@ -136,15 +62,9 @@ typedef struct {
 } Heredoc;
 
 typedef struct {
-    uint32_t len;
-    uint32_t cap;
-    Heredoc *data;
-} HeredocVec;
-
-typedef struct {
     bool has_leading_whitespace;
-    LiteralVec literal_stack;
-    HeredocVec open_heredocs;
+    Array(Literal) literal_stack;
+    Array(Heredoc) open_heredocs;
 } Scanner;
 
 const char NON_IDENTIFIER_CHARS[] = {
@@ -160,49 +80,49 @@ static inline void skip(Scanner *scanner, TSLexer *lexer) {
 static inline void advance(TSLexer *lexer) { lexer->advance(lexer, false); }
 
 static inline void reset(Scanner *scanner) {
-    VEC_CLEAR(scanner->literal_stack);
-    for (uint32_t i = 0; i < scanner->open_heredocs.len; i++) {
-        STRING_FREE(scanner->open_heredocs.data[i].word);
+    array_delete(&scanner->literal_stack);
+    for (uint32_t i = 0; i < scanner->open_heredocs.size; i++) {
+        array_delete(&array_get(&scanner->open_heredocs, i)->word);
     }
-    VEC_CLEAR(scanner->open_heredocs);
+    array_delete(&scanner->open_heredocs);
 }
 
 static inline unsigned serialize(Scanner *scanner, char *buffer) {
-    unsigned i = 0;
+    unsigned size = 0;
 
-    if (scanner->literal_stack.len * 5 + 2 >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+    if (scanner->literal_stack.size * 5 + 2 >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
         return 0;
     }
 
-    buffer[i++] = (char)scanner->literal_stack.len;
-    for (uint32_t j = 0; j < scanner->literal_stack.len; j++) {
-        Literal *literal = &scanner->literal_stack.data[j];
-        buffer[i++] = literal->type;
-        buffer[i++] = (char)literal->open_delimiter;
-        buffer[i++] = (char)literal->close_delimiter;
-        buffer[i++] = (char)literal->nesting_depth;
-        buffer[i++] = (char)literal->allows_interpolation;
+    buffer[size++] = (char)scanner->literal_stack.size;
+    for (uint32_t i = 0; i < scanner->literal_stack.size; i++) {
+        Literal *literal = array_get(&scanner->literal_stack, i);
+        buffer[size++] = literal->type;
+        buffer[size++] = (char)literal->open_delimiter;
+        buffer[size++] = (char)literal->close_delimiter;
+        buffer[size++] = (char)literal->nesting_depth;
+        buffer[size++] = (char)literal->allows_interpolation;
     }
 
-    buffer[i++] = (char)scanner->open_heredocs.len;
-    for (uint32_t j = 0; j < scanner->open_heredocs.len; j++) {
-        Heredoc *heredoc = &scanner->open_heredocs.data[j];
-        if (i + 2 + heredoc->word.len >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+    buffer[size++] = (char)scanner->open_heredocs.size;
+    for (uint32_t i = 0; i < scanner->open_heredocs.size; i++) {
+        Heredoc *heredoc = array_get(&scanner->open_heredocs, i);
+        if (size + 2 + heredoc->word.size >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
             return 0;
         }
-        buffer[i++] = (char)heredoc->end_word_indentation_allowed;
-        buffer[i++] = (char)heredoc->allows_interpolation;
-        buffer[i++] = (char)heredoc->started;
-        buffer[i++] = (char)heredoc->word.len;
-        memcpy(&buffer[i], heredoc->word.data, heredoc->word.len);
-        i += heredoc->word.len;
+        buffer[size++] = (char)heredoc->end_word_indentation_allowed;
+        buffer[size++] = (char)heredoc->allows_interpolation;
+        buffer[size++] = (char)heredoc->started;
+        buffer[size++] = (char)heredoc->word.size;
+        memcpy(&buffer[size], heredoc->word.contents, heredoc->word.size);
+        size += heredoc->word.size;
     }
 
-    return i;
+    return size;
 }
 
 static inline void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
-    unsigned i = 0;
+    unsigned size = 0;
     scanner->has_leading_whitespace = false;
     reset(scanner);
 
@@ -210,39 +130,39 @@ static inline void deserialize(Scanner *scanner, const char *buffer, unsigned le
         return;
     }
 
-    uint8_t literal_depth = buffer[i++];
+    uint8_t literal_depth = buffer[size++];
     for (unsigned j = 0; j < literal_depth; j++) {
         Literal literal = {0};
-        literal.type = (TokenType)(buffer[i++]);
-        literal.open_delimiter = (unsigned char)buffer[i++];
-        literal.close_delimiter = (unsigned char)buffer[i++];
-        literal.nesting_depth = (unsigned char)buffer[i++];
-        literal.allows_interpolation = buffer[i++];
-        VEC_PUSH(scanner->literal_stack, literal);
+        literal.type = (TokenType)(buffer[size++]);
+        literal.open_delimiter = (unsigned char)buffer[size++];
+        literal.close_delimiter = (unsigned char)buffer[size++];
+        literal.nesting_depth = (unsigned char)buffer[size++];
+        literal.allows_interpolation = buffer[size++];
+        array_push(&scanner->literal_stack, literal);
     }
 
-    uint8_t open_heredoc_count = buffer[i++];
+    uint8_t open_heredoc_count = buffer[size++];
     for (unsigned j = 0; j < open_heredoc_count; j++) {
         Heredoc heredoc = {0};
-        heredoc.end_word_indentation_allowed = buffer[i++];
-        heredoc.allows_interpolation = buffer[i++];
-        heredoc.started = buffer[i++];
+        heredoc.end_word_indentation_allowed = buffer[size++];
+        heredoc.allows_interpolation = buffer[size++];
+        heredoc.started = buffer[size++];
 
-        heredoc.word = string_new();
-        uint8_t word_length = buffer[i++];
-        STRING_GROW(heredoc.word, word_length);
-        memcpy(heredoc.word.data, buffer + i, word_length);
-        heredoc.word.len = word_length;
-        i += word_length;
-        VEC_PUSH(scanner->open_heredocs, heredoc);
+        heredoc.word = (String)array_new();
+        uint8_t word_length = buffer[size++];
+        array_reserve(&heredoc.word, word_length);
+        memcpy(heredoc.word.contents, &buffer[size], word_length);
+        heredoc.word.size = word_length;
+        size += word_length;
+        array_push(&scanner->open_heredocs, heredoc);
     }
 
-    assert(i == length);
+    assert(size == length);
 }
 
 static inline bool scan_whitespace(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
-    bool heredoc_body_start_is_valid =
-        scanner->open_heredocs.len > 0 && !scanner->open_heredocs.data[0].started && valid_symbols[HEREDOC_BODY_START];
+    bool heredoc_body_start_is_valid = scanner->open_heredocs.size > 0 && !scanner->open_heredocs.contents[0].started &&
+                                       valid_symbols[HEREDOC_BODY_START];
     bool crossed_newline = false;
 
     for (;;) {
@@ -260,7 +180,7 @@ static inline bool scan_whitespace(Scanner *scanner, TSLexer *lexer, const bool 
             case '\r':
                 if (heredoc_body_start_is_valid) {
                     lexer->result_symbol = HEREDOC_BODY_START;
-                    scanner->open_heredocs.data[0].started = true;
+                    scanner->open_heredocs.contents[0].started = true;
                     return true;
                 } else {
                     skip(scanner, lexer);
@@ -269,7 +189,7 @@ static inline bool scan_whitespace(Scanner *scanner, TSLexer *lexer, const bool 
             case '\n':
                 if (heredoc_body_start_is_valid) {
                     lexer->result_symbol = HEREDOC_BODY_START;
-                    scanner->open_heredocs.data[0].started = true;
+                    scanner->open_heredocs.contents[0].started = true;
                     return true;
                 } else if (!valid_symbols[NO_LINE_BREAK] && valid_symbols[LINE_BREAK] && !crossed_newline) {
                     lexer->mark_end(lexer);
@@ -625,6 +545,7 @@ static inline bool scan_open_delimiter(Scanner *scanner, TSLexer *lexer, Literal
                     if (valid_symbols[FORWARD_SLASH]) {
                         return false;
                     }
+                    break;
 
                 case '|':
                 case '!':
@@ -674,7 +595,7 @@ static inline bool scan_open_delimiter(Scanner *scanner, TSLexer *lexer, Literal
 }
 
 static inline void scan_heredoc_word(TSLexer *lexer, Heredoc *heredoc) {
-    String word = string_new();
+    String word = array_new();
     int32_t quote = 0;
 
     switch (lexer->lookahead) {
@@ -684,7 +605,7 @@ static inline void scan_heredoc_word(TSLexer *lexer, Heredoc *heredoc) {
             quote = lexer->lookahead;
             advance(lexer);
             while (lexer->lookahead != quote && !lexer->eof(lexer)) {
-                STRING_PUSH(word, lexer->lookahead);
+                array_push(&word, lexer->lookahead);
                 advance(lexer);
             }
             advance(lexer);
@@ -692,10 +613,10 @@ static inline void scan_heredoc_word(TSLexer *lexer, Heredoc *heredoc) {
 
         default:
             if (iswalnum(lexer->lookahead) || lexer->lookahead == '_') {
-                STRING_PUSH(word, lexer->lookahead);
+                array_push(&word, lexer->lookahead);
                 advance(lexer);
                 while (iswalnum(lexer->lookahead) || lexer->lookahead == '_') {
-                    STRING_PUSH(word, lexer->lookahead);
+                    array_push(&word, lexer->lookahead);
                     advance(lexer);
                 }
             }
@@ -744,13 +665,13 @@ static inline bool scan_short_interpolation(TSLexer *lexer, const bool has_conte
 }
 
 static inline bool scan_heredoc_content(Scanner *scanner, TSLexer *lexer) {
-    Heredoc *heredoc = &scanner->open_heredocs.data[0];
+    Heredoc *heredoc = array_get(&scanner->open_heredocs, 0);
     size_t position_in_word = 0;
     bool look_for_heredoc_end = true;
     bool has_content = false;
 
     for (;;) {
-        if (position_in_word == heredoc->word.len) {
+        if (position_in_word == heredoc->word.size) {
             if (!has_content) {
                 lexer->mark_end(lexer);
             }
@@ -761,7 +682,8 @@ static inline bool scan_heredoc_content(Scanner *scanner, TSLexer *lexer) {
                 if (has_content) {
                     lexer->result_symbol = HEREDOC_CONTENT;
                 } else {
-                    VEC_ERASE(scanner->open_heredocs, 0);
+                    array_delete(&heredoc->word);
+                    array_erase(&scanner->open_heredocs, 0);
                     lexer->result_symbol = HEREDOC_BODY_END;
                 }
                 return true;
@@ -775,13 +697,14 @@ static inline bool scan_heredoc_content(Scanner *scanner, TSLexer *lexer) {
             if (has_content) {
                 lexer->result_symbol = HEREDOC_CONTENT;
             } else {
-                VEC_ERASE(scanner->open_heredocs, 0);
+                array_delete(&heredoc->word);
+                array_erase(&scanner->open_heredocs, 0);
                 lexer->result_symbol = HEREDOC_BODY_END;
             }
             return true;
         }
 
-        if (lexer->lookahead == heredoc->word.data[position_in_word] && look_for_heredoc_end) {
+        if (lexer->lookahead == *array_get(&heredoc->word, position_in_word) && look_for_heredoc_end) {
             advance(lexer);
             position_in_word++;
         } else {
@@ -837,7 +760,7 @@ static inline bool scan_heredoc_content(Scanner *scanner, TSLexer *lexer) {
 }
 
 static inline bool scan_literal_content(Scanner *scanner, TSLexer *lexer) {
-    Literal *literal = &VEC_BACK(scanner->literal_stack);
+    Literal *literal = array_back(&scanner->literal_stack);
     bool has_content = false;
     bool stop_on_space = literal->type == SYMBOL_ARRAY_START || literal->type == STRING_ARRAY_START;
 
@@ -862,7 +785,7 @@ static inline bool scan_literal_content(Scanner *scanner, TSLexer *lexer) {
                             advance(lexer);
                         }
                     }
-                    VEC_POP(scanner->literal_stack);
+                    array_pop(&scanner->literal_stack);
                     lexer->result_symbol = STRING_END;
                     lexer->mark_end(lexer);
                 }
@@ -916,10 +839,10 @@ static inline bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symb
 
     // Contents of literals, which match any character except for some close delimiter
     if (!valid_symbols[STRING_START]) {
-        if ((valid_symbols[STRING_CONTENT] || valid_symbols[STRING_END]) && scanner->literal_stack.len > 0) {
+        if ((valid_symbols[STRING_CONTENT] || valid_symbols[STRING_END]) && scanner->literal_stack.size > 0) {
             return scan_literal_content(scanner, lexer);
         }
-        if ((valid_symbols[HEREDOC_CONTENT] || valid_symbols[HEREDOC_BODY_END]) && scanner->open_heredocs.len > 0) {
+        if ((valid_symbols[HEREDOC_CONTENT] || valid_symbols[HEREDOC_BODY_END]) && scanner->open_heredocs.size > 0) {
             return scan_heredoc_content(scanner, lexer);
         }
     }
@@ -1047,7 +970,7 @@ static inline bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symb
                         literal.open_delimiter = '"';
                         literal.close_delimiter = '"';
                         literal.allows_interpolation = true;
-                        VEC_PUSH(scanner->literal_stack, literal);
+                        array_push(&scanner->literal_stack, literal);
                         lexer->result_symbol = SYMBOL_START;
                         return true;
 
@@ -1056,7 +979,7 @@ static inline bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symb
                         literal.open_delimiter = '\'';
                         literal.close_delimiter = '\'';
                         literal.allows_interpolation = false;
-                        VEC_PUSH(scanner->literal_stack, literal);
+                        array_push(&scanner->literal_stack, literal);
                         lexer->result_symbol = SYMBOL_START;
                         return true;
 
@@ -1088,17 +1011,11 @@ static inline bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symb
     }
 
     // Open delimiters for literals
-    if ((valid_symbols[HASH_KEY_SYMBOL] || valid_symbols[IDENTIFIER_SUFFIX]) &&
-            (iswalpha(lexer->lookahead) || lexer->lookahead == '_') ||
-        valid_symbols[CONSTANT_SUFFIX] && iswupper(lexer->lookahead)) {
+    if (((valid_symbols[HASH_KEY_SYMBOL] || valid_symbols[IDENTIFIER_SUFFIX]) &&
+         (iswalpha(lexer->lookahead) || lexer->lookahead == '_')) ||
+        (valid_symbols[CONSTANT_SUFFIX] && iswupper(lexer->lookahead))) {
         TokenType validIdentifierSymbol = iswupper(lexer->lookahead) ? CONSTANT_SUFFIX : IDENTIFIER_SUFFIX;
-        char word[8];
-        int index = 0;
         while (iswalnum(lexer->lookahead) || lexer->lookahead == '_') {
-            if (index < 8) {
-                word[index] = (char)lexer->lookahead;
-            }
-            index++;
             advance(lexer);
         }
 
@@ -1139,17 +1056,17 @@ static inline bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symb
             }
 
             scan_heredoc_word(lexer, &heredoc);
-            if (heredoc.word.len == 0) {
-                STRING_FREE(heredoc.word);
+            if (heredoc.word.size == 0) {
+                array_delete(&heredoc.word);
                 return false;
             }
-            VEC_PUSH(scanner->open_heredocs, heredoc);
+            array_push(&scanner->open_heredocs, heredoc);
             lexer->result_symbol = HEREDOC_START;
             return true;
         }
 
         if (scan_open_delimiter(scanner, lexer, &literal, valid_symbols)) {
-            VEC_PUSH(scanner->literal_stack, literal);
+            array_push(&scanner->literal_stack, literal);
             lexer->result_symbol = literal.type;
             return true;
         }
@@ -1160,7 +1077,7 @@ static inline bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symb
 }
 
 void *tree_sitter_ruby_external_scanner_create() {
-    Scanner *scanner = (Scanner *)calloc(1, sizeof(Scanner));
+    Scanner *scanner = (Scanner *)ts_calloc(1, sizeof(Scanner));
     return scanner;
 }
 
@@ -1181,10 +1098,10 @@ void tree_sitter_ruby_external_scanner_deserialize(void *payload, const char *bu
 
 void tree_sitter_ruby_external_scanner_destroy(void *payload) {
     Scanner *scanner = (Scanner *)payload;
-    for (uint32_t i = 0; i < scanner->open_heredocs.len; i++) {
-        STRING_FREE(scanner->open_heredocs.data[i].word);
+    for (uint32_t i = 0; i < scanner->open_heredocs.size; i++) {
+        array_delete(&array_get(&scanner->open_heredocs, i)->word);
     }
-    VEC_FREE(scanner->open_heredocs);
-    VEC_FREE(scanner->literal_stack);
-    free(scanner);
+    array_delete(&scanner->open_heredocs);
+    array_delete(&scanner->literal_stack);
+    ts_free(scanner);
 }

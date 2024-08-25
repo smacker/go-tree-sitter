@@ -4,8 +4,6 @@ void *tree_sitter_tsx_external_scanner_create() { return NULL; }
 
 void tree_sitter_tsx_external_scanner_destroy(void *payload) {}
 
-void tree_sitter_tsx_external_scanner_reset(void *payload) {}
-
 unsigned tree_sitter_tsx_external_scanner_serialize(void *payload, char *buffer) { return 0; }
 
 void tree_sitter_tsx_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {}
