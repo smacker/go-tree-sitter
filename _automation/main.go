@@ -81,6 +81,7 @@ func root(args []string) error {
 		flagsParse(fs, args[1:])
 
 		s.CheckUpdates(ctx)
+
 	case "update":
 		if len(args) < 2 {
 			return fmt.Errorf("language argument is missing")
@@ -91,11 +92,15 @@ func root(args []string) error {
 		flagsParse(fs, args[2:])
 
 		s.Update(ctx, args[1], *force)
+		s.writeGrammarsFile(ctx)
+
 	case "update-all":
 		fs := flag.NewFlagSet("update-all", flag.ExitOnError)
 		flagsParse(fs, args[1:])
 
-		s.UpdateAll(ctx)
+		s.UpdateAll(ctx, true)
+		s.writeGrammarsFile(ctx)
+
 	default:
 		return fmt.Errorf("unknown sub-command")
 	}
@@ -194,33 +199,20 @@ func (s *UpdateService) Update(ctx context.Context, language string, force bool)
 	}
 
 	s.downloadGrammar(ctx, grammar)
-	s.writeGrammarsFile(ctx)
 }
 
-func (s *UpdateService) UpdateAll(ctx context.Context) {
-	newVersions := s.fetchNewVersions()
-
+func (s *UpdateService) UpdateAll(ctx context.Context, force bool) {
 	wg := sync.WaitGroup{}
-	for i, g := range s.grammars {
-		v := newVersions[i]
-		if v == nil {
-			continue
-		}
-
+	for _, g := range s.grammars {
 		wg.Add(1)
-		g.Reference = v.Reference
-		g.Revision = v.Revision
 
 		go func(g *Grammar) {
 			defer wg.Done()
 
-			s.downloadGrammar(ctx, g)
+			s.Update(ctx, g.Language, force)
 		}(g)
 	}
-
 	wg.Wait()
-
-	s.writeGrammarsFile(ctx)
 }
 
 func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
@@ -308,7 +300,7 @@ func (s *UpdateService) fetchFile(ctx context.Context, url string) []byte {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		logAndExit(logger, "incorrect response status code", "statusCode", resp.StatusCode)
+		logger.Error("incorrect response status code", "statusCode", resp.StatusCode)
 	}
 
 	b, err := io.ReadAll(resp.Body)
@@ -370,15 +362,15 @@ func (s *UpdateService) downloadPhp(ctx context.Context, g *Grammar) {
 // ocaml is special since its folder structure is different from the other ones
 func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 	fileMapping := map[string]string{
-		"parser.c":   "ocaml/src/parser.c",
-		"scanner.cc": "ocaml/src/scanner.cc",
-		"scanner.h":  "common/scanner.h",
+		"parser.c":  "grammars/ocaml/src/parser.c",
+		"scanner.c": "grammars/ocaml/src/scanner.c",
+		"scanner.h": "include/scanner.h",
 	}
 
 	url := g.ContentURL()
 	s.downloadFile(
 		ctx,
-		fmt.Sprintf("%s/%s/ocaml/src/tree_sitter/parser.h", url, g.Revision),
+		fmt.Sprintf("%s/%s/include/tree_sitter/parser.h", url, g.Revision),
 		fmt.Sprintf("%s/parser.h", g.Language),
 		nil,
 	)
