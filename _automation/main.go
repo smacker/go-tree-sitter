@@ -374,16 +374,10 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 		"scanner.c": "grammars/ocaml/src/scanner.c",
 		"scanner.h": "include/scanner.h",
 		"alloc.h":   "include/tree_sitter/alloc.h",
+		"parser.h":  "include/tree_sitter/parser.h",
 	}
 
 	url := g.ContentURL()
-	s.downloadFile(
-		ctx,
-		fmt.Sprintf("%s/%s/include/tree_sitter/parser.h", url, g.Revision),
-		fmt.Sprintf("%s/parser.h", g.Language),
-		nil,
-	)
-
 	for _, f := range g.Files {
 		fp, ok := fileMapping[f]
 		if !ok {
