@@ -231,6 +231,8 @@ func (s *UpdateService) downloadGrammar(ctx context.Context, g *Grammar) {
 	s.makeDir(ctx, g.Language)
 
 	switch g.Language {
+	case "dockerfile":
+		s.downloadDockerfile(ctx, g)
 	case "ocaml":
 		s.downloadOcaml(ctx, g)
 	case "typescript":
@@ -362,6 +364,32 @@ func (s *UpdateService) downloadPhp(ctx context.Context, g *Grammar) {
 			map[string]string{
 				`<tree_sitter/parser.h>`:   `"parser.h"`,
 				`"../../common/scanner.h"`: `"scanner.h"`,
+			},
+		)
+	}
+}
+
+func (s *UpdateService) downloadDockerfile(ctx context.Context, g *Grammar) {
+	fileMapping := map[string]string{
+		"parser.h":  "src/tree_sitter/parser.h",
+		"parser.c":  "src/parser.c",
+		"scanner.c": "src/scanner.c",
+	}
+
+	url := g.ContentURL()
+	for _, f := range g.Files {
+		fp, ok := fileMapping[f]
+		if !ok {
+			logAndExit(getLogger(ctx), "mapping for file not found", "file", f)
+		}
+
+		s.downloadFile(
+			ctx,
+			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
+			fmt.Sprintf("%s/%s", g.Language, f),
+			map[string]string{
+				`"tree_sitter/parser.h"`: `"parser.h"`,
+				`<tree_sitter/parser.h>`: `"parser.h"`,
 			},
 		)
 	}
