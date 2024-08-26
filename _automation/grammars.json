@@ -68,7 +68,9 @@
     "language": "dockerfile",
     "url": "https://github.com/camdencheek/tree-sitter-dockerfile",
     "files": [
-      "parser.c"
+      "parser.h",
+      "parser.c",
+      "scanner.c"
     ],
     "reference": "v0.2.0",
     "revision": "868e44ce378deb68aac902a9db68ff82d2299dd0",
@@ -189,7 +191,8 @@
       "parser.c",
       "scanner.c",
       "scanner.h",
-      "alloc.h"
+      "alloc.h",
+      "parser.h"
     ],
     "reference": "v0.22.0",
     "revision": "f7e63111ed1bc1908eacafe6af1ee8d01bfcf7ae",
