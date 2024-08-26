@@ -373,6 +373,7 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 		"parser.c":  "grammars/ocaml/src/parser.c",
 		"scanner.c": "grammars/ocaml/src/scanner.c",
 		"scanner.h": "include/scanner.h",
+		"alloc.h":   "include/tree_sitter/alloc.h",
 	}
 
 	url := g.ContentURL()
@@ -394,8 +395,10 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
 			fmt.Sprintf("%s/%s", g.Language, f),
 			map[string]string{
-				`<tree_sitter/parser.h>`:   `"parser.h"`,
-				`"../../common/scanner.h"`: `"scanner.h"`,
+				`"tree_sitter/alloc.h"`:        `"alloc.h"`,
+				`"tree_sitter/parser.h"`:       `"parser.h"`,
+				`<tree_sitter/parser.h>`:       `"parser.h"`,
+				`"../../../include/scanner.h"`: `"scanner.h"`,
 			},
 		)
 	}
@@ -414,6 +417,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 			fmt.Sprintf("%s/%s/common/scanner.h", url, g.Revision),
 			fmt.Sprintf("%s/%s/scanner.h", g.Language, lang),
 			map[string]string{
+				`"tree_sitter/parser.h"`: `"parser.h"`,
 				`<tree_sitter/parser.h>`: `"parser.h"`,
 			},
 		)
@@ -430,6 +434,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 				fmt.Sprintf("%s/%s/%s/src/%s", url, g.Revision, lang, f),
 				fmt.Sprintf("%s/%s/%s", g.Language, lang, f),
 				map[string]string{
+					`"tree_sitter/parser.h"`:   `"parser.h"`,
 					`<tree_sitter/parser.h>`:   `"parser.h"`,
 					`"../../common/scanner.h"`: `"scanner.h"`,
 				},
