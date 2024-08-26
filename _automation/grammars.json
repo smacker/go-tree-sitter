@@ -103,7 +103,7 @@
       "parser.c"
     ],
     "reference": "master",
-    "revision": "8c0f0e7a6012283d9f0dd650feb8075ad1ffad5e",
+    "revision": "6204b7308a32e991a8daed2e9895a90be55a510a",
     "updateBasedOn": "commit"
   },
   {
@@ -188,7 +188,8 @@
     "files": [
       "parser.c",
       "scanner.c",
-      "scanner.h"
+      "scanner.h",
+      "alloc.h"
     ],
     "reference": "v0.22.0",
     "revision": "f7e63111ed1bc1908eacafe6af1ee8d01bfcf7ae",
@@ -223,8 +224,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.21.0",
-    "revision": "0f9047c857ed0990931b1f899c7d3bf403703147",
+    "reference": "v0.23.0",
+    "revision": "346fa42dc2990d2a2736cc60891369d0d3d8e65c",
     "updateBasedOn": "tag"
   },
   {

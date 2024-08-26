@@ -1,7 +1,7 @@
 #ifndef TREE_SITTER_OCAML_SCANNER_H_
 #define TREE_SITTER_OCAML_SCANNER_H_
 
-#include "tree_sitter/parser.h"
+#include "parser.h"
 
 #include <assert.h>
 #include <string.h>

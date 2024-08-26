@@ -1,4 +1,4 @@
-#include "../../../include/scanner.h"
+#include "scanner.h"
 
 void *tree_sitter_ocaml_external_scanner_create() { return create(); }
 
