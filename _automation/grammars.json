@@ -265,6 +265,16 @@
     "updateBasedOn": "tag"
   },
   {
+    "language": "starlark",
+    "url": "https://github.com/tree-sitter-grammars/tree-sitter-starlark",
+    "files": [
+      "parser.c",
+      "scanner.c"
+    ],
+    "reference": "v1.0.0",
+    "revision": "b31a616aac5d05f927f3f9dd809789db7805b632"
+  },
+  {
     "language": "svelte",
     "url": "https://github.com/Himujjal/tree-sitter-svelte",
     "files": [
