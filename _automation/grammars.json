@@ -16,8 +16,8 @@
     "files": [
       "parser.c"
     ],
-    "reference": "v0.20.2",
-    "revision": "7175a6dd5fc1cee660dce6fe23f6043d75af424a",
+    "reference": "v0.21.4",
+    "revision": "deca017a554045b4c203e7ddff39ae64ff05e071",
     "updateBasedOn": "tag"
   },
   {
@@ -27,8 +27,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.21.2",
-    "revision": "4b8800264f2eae16d6ea7c24409edb2b6ec8c21d",
+    "reference": "v0.21.3",
+    "revision": "31a64b28292aac6adf44071e449fa03fb80eaf4e",
     "updateBasedOn": "tag"
   },
   {
@@ -38,8 +38,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.22.0",
-    "revision": "72fd00128f1c38319670cbf4bcedbba0dc849d96",
+    "reference": "v0.22.3",
+    "revision": "0b4aa47f07d958a49260aadc87e8474b03897c23",
     "updateBasedOn": "tag"
   },
   {
@@ -49,8 +49,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.0",
-    "revision": "98c7b3dceb24f1ee17f1322f3947e55638251c37",
+    "reference": "v0.21.1",
+    "revision": "9af0bdd9d225edee12f489cfa8284e248321959b",
     "updateBasedOn": "tag"
   },
   {
@@ -61,17 +61,19 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "61843e3beebf19417e4fede4e8be4df1084317ad",
+    "revision": "8a5f273bfa281c66354da562f2307c2d394b6c81",
     "updateBasedOn": "commit"
   },
   {
     "language": "dockerfile",
     "url": "https://github.com/camdencheek/tree-sitter-dockerfile",
     "files": [
-      "parser.c"
+      "parser.h",
+      "parser.c",
+      "scanner.c"
     ],
-    "reference": "v0.1.2",
-    "revision": "d34a0cebd094e830bdd2106a28cb2f1fb22401d8",
+    "reference": "v0.2.0",
+    "revision": "868e44ce378deb68aac902a9db68ff82d2299dd0",
     "updateBasedOn": "tag"
   },
   {
@@ -103,18 +105,17 @@
       "parser.c"
     ],
     "reference": "master",
-    "revision": "eb68645662a3f7bf7fdd4bcb9531585f54c8570e",
+    "revision": "6204b7308a32e991a8daed2e9895a90be55a510a",
     "updateBasedOn": "commit"
   },
   {
     "language": "groovy",
     "url": "https://github.com/murtaza64/tree-sitter-groovy",
     "files": [
-      "parser.c",
-      "scanner.c"
+      "parser.c"
     ],
     "reference": "main",
-    "revision": "235009aad0f580211fc12014bb0846c3910130c1",
+    "revision": "171b3b7412bc93284fc0dad0a7a7bbbbd1b51289",
     "updateBasedOn": ""
   },
   {
@@ -125,7 +126,7 @@
       "scanner.c"
     ],
     "reference": "main",
-    "revision": "b5539065432c08e4118eb3ee7c94902fdda85708",
+    "revision": "9e3ec9848f28d26845ba300fd73c740459b83e9b",
     "updateBasedOn": "commit"
   },
   {
@@ -136,8 +137,8 @@
       "scanner.c",
       "tag.h"
     ],
-    "reference": "v0.20.2",
-    "revision": "4e5f3345f74cda667ee8dd94b17184a592ce0374",
+    "reference": "v0.20.4",
+    "revision": "3713d4004c2259f7658eaad367dbad1a3989429d",
     "updateBasedOn": "tag"
   },
   {
@@ -157,8 +158,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.21.0",
-    "revision": "d9b3a5841bd8f05e15db0748848ef3f5af5b5b44",
+    "reference": "v0.21.4",
+    "revision": "d767b1a276a4e80d7a6be30bada3070740ba4fa2",
     "updateBasedOn": "tag"
   },
   {
@@ -168,8 +169,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "0.3.5",
-    "revision": "51e451be6c18e2cc123249f49edf8e26fc50311c",
+    "reference": "0.3.8",
+    "revision": "e1a2d5ad1f61f5740677183cd4125bb071cd2f30",
     "updateBasedOn": "tag"
   },
   {
@@ -188,11 +189,13 @@
     "url": "https://github.com/tree-sitter/tree-sitter-ocaml",
     "files": [
       "parser.c",
-      "scanner.cc",
-      "scanner.h"
+      "scanner.c",
+      "scanner.h",
+      "alloc.h",
+      "parser.h"
     ],
-    "reference": "v0.20.1",
-    "revision": "de07323343946c32759933cb3b7c78e821098cad",
+    "reference": "v0.22.0",
+    "revision": "f7e63111ed1bc1908eacafe6af1ee8d01bfcf7ae",
     "updateBasedOn": "tag"
   },
   {
@@ -203,8 +206,8 @@
       "scanner.c",
       "scanner.h"
     ],
-    "reference": "v0.22.4",
-    "revision": "58054be104db0809ea6f119514a4d904f95e5b5c",
+    "reference": "v0.22.8",
+    "revision": "c07d69739ba71b5a449bdbb7735991f8aabf8546",
     "updateBasedOn": "tag"
   },
   {
@@ -224,8 +227,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.21.0",
-    "revision": "0f9047c857ed0990931b1f899c7d3bf403703147",
+    "reference": "v0.23.0",
+    "revision": "346fa42dc2990d2a2736cc60891369d0d3d8e65c",
     "updateBasedOn": "tag"
   },
   {
@@ -235,8 +238,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.1",
-    "revision": "7a010836b74351855148818d5cb8170dc4df8e6a",
+    "reference": "v0.21.0",
+    "revision": "a8eed3d73379528caa9310b20b69fd3c22dcecc7",
     "updateBasedOn": "tag"
   },
   {
@@ -246,8 +249,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.21.0",
-    "revision": "473634230435c18033384bebaa6d6a17c2523281",
+    "reference": "v0.21.2",
+    "revision": "04352146022062c101b8ddd853adf17eadd8cf56",
     "updateBasedOn": "tag"
   },
   {
@@ -255,11 +258,10 @@
     "url": "https://github.com/tree-sitter/tree-sitter-scala",
     "files": [
       "parser.c",
-      "scanner.c",
-      "stack.h"
+      "scanner.c"
     ],
-    "reference": "v0.21.0",
-    "revision": "b3ac6a5d959d3137e7f3146d4d9f7899872177de",
+    "reference": "v0.22.5",
+    "revision": "d9017869dda79cefe2dc9d23c6125eda0a2d5d22",
     "updateBasedOn": "tag"
   },
   {
@@ -285,8 +287,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "0.4.3-with-generated-files",
-    "revision": "caa99d7d3c14aac03b5f16fc86fedf8755570760",
+    "reference": "0.5.0-with-generated-files",
+    "revision": "57c1c6d6ffa1c44b330182d41717e6fe37430704",
     "updateBasedOn": "tag"
   },
   {
@@ -307,8 +309,8 @@
       "parser.c",
       "scanner.c"
     ],
-    "reference": "v0.20.6",
-    "revision": "b00b8eb44f0b9f02556da0b1a4e2f71faed7e61b",
+    "reference": "v0.21.2",
+    "revision": "9f804be960f289a0acc59d8564acc16857b0b088",
     "updateBasedOn": "tag"
   },
   {
@@ -343,7 +345,7 @@
       "scanner.c"
     ],
     "reference": "gh-pages",
-    "revision": "89fd00d0aff3bc9985ac37caf362ec4fd9b2ba1d",
+    "revision": "c67ecbd37d8d12f22e4cc7138afd14bc20253e10",
     "updateBasedOn": "commit"
   }
 ]

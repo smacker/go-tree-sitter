@@ -169,7 +169,8 @@ unsigned tree_sitter_sql_external_scanner_serialize(void *payload, char *buffer)
   if (tag_length >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
     return 0;
   }
-  strcpy(buffer, state->start_tag);
+
+  memcpy(buffer, state->start_tag, tag_length);
   if (state->start_tag != NULL) {
     free(state->start_tag);
     state->start_tag = NULL;
@@ -183,6 +184,6 @@ void tree_sitter_sql_external_scanner_deserialize(void *payload, const char *buf
   // A length of 1 can't exists.
   if (length > 1) {
     state->start_tag = malloc(length);
-    strcpy(state->start_tag, buffer);
+    memcpy(state->start_tag, buffer, length);
   }
 }

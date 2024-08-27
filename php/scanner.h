@@ -184,7 +184,7 @@ static String scan_heredoc_word(TSLexer *lexer) {
     return result;
 }
 
-static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
+static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer) {
     bool has_consumed_content = false;
     if (scanner->heredocs.size == 0) {
         return false;
@@ -199,7 +199,6 @@ static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer, const bo
 
     bool end_tag_matched = false;
     String heredoc_tag = array_back(&scanner->heredocs)->word;
-    String word = (String)array_new();
 
     for (uint32_t i = 0; i < heredoc_tag.size; i++) {
         if (lexer->lookahead != heredoc_tag.contents[i]) {
@@ -208,16 +207,9 @@ static inline bool scan_nowdoc_string(Scanner *scanner, TSLexer *lexer, const bo
         advance(lexer);
         has_consumed_content = true;
 
-        array_push(&word, heredoc_tag.contents[i]);
+        end_tag_matched = (i == heredoc_tag.size - 1 && (iswspace(lexer->lookahead) || lexer->lookahead == ';' ||
+                                                         lexer->lookahead == ',' || lexer->lookahead == ')'));
     }
-
-    if (valid_symbols[HEREDOC_END] && string_eq(&word, &heredoc_tag)) {
-        lexer->result_symbol = HEREDOC_END;
-        lexer->mark_end(lexer);
-        array_delete(&word);
-        return true;
-    }
-    array_delete(&word);
 
     if (end_tag_matched) {
         // There may be an arbitrary amount of white space after the end tag
@@ -450,7 +442,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
     if (valid_symbols[NOWDOC_STRING]) {
         lexer->result_symbol = NOWDOC_STRING;
-        return scan_nowdoc_string(scanner, lexer, valid_symbols);
+        return scan_nowdoc_string(scanner, lexer);
     }
 
     if (valid_symbols[HEREDOC_END]) {
@@ -473,8 +465,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
         array_delete(&word);
 
         lexer->mark_end(lexer);
-        String last_word = array_pop(&scanner->heredocs).word;
-        array_delete(&last_word);
+        array_delete(&array_pop(&scanner->heredocs).word);
         return true;
     }
 

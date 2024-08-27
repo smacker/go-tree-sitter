@@ -1,5 +1,6 @@
 #include "tag.h"
-#include "../array.h"
+#include "parser.h"
+
 #include <wctype.h>
 
 enum TokenType {
@@ -12,9 +13,6 @@ enum TokenType {
     IMPLICIT_END_TAG,
     RAW_TEXT,
     COMMENT,
-    OMITTED_HTML_END_TAG,
-    OMITTED_HEAD_END_TAG,
-    OMITTED_BODY_END_TAG,
 };
 
 typedef struct {
@@ -335,7 +333,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 }
 
 void *tree_sitter_html_external_scanner_create() {
-    Scanner *scanner = (Scanner *)calloc(1, sizeof(Scanner));
+    Scanner *scanner = (Scanner *)ts_calloc(1, sizeof(Scanner));
     return scanner;
 }
 
@@ -360,5 +358,5 @@ void tree_sitter_html_external_scanner_destroy(void *payload) {
         tag_free(&scanner->tags.contents[i]);
     }
     array_delete(&scanner->tags);
-    free(scanner);
+    ts_free(scanner);
 }

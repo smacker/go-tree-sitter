@@ -95,7 +95,7 @@ static bool scan_automatic_semicolon(TSLexer *lexer, const bool *valid_symbols, 
                 skip(lexer);
             } while (iswspace(lexer->lookahead));
             if (lexer->lookahead == ':') {
-                return false;
+                return valid_symbols[LOGICAL_OR]; // Don't return false if we're in a ternary by checking if || is valid
             }
             return true;
         }

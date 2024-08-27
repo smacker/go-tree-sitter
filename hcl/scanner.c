@@ -84,12 +84,12 @@ enum TokenType {
     HEREDOC_IDENTIFIER,
 };
 
-enum ContextType {
+typedef enum ContextType {
     TEMPLATE_INTERPOLATION,
     TEMPLATE_DIRECTIVE,
     QUOTED_TEMPLATE,
     HEREDOC_TEMPLATE,
-};
+} ContextType;
 
 typedef struct {
     uint32_t cap;
@@ -100,7 +100,7 @@ typedef struct {
 String string_new() { return (String){.cap = 16, .len = 0, .data = calloc(1, sizeof(char) * 17)}; }
 
 typedef struct {
-    enum ContextType type;
+    ContextType type;
 
     // valid if type == HEREDOC_TEMPLATE
     String heredoc_identifier;
@@ -131,13 +131,14 @@ static unsigned serialize(Scanner *scanner, char *buf) {
     size += sizeof(uint32_t);
     for (int i = 0; i < scanner->context_stack.len; i++) {
         Context *context = &scanner->context_stack.data[i];
-        if (size + 2 + context->heredoc_identifier.len >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
+        if (size + sizeof(ContextType) + sizeof(uint32_t) + context->heredoc_identifier.len >= TREE_SITTER_SERIALIZATION_BUFFER_SIZE) {
             return 0;
         }
         if (context->heredoc_identifier.len > CHAR_MAX) {
             return 0;
         }
-        buf[size++] = context->type;
+        memcpy(&buf[size], &(context->type), sizeof(ContextType));
+        size += sizeof(ContextType);
         memcpy(&buf[size], &(context->heredoc_identifier.len), sizeof(uint32_t));
         size += sizeof(uint32_t);
         memcpy(&buf[size], context->heredoc_identifier.data, context->heredoc_identifier.len);
@@ -160,7 +161,9 @@ static void deserialize(Scanner *scanner, const char *buffer, unsigned length) {
     for (uint32_t j = 0; j < context_stack_size; j++) {
         Context ctx;
         ctx.heredoc_identifier = string_new();
-        ctx.type = (enum ContextType)buffer[size++];
+
+        memcpy(&(ctx.type), &buffer[size], sizeof(ContextType));
+        size += sizeof(ContextType);
 
         uint32_t heredoc_identifier_size;
         memcpy(&heredoc_identifier_size, &buffer[size], sizeof(uint32_t));
