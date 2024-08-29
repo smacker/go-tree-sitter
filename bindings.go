@@ -683,6 +683,14 @@ func (c *TreeCursor) GoToFirstChildForByte(b uint32) int64 {
 	return int64(C.ts_tree_cursor_goto_first_child_for_byte(c.c, C.uint32_t(b)))
 }
 
+func (c *TreeCursor) GoToFirstChildForPoint(GoalPoint Point) int64 {
+	cGoalPoint := C.TSPoint{
+		row:    C.uint32_t(GoalPoint.Row),
+		column: C.uint32_t(GoalPoint.Column),
+	}
+	return int64(C.ts_tree_cursor_goto_first_child_for_point(c.c, cGoalPoint))
+}
+
 // QueryErrorType - value that indicates the type of QueryError.
 type QueryErrorType int
 
