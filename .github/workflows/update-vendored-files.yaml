@@ -1,0 +1,31 @@
+name: Update Vendored Files
+
+on:
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  update-files:
+    name: 'Update Files'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Files
+        uses: actions/checkout@v2
+      - name: Run Download Script
+        run: ./vendor.sh download
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - name: Run tests
+        run: |
+          go get -t ./...
+          go test -v ./...
+      - name: Upload Updated Files
+        run: |
+          git config --global user.name "Go Tree Sitter Bot"
+          git config --global user.email "smacker@users.noreply.github.com"
+          git commit -am "Updated vendor files"
