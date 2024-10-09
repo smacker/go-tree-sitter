@@ -40,7 +40,7 @@ type Grammar struct {
 	// If specified, files are not downloaded from the remote URL. Instead,
 	// files are copied from within the local checkout of the git repo
 	// for the language.
-	LocalPathOverride string `json:"localPathOverride"`
+	LocalPathOverride string `json:"localPathOverride,omitempty"`
 	*GrammarVersion
 }
 
@@ -193,7 +193,9 @@ func (s *UpdateService) Update(ctx context.Context, language string, force bool)
 
 	v := grammar.FetchNewVersion()
 	if v == nil {
-		if !force {
+		if grammar.LocalPathOverride != "" {
+			logger.Warn(fmt.Sprintf("updating grammer from local repository %s", grammar.LocalPathOverride))
+		} else if !force {
 			logAndExit(logger, "grammar is not outdated")
 		} else {
 			logger.Warn("re-downloading up-to-date grammar")
