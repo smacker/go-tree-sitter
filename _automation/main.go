@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -36,6 +37,10 @@ type Grammar struct {
 	Language string   `json:"language"`
 	URL      string   `json:"url"`
 	Files    []string `json:"files"`
+	// If specified, files are not downloaded from the remote URL. Instead,
+	// files are copied from within the local checkout of the git repo
+	// for the language.
+	LocalPathOverride string `json:"localPathOverride,omitempty"`
 	*GrammarVersion
 }
 
@@ -188,7 +193,9 @@ func (s *UpdateService) Update(ctx context.Context, language string, force bool)
 
 	v := grammar.FetchNewVersion()
 	if v == nil {
-		if !force {
+		if grammar.LocalPathOverride != "" {
+			logger.Warn(fmt.Sprintf("updating grammer from local repository %s", grammar.LocalPathOverride))
+		} else if !force {
 			logAndExit(logger, "grammar is not outdated")
 		} else {
 			logger.Warn("re-downloading up-to-date grammar")
@@ -252,11 +259,9 @@ func (s *UpdateService) makeDir(ctx context.Context, path string) {
 }
 
 func (s *UpdateService) defaultGrammarDownload(ctx context.Context, g *Grammar) {
-	url := g.ContentURL()
-
 	s.downloadFile(
 		ctx,
-		fmt.Sprintf("%s/%s/src/tree_sitter/parser.h", url, g.Revision),
+		fetcherForFile(g, "src/tree_sitter/parser.h"),
 		fmt.Sprintf("%s/parser.h", g.Language),
 		nil,
 	)
@@ -264,7 +269,7 @@ func (s *UpdateService) defaultGrammarDownload(ctx context.Context, g *Grammar) 
 	for _, f := range g.Files {
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/src/%s", url, g.Revision, f),
+			fetcherForFile(g, "src/"+f),
 			fmt.Sprintf("%s/%s", g.Language, f),
 			map[string]string{
 				`<tree_sitter/parser.h>`: `"parser.h"`,
@@ -278,14 +283,56 @@ func (s *UpdateService) defaultGrammarDownload(ctx context.Context, g *Grammar) 
 	}
 }
 
-func (s *UpdateService) downloadFile(ctx context.Context, url, toPath string, replaceMap map[string]string) {
-	b := s.fetchFile(ctx, url)
+func fetcherForFile(g *Grammar, repoRootRelativePath string) func(ctx context.Context) ([]byte, error) {
+	if g.LocalPathOverride != "" {
+		localRelativePath, err := filepath.Localize(repoRootRelativePath)
+		if err != nil {
+			return func(_ context.Context) ([]byte, error) {
+				return nil, fmt.Errorf("failed to localize path %q for local directory %q: %w", repoRootRelativePath, g.LocalPathOverride, err)
+			}
+		}
+		path := filepath.Join(g.LocalPathOverride, localRelativePath)
+		return func(_ context.Context) ([]byte, error) {
+			return os.ReadFile(path)
+		}
+	}
+
+	url := fmt.Sprintf("%s/%s/%s", g.ContentURL(), g.Revision, repoRootRelativePath)
+
+	return func(ctx context.Context) ([]byte, error) {
+		logger := getLogger(ctx).With("url", url)
+		logger.Debug("fetching")
+
+		resp, err := http.Get(url)
+		if err != nil {
+			return nil, fmt.Errorf("error downloading file from %s: %w", url, err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("error downloading file from %s: non-200 status code %d", url, resp.StatusCode)
+		}
+
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error downloading file from %s: %w", url, err)
+		}
+		return b, nil
+	}
+
+}
+
+func (s *UpdateService) downloadFile(ctx context.Context, fetcher func(context.Context) ([]byte, error), toPath string, replaceMap map[string]string) {
+	b, err := fetcher(ctx)
+	if err != nil {
+		logAndExit(getLogger(ctx), err.Error())
+	}
 
 	for old, new := range replaceMap {
 		b = bytes.ReplaceAll(b, []byte(old), []byte(new))
 	}
 
-	err := os.WriteFile(toPath, b, 0644)
+	err = os.WriteFile(toPath, b, 0644)
 	if err != nil {
 		logAndExit(getLogger(ctx), err.Error(), "path", toPath)
 	}
@@ -330,14 +377,12 @@ func (s *UpdateService) downloadPhp(ctx context.Context, g *Grammar) {
 		"scanner.h": "common/scanner.h",
 	}
 
-	url := g.ContentURL()
-
 	treeSitterFiles := []string{"parser.h", "array.h", "alloc.h"}
 
 	for _, f := range treeSitterFiles {
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/php/src/tree_sitter/%s", url, g.Revision, f),
+			fetcherForFile(g, "php/src/tree_sitter/"+f),
 			fmt.Sprintf("%s/tree_sitter/%s", g.Language, f),
 			nil,
 		)
@@ -351,7 +396,7 @@ func (s *UpdateService) downloadPhp(ctx context.Context, g *Grammar) {
 
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
+			fetcherForFile(g, fp),
 			fmt.Sprintf("%s/%s", g.Language, f),
 			map[string]string{
 				`<tree_sitter/parser.h>`:   `"parser.h"`,
@@ -368,7 +413,6 @@ func (s *UpdateService) downloadDockerfile(ctx context.Context, g *Grammar) {
 		"scanner.c": "src/scanner.c",
 	}
 
-	url := g.ContentURL()
 	for _, f := range g.Files {
 		fp, ok := fileMapping[f]
 		if !ok {
@@ -377,7 +421,7 @@ func (s *UpdateService) downloadDockerfile(ctx context.Context, g *Grammar) {
 
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
+			fetcherForFile(g, fp),
 			fmt.Sprintf("%s/%s", g.Language, f),
 			map[string]string{
 				`"tree_sitter/parser.h"`: `"parser.h"`,
@@ -397,7 +441,6 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 		"parser.h":  "include/tree_sitter/parser.h",
 	}
 
-	url := g.ContentURL()
 	for _, f := range g.Files {
 		fp, ok := fileMapping[f]
 		if !ok {
@@ -406,7 +449,7 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/%s", url, g.Revision, fp),
+			fetcherForFile(g, fp),
 			fmt.Sprintf("%s/%s", g.Language, f),
 			map[string]string{
 				`"tree_sitter/alloc.h"`:        `"alloc.h"`,
@@ -420,7 +463,6 @@ func (s *UpdateService) downloadOcaml(ctx context.Context, g *Grammar) {
 
 // typescript is special as it contains 2 different grammars
 func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
-	url := g.ContentURL()
 
 	langs := []string{"typescript", "tsx"}
 	for _, lang := range langs {
@@ -428,7 +470,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/common/scanner.h", url, g.Revision),
+			fetcherForFile(g, "common/scanner.h"),
 			fmt.Sprintf("%s/%s/scanner.h", g.Language, lang),
 			map[string]string{
 				`"tree_sitter/parser.h"`: `"parser.h"`,
@@ -437,7 +479,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 		)
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/%s/src/tree_sitter/parser.h", url, g.Revision, lang),
+			fetcherForFile(g, "src/tree_sitter/parser.h"),
 			fmt.Sprintf("%s/%s/parser.h", g.Language, lang),
 			nil,
 		)
@@ -445,7 +487,7 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 		for _, f := range g.Files {
 			s.downloadFile(
 				ctx,
-				fmt.Sprintf("%s/%s/%s/src/%s", url, g.Revision, lang, f),
+				fetcherForFile(g, fmt.Sprintf("%s/src/%s", lang, f)),
 				fmt.Sprintf("%s/%s/%s", g.Language, lang, f),
 				map[string]string{
 					`"tree_sitter/parser.h"`:   `"parser.h"`,
@@ -459,15 +501,13 @@ func (s *UpdateService) downloadTypescript(ctx context.Context, g *Grammar) {
 
 // markdown is special as it contains 2 different grammars
 func (s *UpdateService) downloadMarkdown(ctx context.Context, g *Grammar) {
-	url := g.ContentURL()
-
 	langs := []string{"tree-sitter-markdown", "tree-sitter-markdown-inline"}
 	for _, lang := range langs {
 		s.makeDir(ctx, fmt.Sprintf("%s/%s", g.Language, lang))
 
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/%s/src/tree_sitter/parser.h", url, g.Revision, lang),
+			fetcherForFile(g, fmt.Sprintf("%s/src/tree_sitter/parser.h", lang)),
 			fmt.Sprintf("%s/%s/parser.h", g.Language, lang),
 			nil,
 		)
@@ -475,7 +515,7 @@ func (s *UpdateService) downloadMarkdown(ctx context.Context, g *Grammar) {
 		for _, f := range g.Files {
 			s.downloadFile(
 				ctx,
-				fmt.Sprintf("%s/%s/%s/src/%s", url, g.Revision, lang, f),
+				fetcherForFile(g, fmt.Sprintf("%s/src/%s", lang, f)),
 				fmt.Sprintf("%s/%s/%s", g.Language, lang, f),
 				map[string]string{
 					`"tree_sitter/parser.h"`: `"parser.h"`,
@@ -519,7 +559,6 @@ func (s *UpdateService) downloadSql(ctx context.Context, g *Grammar) {
 
 	s.makeDir(ctx, fmt.Sprintf("%s/tree_sitter", g.Language))
 
-	url := g.ContentURL()
 	for _, f := range g.Files {
 		fp, ok := fileMapping[f]
 		if !ok {
@@ -528,7 +567,7 @@ func (s *UpdateService) downloadSql(ctx context.Context, g *Grammar) {
 
 		s.downloadFile(
 			ctx,
-			fmt.Sprintf("%s/%s/src/%s", url, g.Revision, fp),
+			fetcherForFile(g, "src/"+fp),
 			fmt.Sprintf("%s/%s", g.Language, fp),
 			nil,
 		)
