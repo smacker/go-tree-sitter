@@ -16,8 +16,10 @@ import (
 )
 
 // Constants for the Tree Sitter version and download URL
-const sitterVersion = "0.22.5"
-const sitterURL = "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v" + sitterVersion + ".tar.gz"
+const (
+	sitterVersion = "0.25.9"
+	sitterURL     = "https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v" + sitterVersion + ".tar.gz"
+)
 
 func main() {
 	// Get the current working directory
@@ -40,6 +42,7 @@ func main() {
 	copyFiles(filepath.Join(parentPath, "lib", "src"), filepath.Join(currentDir, "tmpts"), "*.c")
 	copyFiles(filepath.Join(parentPath, "lib", "src"), filepath.Join(currentDir, "tmpts"), "*.h")
 	copyFiles(filepath.Join(parentPath, "lib", "src", "unicode"), filepath.Join(currentDir, "tmpts"), "*.h")
+	copyFiles(filepath.Join(parentPath, "lib", "src", "portable"), filepath.Join(currentDir, "tmpts"), "*.h")
 
 	// Remove the original extracted directory
 	err = os.RemoveAll(parentPath)
@@ -125,7 +128,7 @@ func copyFile(src, dst string) error {
 	}
 
 	// Write the file to destination
-	err = ioutil.WriteFile(dst, input, 0644)
+	err = ioutil.WriteFile(dst, input, 0o644)
 	if err != nil {
 		return err
 	}
@@ -154,6 +157,7 @@ func modifyIncludePaths(path string) error {
 		// Modify the content and write back
 		modifiedContent := strings.ReplaceAll(string(content), `"tree_sitter/`, `"`)
 		modifiedContent = strings.ReplaceAll(modifiedContent, `"unicode/`, `"`)
+		modifiedContent = strings.ReplaceAll(modifiedContent, `"portable/`, `"`)
 		return os.WriteFile(filePath, []byte(modifiedContent), info.Mode())
 	})
 }
@@ -196,7 +200,7 @@ func downloadAndExtractSitter(url, version string) error {
 		// Create directories and files as needed
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0755); err != nil {
+			if err := os.MkdirAll(target, 0o755); err != nil {
 				return err
 			}
 		case tar.TypeReg:
@@ -230,7 +234,6 @@ func cleanup(path string) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		// Handle the error
 	}
