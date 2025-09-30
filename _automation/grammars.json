@@ -347,5 +347,17 @@
     "reference": "gh-pages",
     "revision": "c67ecbd37d8d12f22e4cc7138afd14bc20253e10",
     "updateBasedOn": "commit"
+  },
+  {
+    "language": "matlab",
+    "url": "https://github.com/acristoffers/tree-sitter-matlab",
+    "files": [
+      "parser.c",
+      "parser.h",
+      "scanner.c"
+    ],
+    "reference": "v1.2.0",
+    "revision": "96a3e8fb0a4ebd0db64db6b52043483937e9ca3a",
+    "updateBasedOn": "tag"
   }
 ]
