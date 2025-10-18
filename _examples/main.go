@@ -11,7 +11,7 @@ func main() {
 	input := []byte("function hello() { console.log('hello') }; function goodbye(){}")
 
 	parser := sitter.NewParser()
-	parser.SetLanguage(javascript.GetLanguage())
+	_ = parser.SetLanguage(javascript.GetLanguage())
 
 	tree := parser.Parse(nil, input)
 

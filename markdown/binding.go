@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"context"
+	"fmt"
 
 	sitter "github.com/smacker/go-tree-sitter"
 	tree_sitter_markdown "github.com/smacker/go-tree-sitter/markdown/tree-sitter-markdown"
@@ -82,7 +83,9 @@ type Node struct {
 
 func ParseCtx(ctx context.Context, oldTree *MarkdownTree, content []byte) (*MarkdownTree, error) {
 	p := sitter.NewParser()
-	p.SetLanguage(tree_sitter_markdown.GetLanguage())
+	if err := p.SetLanguage(tree_sitter_markdown.GetLanguage()); err != nil {
+		return nil, fmt.Errorf("could not set markdown language: %v", err)
+	}
 
 	var old *sitter.Tree
 	if oldTree != nil {
@@ -99,7 +102,9 @@ func ParseCtx(ctx context.Context, oldTree *MarkdownTree, content []byte) (*Mark
 		inlineIndices: map[uintptr]int{},
 	}
 
-	p.SetLanguage(tree_sitter_markdown_inline.GetLanguage())
+	if err := p.SetLanguage(tree_sitter_markdown_inline.GetLanguage()); err != nil {
+		return nil, fmt.Errorf("could not set markdown inline language: %v", err)
+	}
 
 	q, err := sitter.NewQuery([]byte(`(inline) @inline`), tree_sitter_markdown.GetLanguage())
 	if err != nil {

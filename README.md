@@ -19,7 +19,7 @@ import (
 )
 
 parser := sitter.NewParser()
-parser.SetLanguage(javascript.GetLanguage())
+_ = parser.SetLanguage(javascript.GetLanguage())
 ```
 
 Parse some code:

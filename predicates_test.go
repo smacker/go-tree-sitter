@@ -380,7 +380,7 @@ func TestFilterPredicates(t *testing.T) {
 	}
 
 	parser := NewParser()
-	parser.SetLanguage(getTestGrammar())
+	assert.Nil(t, parser.SetLanguage(getTestGrammar()))
 
 	for testNum, testCase := range testCases {
 		tree := parser.Parse(nil, []byte(testCase.input))

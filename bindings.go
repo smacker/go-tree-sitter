@@ -33,7 +33,9 @@ func Parse(content []byte, lang *Language) *Node {
 // returns root node
 func ParseCtx(ctx context.Context, content []byte, lang *Language) (*Node, error) {
 	p := NewParser()
-	p.SetLanguage(lang)
+	if err := p.SetLanguage(lang); err != nil {
+		return nil, fmt.Errorf("error while setting language: %v", err)
+	}
 	tree, err := p.ParseCtx(ctx, nil, content)
 	if err != nil {
 		return nil, err
@@ -59,9 +61,12 @@ func NewParser() *Parser {
 }
 
 // SetLanguage assignes Language to a parser
-func (p *Parser) SetLanguage(lang *Language) {
+func (p *Parser) SetLanguage(lang *Language) error {
 	cLang := (*C.struct_TSLanguage)(lang.ptr)
-	C.ts_parser_set_language(p.c, cLang)
+	if !C.ts_parser_set_language(p.c, cLang) {
+		return fmt.Errorf("could not set the language, make sure the language version is compatible with current tree sitter")
+	}
+	return nil
 }
 
 // ReadFunc is a function to retrieve a chunk of text at a given byte offset and (row, column) position
