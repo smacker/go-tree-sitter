@@ -387,14 +387,79 @@ func testCaptures(t *testing.T, body, sq string, expected []string) {
 }
 
 func TestQueryError(t *testing.T) {
-	assert := assert.New(t)
+	grammar := getTestGrammar()
 
-	q, err := NewQuery([]byte("((unknown) name: (identifier))"), getTestGrammar())
+	tests := []struct {
+		name     string
+		query    string
+		expected *QueryError
+	}{
+		{
+			name:  "syntax error",
+			query: "((expression)",
+			expected: &QueryError{
+				Type:    QueryErrorSyntax,
+				Message: "invalid syntax at line 1 column 1\n\n ^",
+			},
+		},
+		{
+			name:  "node type error",
+			query: "((unknown))",
+			expected: &QueryError{
+				Type:    QueryErrorNodeType,
+				Message: "invalid node type 'unknown' at line 1 column 0",
+			},
+		},
+		{
+			name:  "field error",
+			query: "(sum invalid_field: (number))",
+			expected: &QueryError{
+				Type:    QueryErrorField,
+				Message: "invalid field 'invalid_field' at line 1 column 0",
+			},
+		},
+		{
+			name:  "capture error",
+			query: "((#eq? @missing \"value\")",
+			expected: &QueryError{
+				Type:    QueryErrorCapture,
+				Message: "invalid capture 'missing' at line 1 column 0",
+			},
+		},
+		{
+			name:  "structure error",
+			query: "(number (expression ) @query)",
+			expected: &QueryError{
+				Type:    QueryErrorStructure,
+				Message: "invalid structure at line 1 column 0\n(expression ) @query)\n^",
+			},
+		},
+		// TODO: this error only happens when a language with incompatible version is being used
+		// {
+		// 	name:  "language error",
+		// 	query: "",
+		// 	expected: &QueryError{
+		// 		Type:    QueryErrorLanguage,
+		// 		Message: "incompatible language at line 1 column 0",
+		// 	},
+		// },
+	}
 
-	assert.Nil(q)
-	assert.NotNil(err)
-	assert.EqualValues(&QueryError{Offset: 0x02, Type: QueryErrorNodeType,
-		Message: "invalid node type 'unknown' at line 1 column 0"}, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+			q, err := NewQuery([]byte(tt.query), grammar)
+			if !assert.Nil(q) {
+				return
+			}
+			assert.NotNil(err)
+			queryErr, ok := err.(*QueryError)
+			if assert.True(ok, "error type: %T, err: %v", err, err) {
+				assert.Equal(tt.expected.Type, queryErr.Type)
+				assert.Equal(tt.expected.Message, queryErr.Message)
+			}
+		})
+	}
 }
 
 func doWorkLifetime(t testing.TB, n *Node) {

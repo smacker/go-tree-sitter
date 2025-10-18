@@ -700,16 +700,20 @@ func QueryErrorTypeToString(errorType QueryErrorType) string {
 	switch errorType {
 	case QueryErrorNone:
 		return "none"
+	case QueryErrorSyntax:
+		return "syntax"
 	case QueryErrorNodeType:
 		return "node type"
 	case QueryErrorField:
 		return "field"
 	case QueryErrorCapture:
 		return "capture"
-	case QueryErrorSyntax:
-		return "syntax"
+	case QueryErrorStructure:
+		return "structure"
+	case QueryErrorLanguage:
+		return "language"
 	default:
-		return "unknown"
+		return fmt.Sprintf("unknown(%d)", errorType)
 	}
 
 }
